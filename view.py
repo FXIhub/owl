@@ -247,7 +247,7 @@ class View2D(View,QtOpenGL.QGLWidget):
 
         self.slideshowTimer = QtCore.QTimer()
         self.slideshowTimer.setInterval(2000)
-        self.slideshowTimer.timeout.connect(self.nextSlide)
+        self.slideshowTimer.timeout.connect(self.nextSlideRow)
 
     def stopThreads(self):
         while(self.imageLoader.isRunning()):
@@ -820,10 +820,16 @@ class View2D(View,QtOpenGL.QGLWidget):
             self.slideshowTimer.stop()
         else:
             self.slideshowTimer.start()
-    def nextSlide(self):
+    def nextSlideRow(self):
+        self.nextRow(wrap=True)
+    def nextRow(self,wrap=False):
+        self.changeRowBy(count=1,wrap=wrap)
+    def previousRow(self,wrap=False):
+        self.changeRowBy(count=-1,wrap=wrap)
+    def changeRowBy(self,count=1,wrap=False):
         img_height =  self.data.getCXIHeight()*self.zoom+self.subplotBorder
-        self.translation[1] += img_height
-        self.clipTranslation(True)
+        self.translation[1] += count*img_height
+        self.clipTranslation(wrap)
         self.updateGL()
     def browseToImg(self,img):
         img_height =  self.data.getCXIHeight()*self.zoom+self.subplotBorder

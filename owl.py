@@ -60,23 +60,8 @@ class Viewer(QtGui.QMainWindow):
             settings.setValue("scrollDirection", 1);  
         QtCore.QTimer.singleShot(0,self.after_show)
         
-        self.CXINavigation.CXITree.datasetClicked.connect(self.handleDatasetClicked)
-        self.view.view1D.needDataset.connect(self.handleNeedDatasetPlot)
-        self.view.view1D.datasetChanged.connect(self.handleDatasetChanged)
-        self.view.view2D.needDataset.connect(self.handleNeedDatasetImage)
-        self.view.view2D.datasetChanged.connect(self.handleDatasetChanged)
-        self.CXINavigation.datasetBoxes["image"].button.needDataset.connect(self.handleNeedDatasetImage)
-        self.CXINavigation.datasetBoxes["mask"].button.needDataset.connect(self.handleNeedDatasetMask)
-        self.CXINavigation.datasetMenus["mask"].triggered.connect(self.handleMaskOutBitsChanged)
-        self.CXINavigation.datasetBoxes["sort"].button.needDataset.connect(self.handleNeedDatasetSorting)
-        self.CXINavigation.datasetBoxes["plot"].button.needDataset.connect(self.handleNeedDatasetPlot)
-        self.CXINavigation.datasetMenus["plot"].triggered.connect(self.handlePlotModeTriggered)
-        self.CXINavigation.datasetBoxes["filter0"].button.needDataset.connect(self.handleNeedDatasetFilter)
-        self.datasetProp.displayPropChanged.connect(self.handleDisplayPropChanged)
-        self.view.view2D.imageSelected.connect(self.datasetProp.onImageSelected)
-        self.view.view2D.visibleImgChanged.connect(self.datasetProp.refreshDatasetImg)
-        self.view.view1D.eventSelected.connect(self.handleEventSelected)    
-
+        self.initConnections()
+        
         self.datasetProp.emitDisplayProp()
 
         self.setStyle()
@@ -102,6 +87,16 @@ class Viewer(QtGui.QMainWindow):
         #self.geometryMenu.addAction(self.assembleGeometry)
         #self.assembleGeometry.triggered.connect(self.assembleGeometryClicked)
         
+        self.goMenu = self.menuBar().addMenu(self.tr("&Go"));
+        act = QtGui.QAction("Previous Row",self)
+        act.setShortcut(QtGui.QKeySequence.MoveToPreviousPage)
+        self.goMenu.previousRow = act
+        self.goMenu.addAction(act)
+        act = QtGui.QAction("Next Row",self)
+        act.setShortcut(QtGui.QKeySequence.MoveToNextPage)
+        self.goMenu.nextRow = act
+        self.goMenu.addAction(act)
+
         self.viewMenu = self.menuBar().addMenu(self.tr("&View"));
 
         self.CXIStyleAction = QtGui.QAction("CXI Style",self)
@@ -183,6 +178,26 @@ class Viewer(QtGui.QMainWindow):
         self.colormapMenu.addMenu(self.exoticColormapMenu)
         self.viewMenu.addMenu(self.colormapMenu)
 
+    def initConnections(self):
+        self.CXINavigation.CXITree.datasetClicked.connect(self.handleDatasetClicked)
+        self.view.view1D.needDataset.connect(self.handleNeedDatasetPlot)
+        self.view.view1D.datasetChanged.connect(self.handleDatasetChanged)
+        self.view.view2D.needDataset.connect(self.handleNeedDatasetImage)
+        self.view.view2D.datasetChanged.connect(self.handleDatasetChanged)
+        self.CXINavigation.datasetBoxes["image"].button.needDataset.connect(self.handleNeedDatasetImage)
+        self.CXINavigation.datasetBoxes["mask"].button.needDataset.connect(self.handleNeedDatasetMask)
+        self.CXINavigation.datasetMenus["mask"].triggered.connect(self.handleMaskOutBitsChanged)
+        self.CXINavigation.datasetBoxes["sort"].button.needDataset.connect(self.handleNeedDatasetSorting)
+        self.CXINavigation.datasetBoxes["plot"].button.needDataset.connect(self.handleNeedDatasetPlot)
+        self.CXINavigation.datasetMenus["plot"].triggered.connect(self.handlePlotModeTriggered)
+        self.CXINavigation.datasetBoxes["filter0"].button.needDataset.connect(self.handleNeedDatasetFilter)
+        self.datasetProp.displayPropChanged.connect(self.handleDisplayPropChanged)
+        self.view.view2D.imageSelected.connect(self.datasetProp.onImageSelected)
+        self.view.view2D.visibleImgChanged.connect(self.datasetProp.refreshDatasetImg)
+        self.view.view1D.eventSelected.connect(self.handleEventSelected)   
+        self.goMenu.nextRow.triggered.connect(self.view.view2D.nextRow)
+        self.goMenu.previousRow.triggered.connect(self.view.view2D.previousRow)
+        
     def openFileClicked(self):
         fileName = QtGui.QFileDialog.getOpenFileName(self,"Open CXI File", None, "CXI Files (*.cxi)");
         if(fileName[0]):
