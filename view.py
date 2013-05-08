@@ -202,7 +202,6 @@ class View2DScrollWidget(QtGui.QWidget):
         
 class View2D(View,QtOpenGL.QGLWidget):
     needsImage = QtCore.Signal(int)
-#    clearLoaderThread = QtCore.Signal(int)
     imageSelected = QtCore.Signal(int)
     visibleImgChanged = QtCore.Signal(int)
     def __init__(self,viewer,parent=None):
@@ -257,17 +256,10 @@ class View2D(View,QtOpenGL.QGLWidget):
     def initializeGL(self):
         glClearColor(0.0, 0.0, 0.0, 1.0)
         glClearDepth(1.0)
-        glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
-        glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST);
-        glEnable(GL_LINE_SMOOTH);
-        glEnable(GL_POLYGON_SMOOTH);
-        glEnable(GL_POINT_SMOOTH);
-        glEnable(GL_BLEND);
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
         if(self.width() and self.height()):
             gluOrtho2D(0.0, self.width(), 0.0, self.height());  
-#            glScalef(1., -1., 1.)      
         glMatrixMode(GL_MODELVIEW);
         glLoadIdentity();
 
@@ -404,7 +396,6 @@ class View2D(View,QtOpenGL.QGLWidget):
             self.colormapTextures[m] = glGenTextures(1)
             # I don't know how much of this I need
             glEnable(GL_BLEND)
-            glEnable(GL_TEXTURE_2D)
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
             glBindTexture(GL_TEXTURE_2D, self.colormapTextures[m])
             glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
@@ -555,6 +546,7 @@ class View2D(View,QtOpenGL.QGLWidget):
         glColor3f(3/4.0,3/4.0,3/4.0);
         self.renderText(3*img_width/8.0,3*img_height/10.0,0.0,"Loading...",font);
         glPopMatrix()
+
     def paintImage(self,img):
         img_width = self.data.getCXIWidth()
         img_height = self.data.getCXIHeight()
@@ -596,7 +588,6 @@ class View2D(View,QtOpenGL.QGLWidget):
         loc = glGetUniformLocation(self.shader, "maskedBits")
         glUniform1f(loc,self.maskOutBits)
 
-        glColor3f(1.0,1.0,1.0);
         glBegin (GL_QUADS);
         glTexCoord2f (0.0, 0.0);
         glVertex3f (0, img_height, 0.0);
