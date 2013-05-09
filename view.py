@@ -28,18 +28,24 @@ class IndexProjector(QtCore.QObject):
         if self.stackSize != None:
             self.imgs = numpy.arange(self.stackSize)
             self.viewIndices = numpy.arange(self.stackSize)
-            # apply sorting
-            if self.sortingArray != None:        
-                self.imgs = numpy.argsort(self.sortingArray)[-1::-1]
-                self.viewIndices = numpy.argsort(self.imgs)
             # apply filter
             if self.filterMask != []:
-                self.imgs = self.imgs[self.filterMask[self.viewIndices]]
-                self.viewIndices = self.viewIndices[self.filterMask]
+                self.imgs = self.imgs[self.filterMask]
+            # apply sorting
+            if self.sortingArray != None:
+                self.imgs = numpy.argsort(self.sortingArray[self.filterMask])[-1::-1]
+            # lookup table for back projection
+            self.viewIndices[self.filterMask==0] = 0
+            self.viewIndices[self.imgs] = numpy.arange(len(self.imgs))
         else:
             self.viewIndices = None
             self.imgs = None
         self.projectionChanged.emit(self)
+    def getNViewIndices(self):
+        if self.imgs != None:
+            return len(self.imgs)
+        else:
+            return 0
     # get the view index for a given img
     def imgToIndex(self,img):
         if self.viewIndices == None or img == None:
@@ -267,7 +273,6 @@ class View2DScrollWidget(QtGui.QWidget):
         hbox.addWidget(self.scrollbar)
         self.setLayout(hbox)
     def onValueChanged(self,value):
-        print "scrollbar changes view to y=%i" % value
         self.view2D.scrollTo(value)
     def update(self,foo=None):
         if self.view2D.indexProjector.viewIndices == None or self.view2D.indexProjector.stackSize == None:
@@ -277,11 +282,16 @@ class View2DScrollWidget(QtGui.QWidget):
             imgHeight = self.view2D.getImgHeight("window",True)
             self.scrollbar.setPageStep(imgHeight)
             maximum = numpy.ceil((NViewIndices-1)/float(self.view2D.stackWidth))*imgHeight
-            print "Maximum: %i" % maximum
+            #minimum = 0
+            #if self.scrollbar.value() > maximum:
+            #    self.scrollbar.setValue(maximum)
+            #if self.scrollbar.value() < minimum:
+            #    self.scrollbar.setValue(minimum)
             self.scrollbar.setMaximum(maximum)
+            self.scrollbar.setValue(0)
+            self.view2D.scrollTo(0)
             self.scrollbar.show()
     def onTranslationChanged(self,x,y):
-        print "view changes scrollbar to y=%i" % y
         self.scrollbar.setValue(y)
         
 
@@ -613,7 +623,7 @@ class View2D(View,QtOpenGL.QGLWidget):
         img_height = self.getImgHeight("scene",False)
         glPushMatrix()
         (x,y,z) = self.imageToScene(img,imagePos='BottomLeft',withBorder=False)
-        glTranslated(x,y,z)
+        glTranslatef(x,y,z)
         # Draw a ball in the center                
         path_radius = min(img_width,img_height)/10.0
         path_center = (img_width/2.0,6*img_height/10.0)
@@ -645,8 +655,7 @@ class View2D(View,QtOpenGL.QGLWidget):
         glPushMatrix()
 
         (x,y,z) = self.imageToScene(img,imagePos='BottomLeft',withBorder=False)
-        print "Image %i y=%f" % (img,y)
-        glTranslated(x,y,z)
+        glTranslatef(x,y,z)
 
         glUseProgram(self.shader)
         glActiveTexture(GL_TEXTURE0+1)
@@ -721,14 +730,13 @@ class View2D(View,QtOpenGL.QGLWidget):
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
         glLoadIdentity()
         # Set GL origin in the middle of the widget
-        glTranslated(self.width()/2.,self.height()/2.,0)
+        glTranslatef(self.width()/2.,self.height()/2.,0)
         # Apply user defined translation
-        glTranslated(self.translation[0],self.translation[1],0)
-        print self.translation
+        glTranslatef(self.translation[0],self.translation[1],0)
         # Apply user defined zoom
         glScalef(self.zoom,self.zoom,1.0);
         # Put GL origin on the top left corner of the widget
-        glTranslated(-(self.width()/self.zoom)/2.,(self.height()/self.zoom)/2.,0)
+        glTranslatef(-(self.width()/self.zoom)/2.,(self.height()/self.zoom)/2.,0)
         if(self.has_data):
             if(self.data.getCXIFormat() == 2):
                 img_width = self.getImgWidth("scene",False)
@@ -845,18 +853,13 @@ class View2D(View,QtOpenGL.QGLWidget):
         self.translateBy(translation,wrap)
     def scrollTo(self,translationY,wrap=False):
         translation = (0,translationY)
-        print "scrollTo: %i" % translationY
         self.translateTo(translation,wrap)
     def translateBy(self,translationBy,wrap=False):
         self.translateTo([self.translation[0]+translationBy[0],self.translation[1]+translationBy[1]],wrap)
     def translateTo(self,translation,wrap=False):
         self.translation[0] = translation[0]
         self.translation[1] = translation[1]
-        #print "wrapping 1"
-        #print self.translation
         self.clipTranslation()
-        #print self.translation
-        #print "wrapping 2"
         self.translationChanged.emit(self.translation[0],self.translation[1])
         self.updateGL()
     def clipTranslation(self,wrap=False):
@@ -946,7 +949,6 @@ class View2D(View,QtOpenGL.QGLWidget):
     # By default the coordinate of the TopLeft corner of the image is returned
     # By default the border is considered part of the image
     def imageToScene(self,imgIndex,imagePos='TopLeft',withBorder=True):
-        #print imgIndex
         img_width = self.getImgWidth("scene",True)
         img_height = self.getImgHeight("scene",True)
         (col,row) = self.imageToCell(imgIndex)
@@ -980,17 +982,14 @@ class View2D(View,QtOpenGL.QGLWidget):
             raise('Unknown imagePos: %s' % (imagePos))
         return (x,y,z)
     def viewIndexToScene(self,viewIndex,imagePosition="TopLeft",withBorder=True):
-        #print viewIndex
         img = self.indexProjector.indexToImg(viewIndex)
         return self.imageToScene(img,imagePosition,withBorder)
     # Returns the window position of the top left corner of the image corresponding to the index given
     def imageToWindow(self,imgIndex,imagePos='TopLeft',withBorder=True):
-        #print imgIndex
         (x,y,z) = self.imageToScene(imgIndex,imagePos,withBorder)
         return self.sceneToWindow(x,y,z)
     # Returns the window location of a given point in scene
     def sceneToWindow(self,x,y,z):
-        #print x,y,z
         modelview = glGetDoublev(GL_MODELVIEW_MATRIX)
         projection = glGetDoublev(GL_PROJECTION_MATRIX)
         viewport = glGetIntegerv(GL_VIEWPORT);
@@ -998,7 +997,6 @@ class View2D(View,QtOpenGL.QGLWidget):
         return (x,viewport[3]-y,z)
     # Returns the x,y,z position of a particular window position
     def windowToScene(self,x,y,z):
-        #print x,y,z
         modelview = glGetDoublev(GL_MODELVIEW_MATRIX)
         projection = glGetDoublev(GL_PROJECTION_MATRIX)
         viewport = glGetIntegerv(GL_VIEWPORT);
@@ -1006,7 +1004,6 @@ class View2D(View,QtOpenGL.QGLWidget):
         return (x,y,z)
     # Returns the view index (index after sorting and filtering) of the image that is at a particular window location
     def windowToViewIndex(self,x,y,z,checkExistance=True, clip=True):
-        #print x,y,z
         if(self.has_data > 0):
             shape = (self.data.getCXIHeight(),self.data.getCXIWidth())
             modelview = glGetDoublev(GL_MODELVIEW_MATRIX)
@@ -1021,18 +1018,15 @@ class View2D(View,QtOpenGL.QGLWidget):
             return x + y*self.stackWidth
     # Returns the index of the image that is at a particular window location
     def windowToImage(self,x,y,z,checkExistance=True, clip=True):
-        #print x,y,z
         return self.indexProjector.indexToImg(self.windowToViewIndex(x,y,z,checkExistance,clip))
     # Returns the column and row from an view index
     def viewIndexToCell(self,index):
-        #print index
         if(index is None):
             return index
         else:
             return (index%self.stackWidth,int(index/self.stackWidth))
     # Returns the column and row from an imagex
     def imageToCell(self,img):
-        #print img
         if(img is None):
             return img
         else:
