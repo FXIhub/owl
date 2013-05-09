@@ -259,30 +259,38 @@ class View2DScrollWidget(QtGui.QWidget):
         self.scrollbar = QtGui.QScrollBar(QtCore.Qt.Vertical,self)
         self.scrollbar.setTracking(False)
         self.scrollbar.setMinimum(0)
-        self.scrollbar.setPageStep(self.view2D.stackWidth)
-        self.scrollbar.valueChanged.connect(self.view2D.browseToViewIndex)
+        self.scrollbar.setPageStep(1)
+        self.scrollbar.valueChanged.connect(self.onValueChanged)
         self.view2D.indexProjector.projectionChanged.connect(self.update)
         self.view2D.stackWidthChanged.connect(self.update)
-        self.view2D.visibleImgChanged.connect(self.onVisibleImageChanged)
+        self.view2D.translationChanged.connect(self.onTranslationChanged)
         hbox.addWidget(self.scrollbar)
         self.setLayout(hbox)
+    def onValueChanged(self,value):
+        print "scrollbar changes view to y=%i" % value
+        self.view2D.scrollTo(value)
     def update(self,foo=None):
         if self.view2D.indexProjector.viewIndices == None or self.view2D.indexProjector.stackSize == None:
             self.scrollbar.hide()
         else:
             NViewIndices = len(self.view2D.indexProjector.viewIndices)
-            self.scrollbar.setPageStep(self.view2D.stackWidth)
-            maximum = int(numpy.ceil(NViewIndices/self.view2D.stackWidth))*self.view2D.stackWidth-1
+            imgHeight = self.view2D.getImgHeight("scene",True)
+            self.scrollbar.setPageStep(imgHeight)
+            maximum = numpy.ceil(NViewIndices/float(self.view2D.stackWidth))*imgHeight
+            print maximum
             self.scrollbar.setMaximum(maximum)
             self.scrollbar.show()
-    def onVisibleImageChanged(self,img):
-        self.scrollbar.setValue(self.view2D.indexProjector.imgToIndex(img))
+    def onTranslationChanged(self,x,y):
+        print "view changes scrollbar to y=%i" % y
+        self.scrollbar.setValue(y)
+        
 
         
 class View2D(View,QtOpenGL.QGLWidget):
     needsImage = QtCore.Signal(int)
     imageSelected = QtCore.Signal(int)
     visibleImgChanged = QtCore.Signal(int)
+    translationChanged = QtCore.Signal(int,int)
     stackWidthChanged = QtCore.Signal(int)
     def __init__(self,viewer,parent=None):
         View.__init__(self,parent,"image")
@@ -828,6 +836,27 @@ class View2D(View,QtOpenGL.QGLWidget):
         for img in images:
             if(img not in self.imageTextures):
                 self.needsImage.emit(img)
+    # positive counts correspond to upwards movement of window / downwards movement of images
+    def scrollBy(self,count=1,wrap=False):
+        stepSize = 1
+        translation = (0,stepSize*count)
+        self.translateBy(translation,wrap)
+    def scrollTo(self,translationY,wrap=False):
+        translation = (0,translationY)
+        print "scrollTo: %i" % translationY
+        self.translateTo(translation,wrap)
+    def translateBy(self,translationBy,wrap=False):
+        self.translateTo([self.translation[0]+translationBy[0],self.translation[1]+translationBy[1]],wrap)
+    def translateTo(self,translation,wrap=False):
+        self.translation[0] = translation[0]
+        self.translation[1] = translation[1]
+        print "wrapping 1"
+        print self.translation
+        self.clipTranslation()
+        print self.translation
+        print "wrapping 2"
+        self.translationChanged.emit(self.translation[0],self.translation[1])
+        self.updateGL()
     def clipTranslation(self,wrap=False):
         # Translation is bounded by top_margin < translation < bottom_margin
         if(self.has_data):
@@ -845,67 +874,16 @@ class View2D(View,QtOpenGL.QGLWidget):
                     self.translation[1] = 0
     def wheelEvent(self, event):    
         settings = QtCore.QSettings()    
-        self.translation[1] -= event.delta()*float(settings.value("scrollDirection"))
-        self.clipTranslation()
-        self.updateGL()
+        t = -event.delta()*float(settings.value("scrollDirection"))
+        self.translateBy([0,t])
         # Do not allow zooming
        # self.scaleZoom(1+(event.delta()/8.0)/360)
     def keyPressEvent(self, event):
         delta = self.width()/20
         img_height =  self.getImgHeight("window",True)
         stack_height = math.ceil(((self.getNImages()-0.0001)/self.stackWidth))*img_height
-        if(event.key() == QtCore.Qt.Key_Up):
-            self.translation[1] -= delta
-            self.clipTranslation()
-            self.updateGL()
-        elif(event.key() == QtCore.Qt.Key_Down):
-            self.translation[1] += delta
-            self.clipTranslation()
-            self.updateGL()
-        elif(event.key() == QtCore.Qt.Key_P):
-            self.translation[1] -= img_height
-            self.clipTranslation()
-            self.updateGL()
-        elif(event.key() == QtCore.Qt.Key_N):
-            self.translation[1] += img_height
-            self.clipTranslation()
-            self.updateGL()
-        elif(event.key() == QtCore.Qt.Key_PageUp):
-            self.translation[1] -= img_height
-            self.clipTranslation()
-            self.updateGL()
-        elif(event.key() == QtCore.Qt.Key_PageDown):
-            self.translation[1] += img_height
-            self.clipTranslation()
-            self.updateGL()
-        elif(event.key() == QtCore.Qt.Key_End):
-            self.translation[1] = 0
-            self.clipTranslation()
-            self.updateGL()
-        elif(event.key() == QtCore.Qt.Key_Home):
-            self.translation[1] = -stack_height + img_height
-            self.clipTranslation()
-            self.updateGL()
-        # elif(event.key() == QtCore.Qt.Key_Left):
-        #     self.translation[0] += delta
-        #     self.clipTranslation()
-        #     self.updateGL()
-        # elif(event.key() == QtCore.Qt.Key_Right):
-        #     self.translation[0] -= delta
-        #     self.clipTranslation()
-        #     self.updateGL()
-        # elif(event.key() == QtCore.Qt.Key_Plus):
-        #     self.scaleZoom(1.05)
-        # elif(event.key() == QtCore.Qt.Key_Minus):
-        #     self.scaleZoom(0.95)
-        elif(event.key() == QtCore.Qt.Key_F):
+        if(event.key() == QtCore.Qt.Key_F):
             self.parent.statusBar.showMessage("Flaged "+str(self.indexProjector.indexToImg(self.hoveredViewIndex())),1000)
-        #elif event.key() == QtCore.Qt.Key_Space:
-        #    if self.viewer.windowState() & QtCore.Qt.WindowFullScreen:
-        #        self.viewer.showNormal()
-        #    else:
-        #        self.viewer.showFullScreen()
-
     def toggleSlideShow(self):
         if self.slideshowTimer.isActive():
             self.slideshowTimer.stop()
@@ -919,14 +897,11 @@ class View2D(View,QtOpenGL.QGLWidget):
         self.changeRowBy(count=-1,wrap=wrap)
     def changeRowBy(self,count=1,wrap=False):
         img_height = self.getImgHeight("window",True)
-        self.translation[1] += count*img_height
-        self.clipTranslation(wrap)
-        self.updateGL()
+        t = count*img_height
+        self.scrollBy(t,wrap)
     def browseToViewIndex(self,index):
         img_height =  self.getImgHeight("window",True)
-        self.translation[1] = img_height*int(numpy.floor(index/self.stackWidth))
-        self.clipTranslation()
-        self.updateGL()
+        self.translateTo([0,img_height*int(numpy.floor(index/self.stackWidth))])
     def mouseReleaseEvent(self, event):
         self.dragging = False
         # Select even when draggin
@@ -947,10 +922,10 @@ class View2D(View,QtOpenGL.QGLWidget):
         self.updateGL()
     def mouseMoveEvent(self, event):
         if(self.dragging):
-            self.translation[1] -= (event.pos()-self.dragPos).y()
+            self.translateBy([0,-(event.pos()-self.dragPos).y()])
             self.clipTranslation()
             if(QtGui.QApplication.keyboardModifiers().__and__(QtCore.Qt.ControlModifier)):
-               self.translation[0] += (event.pos()-self.dragPos).x()
+               self.translateBy([0,(event.pos()-self.dragPos).x()])
             self.dragPos = event.pos()
             self.updateGL()
         ss = self.hoveredViewIndex()
@@ -1057,10 +1032,7 @@ class View2D(View,QtOpenGL.QGLWidget):
         self.zoom *= ratio
         self.translation[0] *= ratio
         viewIndex = self.indexProjector.imgToIndex(self.visibleImg)
-        if viewIndex != None: 
-            self.browseToViewIndex(viewIndex)
-        else:
-            self.updateGL()
+        self.browseToViewIndex(viewIndex)
     # Calculate the appropriate zoom level such that the windows will exactly fill the viewport widthwise
     def zoomFromStackWidth(self):
         width = self.stackWidth
