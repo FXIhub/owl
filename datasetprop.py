@@ -269,8 +269,6 @@ class DatasetProp(QtGui.QWidget):
         self.intensityHistogramRegion.setRegion([self.displayMin.value(),self.displayMax.value()])
     def clearNorm(self):
         settings = QtCore.QSettings()
-
-
         if(settings.contains("normVmax")):
             normVmax = settings.value('normVmax')
         else:
@@ -453,7 +451,6 @@ class FilterWidget(QtGui.QWidget):
         self.histogram = histogram
         self.histogram.region = region
         self.histogram.itemPlot = None
-        #self.datasetBox = datasetBox
         self.nameLabel = nameLabel
         self.yieldLabel = yieldLabel
         self.vminLineEdit = vminLineEdit
