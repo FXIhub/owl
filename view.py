@@ -26,35 +26,40 @@ class IndexProjector(QtCore.QObject):
         self.update()
     def update(self):
         if self.stackSize != None:
-            self.projectedIndices = numpy.arange(self.stackSize)
+            self.imgs = numpy.arange(self.stackSize)
+            self.viewIndices = numpy.arange(self.stackSize)
             # apply sorting
             if self.sortingArray != None:        
-                self.projectedIndices = numpy.argsort(self.sortingArray)[-1::-1]
+                self.imgs = numpy.argsort(self.sortingArray)[-1::-1]
+                self.viewIndices = numpy.argsort(self.imgs)
             # apply filter
             if self.filterMask != []:
-                if self.projectedIndices == None:
-                    self.projectedIndices = numpy.arange(len(self.filterMask))
-                self.projectedIndices = self.projectedIndices[self.filterMask]
+                self.imgs = self.imgs[self.filterMask[self.viewIndices]]
+                self.viewIndices = self.viewIndices[self.filterMask]
         else:
-            self.projectedIndices = None
+            self.viewIndices = None
+            self.imgs = None
         self.projectionChanged.emit(self)
     # get the view index for a given img
     def imgToIndex(self,img):
-        if self.projectedIndices == None or img == None:
+        if self.viewIndices == None or img == None:
             return img
         else:
-            if len(self.projectedIndices) == 0:
+            if len(self.viewIndices) == 0:
                 return 0
-            elif int(img) >= len(self.projectedIndices):
-                return self.projectedIndices[-1]
+            elif int(img) >= len(self.viewIndices):
+                return self.viewIndices[-1]
             else:
-                return self.projectedIndices[int(img)]
+                return self.viewIndices[int(img)]
     # get the img for a given view index
     def indexToImg(self,index):
-        if self.projectedIndices == None or index == None:
+        if self.imgs == None or index == None:
             return index
         else:
-            return numpy.where(self.projectedIndices==index)[0][0]
+            if int(index) >= len(self.imgs):
+                return self.imgs[-1]
+            else:
+                return self.imgs[int(index)]
     def handleStackSizeChanged(self,stackSize):
         self.stackSize = stackSize
         self.update()
@@ -62,7 +67,8 @@ class IndexProjector(QtCore.QObject):
         self.stackSize = None
         self.filterMask = []
         self.sortingArray = None
-        self.projectedIndices = None
+        self.viewIndices = None
+        self.imgs = None
         self.projectionChanged.emit(self)
 
 
@@ -196,10 +202,10 @@ class View1D(View,QtGui.QFrame):
         self.refreshPlot()
     def refreshPlot(self):
         if self.getData(1) != None:
-            if self.indexProjector.projectedIndices == None:
+            if self.indexProjector.viewIndices == None:
                 data = self.getData(1)
             else:
-                data = self.getData(1)[self.indexProjector.projectedIndices]
+                data = self.getData(1)[self.indexProjector.viewIndices]
             if self.p == None:
                 self.p = self.plot.plot(numpy.zeros(1), pen=(255,0,0))
             if self.plotMode == "plot":
@@ -257,16 +263,20 @@ class View2DScrollWidget(QtGui.QWidget):
         self.scrollbar.valueChanged.connect(self.view2D.browseToViewIndex)
         self.view2D.indexProjector.projectionChanged.connect(self.update)
         self.view2D.stackWidthChanged.connect(self.update)
+        self.view2D.visibleImgChanged.connect(self.onVisibleImageChanged)
         hbox.addWidget(self.scrollbar)
         self.setLayout(hbox)
     def update(self,foo=None):
-        if self.view2D.indexProjector.projectedIndices == None or self.view2D.indexProjector.stackSize == None:
+        if self.view2D.indexProjector.viewIndices == None or self.view2D.indexProjector.stackSize == None:
             self.scrollbar.hide()
         else:
-            NViewIndices = len(self.view2D.indexProjector.projectedIndices)
+            NViewIndices = len(self.view2D.indexProjector.viewIndices)
             self.scrollbar.setPageStep(self.view2D.stackWidth)
-            self.scrollbar.setMaximum(int(numpy.ceil(NViewIndices/self.view2D.stackWidth))*self.view2D.stackWidth)
+            maximum = int(numpy.ceil(NViewIndices/self.view2D.stackWidth))*self.view2D.stackWidth-1
+            self.scrollbar.setMaximum(maximum)
             self.scrollbar.show()
+    def onVisibleImageChanged(self,img):
+        self.scrollbar.setValue(self.view2D.indexProjector.imgToIndex(img))
 
         
 class View2D(View,QtOpenGL.QGLWidget):
@@ -296,7 +306,7 @@ class View2D(View,QtOpenGL.QGLWidget):
         # subplot border in unit window pixels (independent of zoom)
         self.subplotBorder = 10
         self.selectedImage = None
-        self.lastHoveredImage = None
+        self.lastHoveredViewIndex = None
         self.stackWidth = 1;
         self.has_data = False
         self.imageData = {}
@@ -676,7 +686,7 @@ class View2D(View,QtOpenGL.QGLWidget):
         glActiveTexture(GL_TEXTURE0)  
 
         glUseProgram(0)
-        if(img == self.lastHoveredImage):
+        if(self.indexProjector.imgToIndex(img) == self.lastHoveredViewIndex):
             glPushMatrix()
             glColor3f(1.0,1.0,1.0);
             glLineWidth(0.5/self.zoom)
@@ -717,14 +727,11 @@ class View2D(View,QtOpenGL.QGLWidget):
                 self.updateTextures(visible)
                 for i,img in enumerate(set.intersection(set(self.imageTextures),set(visible))):
                     self.paintImage(img)
-                    #pass
                 for img in (set(visible) - set(self.imageTextures)):
                     self.paintLoadingImage(img)
-                    #pass
                 if len(visible) > 0:
                     # Set and emit current view index
-                    # set to 0.1 instead of 0 due to rounding issues in windowToViewIndex
-                    self.visibleImg = self.windowToImage(0.1,0.1,0,False,False)
+                    self.visibleImg = self.windowToImage(self.getImgWidth("window",True)/2,self.getImgHeight("window",True)/2,0,False,False)
                     self.visibleImgChanged.emit(self.visibleImg)
 #        glFlush()
 #        time4 = time.time()
@@ -755,7 +762,7 @@ class View2D(View,QtOpenGL.QGLWidget):
         if not self.data.isCXIStack():
             return 1
         else:
-            pindices = self.indexProjector.projectedIndices
+            pindices = self.indexProjector.viewIndices
             if pindices == None:
                 return self.getNImages()
             else:
@@ -892,7 +899,7 @@ class View2D(View,QtOpenGL.QGLWidget):
         # elif(event.key() == QtCore.Qt.Key_Minus):
         #     self.scaleZoom(0.95)
         elif(event.key() == QtCore.Qt.Key_F):
-            self.parent.statusBar.showMessage("Flaged "+str(self.hoveredImage()),1000)
+            self.parent.statusBar.showMessage("Flaged "+str(self.indexProjector.indexToImg(self.hoveredViewIndex())),1000)
         #elif event.key() == QtCore.Qt.Key_Space:
         #    if self.viewer.windowState() & QtCore.Qt.WindowFullScreen:
         #        self.viewer.showNormal()
@@ -924,9 +931,9 @@ class View2D(View,QtOpenGL.QGLWidget):
         self.dragging = False
         # Select even when draggin
         if(event.button() == QtCore.Qt.LeftButton):
-            self.selectedImage = self.lastHoveredImage
+            self.selectedImage = self.indexProjector.indexToImg(self.lastHoveredViewIndex)
             self.imageSelected.emit(self.selectedImage)
-            self.browseToViewIndex(self.indexProjector.imgToIndex(self.selectedImage))
+            #self.browseToViewIndex(self.indexProjector.imgToIndex(self.selectedImage))
             self.updateGL()
     def selectViewIndex(self,index):
         img = self.indexProjector.indexToImg(index)
@@ -946,19 +953,18 @@ class View2D(View,QtOpenGL.QGLWidget):
                self.translation[0] += (event.pos()-self.dragPos).x()
             self.dragPos = event.pos()
             self.updateGL()
-        ss = self.hoveredImage()
-        if(ss != self.lastHoveredImage):
-            self.lastHoveredImage = ss
+        ss = self.hoveredViewIndex()
+        if(ss != self.lastHoveredViewIndex):
+            self.lastHoveredViewIndex = ss
             self.updateGL()
     def checkSelectedSubplot(self):
         if(self.selectedImage not in self.data.keys()):
             self.selectedImage = None
             self.parent.datasetProp.recalculateSelectedSlice()
-    def hoveredImage(self):
+    def hoveredViewIndex(self):
         pos = self.mapFromGlobal(QtGui.QCursor.pos())
-        img = self.windowToImage(pos.x(),pos.y(),0)
-        return img
-
+        viewIndex = self.windowToViewIndex(pos.x(),pos.y(),0)
+        return viewIndex
     # Returns the scene position of the image corresponding to the index given
     # By default the coordinate of the TopLeft corner of the image is returned
     # By default the border is considered part of the image
@@ -995,6 +1001,9 @@ class View2D(View,QtOpenGL.QGLWidget):
         else:
             raise('Unknown imagePos: %s' % (imagePos))
         return (x,y,z)
+    def viewIndexToScene(self,viewIndex,imagePosition="TopLeft",withBorder=True):
+        img = self.indexProjector.indexToImg(viewIndex)
+        return self.imageToScene(img,imagePosition,withBorder)
     # Returns the window position of the top left corner of the image corresponding to the index given
     def imageToWindow(self,imgIndex,imagePos='TopLeft',withBorder=True):
         (x,y,z) = self.imageToScene(imgIndex,imagePos,withBorder)
@@ -1031,11 +1040,11 @@ class View2D(View,QtOpenGL.QGLWidget):
     def windowToImage(self,x,y,z,checkExistance=True, clip=True):
         return self.indexProjector.indexToImg(self.windowToViewIndex(x,y,z,checkExistance,clip))
     # Returns the column and row from an view index
-    def viewIndexToCell(self,img):
-        if(img is None):
-            return img
+    def viewIndexToCell(self,index):
+        if(index is None):
+            return index
         else:
-            return (img%self.stackWidth,int(img/self.stackWidth))
+            return (index%self.stackWidth,int(index/self.stackWidth))
     # Returns the column and row from an imagex
     def imageToCell(self,img):
         if(img is None):
