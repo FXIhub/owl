@@ -258,7 +258,7 @@ class View2DScrollWidget(QtGui.QWidget):
         hbox.addWidget(view2D)
         self.scrollbar = QtGui.QScrollBar(QtCore.Qt.Vertical,self)
         self.scrollbar.setTracking(False)
-        self.scrollbar.setMinimum(0)
+        self.scrollbar.setMinimum(self.view2D.minimumTranslation())
         self.scrollbar.setPageStep(1)
         self.scrollbar.valueChanged.connect(self.onValueChanged)
         self.view2D.indexProjector.projectionChanged.connect(self.update)
@@ -276,7 +276,7 @@ class View2DScrollWidget(QtGui.QWidget):
             NViewIndices = len(self.view2D.indexProjector.viewIndices)
             imgHeight = self.view2D.getImgHeight("window",True)
             self.scrollbar.setPageStep(imgHeight)
-            maximum = numpy.ceil((NViewIndices-1)/float(self.view2D.stackWidth))*imgHeight
+            maximum = self.view2D.maximumTranslation()            
             print "Maximum: %i" % maximum
             self.scrollbar.setMaximum(maximum)
             self.scrollbar.show()
@@ -860,18 +860,31 @@ class View2D(View,QtOpenGL.QGLWidget):
     def clipTranslation(self,wrap=False):
         # Translation is bounded by top_margin < translation < bottom_margin
         if(self.has_data):
-            margin = self.subplotBorder*3
-            img_height = self.getImgHeight("window",True)
-            top_margin = -margin
+            top_margin = self.minimumTranslation()
             if(self.translation[1] < top_margin):
                 self.translation[1] = top_margin
-            stack_height = math.ceil(float(self.getNImagesVisible())/self.stackWidth)*img_height
-            bottom_margin = max(0,stack_height+margin-self.height())
+            bottom_margin = self.maximumTranslation()
             if(self.translation[1] > bottom_margin):
                 if not wrap:
                     self.translation[1] = bottom_margin
                 else:
                     self.translation[1] = 0
+    def maximumTranslation(self,withMargin = True):
+        margin = self.subplotBorder*3
+        img_height = self.getImgHeight("window",True)
+        stack_height = math.ceil(float(self.getNImagesVisible())/self.stackWidth)*img_height
+        if(withMargin):
+            bottom_margin = max(0,stack_height+margin-self.height())
+        else:
+            bottom_margin = max(0,stack_height-self.height())
+        return bottom_margin
+    def minimumTranslation(self,withMargin = True):
+        margin = self.subplotBorder*3
+        if(withMargin):
+            return -margin
+        else:
+            return 0;
+        
     def wheelEvent(self, event):    
         settings = QtCore.QSettings()    
         t = -event.delta()*float(settings.value("scrollDirection"))
