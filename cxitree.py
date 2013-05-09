@@ -12,6 +12,12 @@ def isCXIStack(dataset):
     else:
         return False
 h5py.Dataset.isCXIStack = isCXIStack 
+def getCXIStackSize(dataset):
+    if dataset.isCXIStack():
+        return dataset.shape[0]
+    else:
+        None
+h5py.Dataset.getCXIStackSize = getCXIStackSize 
 def getCXIFormat(dataset):
     N = len(dataset.shape)
     if dataset.isCXIStack() and N == 3:

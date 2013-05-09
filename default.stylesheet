@@ -14,6 +14,7 @@ DatasetButton
     padding: 5px;
 }
 
+/*
 ViewSplitter
 {
    background-color: black;
@@ -21,5 +22,7 @@ ViewSplitter
 
 ViewSplitter::handle
 {
-   background-color: #222222
+   background-color: #222222;
 }
+*/
+

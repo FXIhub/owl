@@ -60,8 +60,8 @@ class Viewer(QtGui.QMainWindow):
             settings.setValue("scrollDirection", 1);  
         QtCore.QTimer.singleShot(0,self.after_show)
         
+
         self.initConnections()
-        
         self.datasetProp.emitDisplayProp()
 
         self.setStyle()
@@ -194,7 +194,7 @@ class Viewer(QtGui.QMainWindow):
         self.datasetProp.displayPropChanged.connect(self.handleDisplayPropChanged)
         self.view.view2D.imageSelected.connect(self.datasetProp.onImageSelected)
         self.view.view2D.visibleImgChanged.connect(self.datasetProp.refreshDatasetImg)
-        self.view.view1D.eventSelected.connect(self.handleEventSelected)   
+        self.view.view1D.viewIndexSelected.connect(self.handleViewIndexSelected)   
         self.goMenu.nextRow.triggered.connect(self.view.view2D.nextRow)
         self.goMenu.previousRow.triggered.connect(self.view.view2D.previousRow)
         
@@ -335,6 +335,7 @@ class Viewer(QtGui.QMainWindow):
             dataset = self.CXINavigation.CXITree.datasets[datasetName]
             plotMode = self.CXINavigation.datasetMenus["plot"].getPlotMode()
             self.view.view1D.show()
+            self.viewActions["View 1D"].setChecked(True)
             self.view.view1D.loadData(dataset,plotMode)
             self.CXINavigation.datasetBoxes["plot"].button.setName(datasetName)
             self.statusBar.showMessage("Loaded plot: %s" % dataset.name,1000)
@@ -345,6 +346,7 @@ class Viewer(QtGui.QMainWindow):
             self.handleNeedDatasetPlot(datasetName)
     def handleDisplayPropChanged(self,prop):
         self.view.view2D.refreshDisplayProp(prop)
+        self.view.view1D.refreshDisplayProp(prop)
     def handleDatasetClicked(self,datasetName):
         dataset = self.CXINavigation.CXITree.datasets[datasetName]
         format = dataset.getCXIFormat()
@@ -361,8 +363,8 @@ class Viewer(QtGui.QMainWindow):
         else:
             n = None
         self.CXINavigation.datasetBoxes[datasetMode].button.setName(n)
-    def handleEventSelected(self,index):
-        self.view.view2D.browseToImg(index)
+    def handleViewIndexSelected(self,index):
+        self.view.view2D.selectViewIndex(index)
 
 
 class PreferencesDialog(QtGui.QDialog):

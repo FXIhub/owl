@@ -12,6 +12,57 @@ import OpenGL.GL.ARB.texture_float
 import sys
 import time
 
+class IndexProjector(QtCore.QObject):
+    projectionChanged = QtCore.Signal(object)
+    def __init__(self):
+        QtCore.QObject.__init__(self)
+        self.stackSize = None
+        self.clear()
+    def setFilterMask(self,filterMask):
+        self.filterMask = filterMask
+        self.update()
+    def setSortingArray(self,data=None):
+        self.sortingArray = data
+        self.update()
+    def update(self):
+        if self.stackSize != None:
+            self.projectedIndices = numpy.arange(self.stackSize)
+            # apply sorting
+            if self.sortingArray != None:        
+                self.projectedIndices = numpy.argsort(self.sortingArray)[-1::-1]
+            # apply filter
+            if self.filterMask != []:
+                if self.projectedIndices == None:
+                    self.projectedIndices = numpy.arange(len(self.filterMask))
+                self.projectedIndices = self.projectedIndices[self.filterMask]
+        else:
+            self.projectedIndices = None
+        self.projectionChanged.emit(self)
+    def projectIndex(self,index):
+        if self.projectedIndices == None or index == None:
+            return index
+        else:
+            if len(self.projectedIndices) == 0:
+                return 0
+            elif int(index) >= len(self.projectedIndices):
+                return self.projectedIndices[-1]
+            else:
+                return self.projectedIndices[int(index)]
+    def backProjectIndex(self,index):
+        if self.projectedIndices == None or index == None:
+            return index
+        else:
+            return numpy.where(self.projectedIndices==index)[0]
+    def handleStackSizeChanged(self,stackSize):
+        self.stackSize = stackSize
+        self.update()
+    def clear(self):
+        self.stackSize = None
+        self.filterMask = []
+        self.sortingArray = None
+        self.projectedIndices = None
+        self.projectionChanged.emit(self)
+
 
 class ViewSplitter(QtGui.QSplitter):
     def __init__(self,parent=None):
@@ -19,9 +70,9 @@ class ViewSplitter(QtGui.QSplitter):
         self.setOrientation(QtCore.Qt.Vertical)
 
         self.view2D = View2D(parent,self)
-        #self.view2DScrollWidget = View2DScrollWidget(self,self.view2D)
-        #self.addWidget(self.view2DScrollWidge)t
-        self.addWidget(self.view2D)
+        self.view2DScrollWidget = View2DScrollWidget(self,self.view2D)
+        self.addWidget(self.view2DScrollWidget)
+        #self.addWidget(self.view2D)
 
         self.view1D = View1D(self)
         self.view1D.hide()
@@ -29,10 +80,12 @@ class ViewSplitter(QtGui.QSplitter):
 
         self.setSizes([1000,1000])
 
-
 class View(QtCore.QObject):
     needDataset = QtCore.Signal(str)
     datasetChanged = QtCore.Signal(h5py.Dataset,str)
+    indexProjector = IndexProjector()
+    # THIS SIGNAL NEEDS TO BE IMPLEMENTED FOR ONLINE MODE!
+    stackSizeChanged = QtCore.Signal(int)
     def __init__(self,parent=None,datasetMode="image"):
         QtCore.QObject.__init__(self)
         self.parent = parent
@@ -40,11 +93,19 @@ class View(QtCore.QObject):
         self.setData()
         self.setMask()
         #self.setSortingIndices()
+        self.stackSizeChanged.connect(self.indexProjector.handleStackSizeChanged)
+    def getStackSize(self):
+        if self.data == None:
+            return 0
+        else:
+            len(self.data)
     # DATA
     def setData(self,dataset=None):
         self.data = dataset
         if self.data != None:
             self.has_data = True
+            if dataset.isCXIStack():
+                self.stackSizeChanged.emit(dataset.getCXIStackSize())
         else:
             self.has_data = False
         self.datasetChanged.emit(dataset,self.datasetMode)
@@ -97,7 +158,7 @@ class View(QtCore.QObject):
         self.needDataset.emit(e.mimeData().text())
 
 class View1D(View,QtGui.QFrame):
-    eventSelected = QtCore.Signal(int)
+    viewIndexSelected = QtCore.Signal(int)
     def __init__(self,parent=None):
         View.__init__(self,parent,"plot")
         QtGui.QFrame.__init__(self,parent)
@@ -109,11 +170,12 @@ class View1D(View,QtGui.QFrame):
         self.setLayout(self.hbox)
         self.p = None
         self.setAcceptDrops(True)
+        self.plotMode = "plot"
     def initPlot(self):
         self.plot = pyqtgraph.PlotWidget()
         line = pyqtgraph.InfiniteLine(0,90,None,True)
         self.plot.addItem(line)
-        line.sigPositionChangeFinished.connect(self.emitEventSelected)    
+        line.sigPositionChangeFinished.connect(self.emitViewIndexSelected)    
         self.line = line
         space = 60
         self.plot.getAxis("top").setHeight(space)
@@ -122,26 +184,35 @@ class View1D(View,QtGui.QFrame):
         self.plot.getAxis("right").setWidth(space)
     def loadData(self,dataset,plotMode):
         self.setData(dataset)
-        data = self.getData(1)
+        self.plotMode = plotMode
         if plotMode == "plot":
             self.plot.setLabel("bottom","index")
             self.plot.setLabel("left",self.data.name)
-            if self.p == None:
-                self.p = self.plot.plot(data, pen=(255,0,0))
-            else:
-                self.p.setData(data)
         elif plotMode == "histogram":
-            (hist,edges) = numpy.histogram(data,bins=200)
-            edges = (edges[:-1]+edges[1:])/2.0
             self.plot.setLabel("bottom",self.data.name)
             self.plot.setLabel("left","#")
-            if self.p == None:
-                self.p = self.plot.plot(edges,hist, pen=(255,0,0))
+        self.refreshPlot()
+    def refreshPlot(self):
+        if self.getData(1) != None:
+            if self.indexProjector.projectedIndices == None:
+                data = self.getData(1)
             else:
-                self.p.setData(edges,hist)
-    def emitEventSelected(self,foovalue=None):
+                data = self.getData(1)[self.indexProjector.projectedIndices]
+            if self.p == None:
+                self.p = self.plot.plot(numpy.zeros(1), pen=(255,0,0))
+            if self.plotMode == "plot":
+                self.p.setData(data)
+            elif self.plotMode == "histogram":
+                (hist,edges) = numpy.histogram(data,bins=200)
+                edges = (edges[:-1]+edges[1:])/2.0
+                self.p.setData(edges,hist)        
+    def emitViewIndexSelected(self,foovalue=None):
         index = int(self.line.getXPos())
-        self.eventSelected.emit(index)
+        self.viewIndexSelected.emit(index)
+    def refreshDisplayProp(self,datasetProp):
+        self.refreshPlot()
+
+
 
 class ImageLoader(QtCore.QObject):
     imageLoaded = QtCore.Signal(int) 
@@ -191,22 +262,44 @@ class ImageLoader(QtCore.QObject):
     #    self.mappable.set_norm(norm)
     #    self.mappable.set_clim(vmin,vmax)
 
+
 class View2DScrollWidget(QtGui.QWidget):
     def __init__(self,parent,view2D):
         QtGui.QWidget.__init__(self,parent)
         self.view2D = view2D
         hbox = QtGui.QHBoxLayout()
-        self.setLayout(hbox)
+        hbox.setSpacing(0) 
         hbox.addWidget(view2D)
         self.scrollbar = QtGui.QScrollBar(QtCore.Qt.Vertical,self)
+        self.scrollbar.setTracking(False)
+        self.scrollbar.valueChanged.connect(self.view2D.browseToViewIndex)
+        self.view2D.indexProjector.projectionChanged.connect(self.update)
+        #self.view2D.stackWidthChanged.connect(self.update)
+        hbox.addWidget(self.scrollbar)
+        self.setLayout(hbox)
+    def update(self,indexProjector):
+        if indexProjector.projectedIndices == None or indexProjector.stackSize == None:
+            self.scrollbar.hide()
+        else:
+            NViewIndices = len(indexProjector.projectedIndices)
+            #stackWidth = self.view2D.stackWidth
+            #self.setMinimum(0)
+            #self.scrollbar.setMaximum(NViewIndices/self.view2D)
+            self.scrollbar.setPageStep(1)
+            self.scrollbar.show()
+    
+
         
 class View2D(View,QtOpenGL.QGLWidget):
     needsImage = QtCore.Signal(int)
     imageSelected = QtCore.Signal(int)
     visibleImgChanged = QtCore.Signal(int)
+    stackWidthChanged = QtCore.Signal(int)
     def __init__(self,viewer,parent=None):
         View.__init__(self,parent,"image")
-        QtOpenGL.QGLWidget.__init__(self,parent)
+        format =  QtOpenGL.QGLFormat();
+        format.setVersion(1,1);
+        QtOpenGL.QGLWidget.__init__(self,format,parent)
         self.viewer = viewer
         self.translation = [0,0]
         self.zoom = 4.0
@@ -225,7 +318,6 @@ class View2D(View,QtOpenGL.QGLWidget):
         self.stackWidth = 1;
         self.has_data = False
         self.imageData = {}
-        self.indexProjector = IndexProjector()
 
         self.loaderThread = ImageLoader(None,self)
         self.needsImage.connect(self.loaderThread.loadImage)
@@ -822,10 +914,10 @@ class View2D(View,QtOpenGL.QGLWidget):
         self.translation[1] += count*img_height
         self.clipTranslation(wrap)
         self.updateGL()
-    def browseToImg(self,img):
+    def browseToViewIndex(self,index):
+        print index
         img_height =  self.data.getCXIHeight()*self.zoom+self.subplotBorder
-        viewIndex = self.indexProjector.projectIndex(img)
-        self.translation[1] = img_height*viewIndex/self.stackWidth
+        self.translation[1] = img_height*index/self.stackWidth
         self.updateGL()
     def mouseReleaseEvent(self, event):
         self.dragging = False
@@ -833,16 +925,13 @@ class View2D(View,QtOpenGL.QGLWidget):
         if(event.button() == QtCore.Qt.LeftButton):
             self.selectedImage = self.lastHoveredImage
             self.imageSelected.emit(self.selectedImage)
-# #            self.parent.datasetProp.recalculateSelectedSlice()
-#             if(self.selectedImage is not None):
-#                 self.parent.datasetProp.onImageSelected(self.selectedImage)
-#                 self.parent.datasetProp.imageMin.setText(str(numpy.min(self.data[self.selectedImage])))
-#                 self.parent.datasetProp.imageMax.setText(str(numpy.max(self.data[self.selectedImage])))
-#                 self.parent.datasetProp.imageSum.setText(str(numpy.sum(self.data[self.selectedImage])))
-#                 self.parent.datasetProp.imageBox.show()
-#             else:
-#                 self.parent.datasetProp.imageBox.hide()
+            self.browseToViewIndex(self.indexProjector.projectIndex(self.selectedImage))
             self.updateGL()
+    def selectViewIndex(self,index):
+        img = self.indexProjector.backProjectIndex(index)
+        self.selectedImage = img
+        self.imageSelected.emit(self.selectedImage)
+        self.browseToViewIndex(index)
     def mousePressEvent(self, event):
         self.dragStart = event.pos()
         self.dragPos = event.pos()
@@ -995,6 +1084,7 @@ class View2D(View,QtOpenGL.QGLWidget):
         self.zoomFromStackWidth(width)            
         self.translation[1] = (self.translation[1] + self.height()/2.0)*ratio-self.height()/2.0
         self.clipTranslation()
+        self.stackWidthChanged.emit(self.stackWidth)
     def stackSceneWidth(self,width):
         return 
     def subplotSceneBorder(self):
@@ -1174,52 +1264,5 @@ def compileShader( source, shaderType ):
     return shader
 
 
-class IndexProjector():
-    def __init__(self):
-        self.clear()
-
-    def setFilterMask(self,filterMask):
-        self.filterMask = filterMask
-        self.update()
-        
-    def setSortingArray(self,data=None):
-        self.sortingArray = data
-        self.update()
-
-    def update(self):
-        self.projectedIndices = None
-
-        # apply sorting
-        if self.sortingArray != None:        
-            self.projectedIndices = numpy.argsort(self.sortingArray)[-1::-1]
-
-        # apply filter
-        if self.filterMask != []:
-            if self.projectedIndices == None:
-                self.projectedIndices = numpy.arange(len(self.filterMask))
-            self.projectedIndices = self.projectedIndices[self.filterMask]
-
-    def projectIndex(self,index):
-        if self.projectedIndices == None or index == None:
-            return index
-        else:
-            if len(self.projectedIndices) == 0:
-                return 0
-            elif int(index) >= len(self.projectedIndices):
-                return self.projectedIndices[-1]
-            else:
-                return self.projectedIndices[int(index)]
-
-    def backProjectIndex(self,index):
-        if self.projectedIndices == None or index == None:
-            return index
-        else:
-            return numpy.where(self.projectedIndices==index)[0]
-
-    def clear(self):
-        self.filterMask = []
-        self.sortingArray = None
-        self.projectedIndices = None
-        self.update()
 
      
