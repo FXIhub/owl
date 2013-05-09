@@ -38,21 +38,23 @@ class IndexProjector(QtCore.QObject):
         else:
             self.projectedIndices = None
         self.projectionChanged.emit(self)
-    def projectIndex(self,index):
-        if self.projectedIndices == None or index == None:
-            return index
+    # get the view index for a given img
+    def imgToIndex(self,img):
+        if self.projectedIndices == None or img == None:
+            return img
         else:
             if len(self.projectedIndices) == 0:
                 return 0
-            elif int(index) >= len(self.projectedIndices):
+            elif int(img) >= len(self.projectedIndices):
                 return self.projectedIndices[-1]
             else:
-                return self.projectedIndices[int(index)]
-    def backProjectIndex(self,index):
+                return self.projectedIndices[int(img)]
+    # get the img for a given view index
+    def indexToImg(self,index):
         if self.projectedIndices == None or index == None:
             return index
         else:
-            return numpy.where(self.projectedIndices==index)[0]
+            return numpy.where(self.projectedIndices==index)[0][0]
     def handleStackSizeChanged(self,stackSize):
         self.stackSize = stackSize
         self.update()
@@ -230,10 +232,6 @@ class ImageLoader(QtCore.QObject):
         data = self.view.getData(2,img)
         mask = self.view.getMask(2,img)
         self.imageData[img] = numpy.ones((self.view.data.getCXIHeight(),self.view.data.getCXIWidth()),dtype=numpy.float32)
-        #X,Y = numpy.meshgrid(numpy.arange(self.imageData[img].shape[1]),numpy.arange(self.imageData[img].shape[0]))
-        #self.imageData[img][:,:] = numpy.floor(X[:,:]/10.)
-        #for i in range(self.imageData[img].shape[1]):
-        #    print self.imageData[img][0,i]
         self.imageData[img] = data[:]
         if(mask != None):
             self.maskData[img] = numpy.ones((self.view.data.getCXIHeight(),self.view.data.getCXIWidth()),dtype=numpy.float32)
@@ -244,24 +242,6 @@ class ImageLoader(QtCore.QObject):
     def clear(self):
         self.loaded = {}
         self.imageData = {}
-    # COLORMAP
-    #def setColormap(self,colormapName='jet'):
-    #    self.mappable.set_cmap(colormapName)
-    #def setNorm(self,scaling='log',vmin=1.,vmax=10000.,clip=True,gamma=1):
-    #    self.normScaling = scaling
-    #    if scaling == 'lin':
-    #        f = lambda x: x
-    #        offsetMinValue = None
-    #    elif scaling == 'pow':
-    #        f = lambda x: x**gamma
-    #        offsetMinValue = 0
-    #    elif scaling == 'log':
-    #        f = lambda x: numpy.log10(x)
-    #        offsetMinValue = 1
-    #    norm = FunctionNorm(f,vmin,vmax,clip,offsetMinValue)
-    #    self.mappable.set_norm(norm)
-    #    self.mappable.set_clim(vmin,vmax)
-
 
 class View2DScrollWidget(QtGui.QWidget):
     def __init__(self,parent,view2D):
@@ -272,22 +252,21 @@ class View2DScrollWidget(QtGui.QWidget):
         hbox.addWidget(view2D)
         self.scrollbar = QtGui.QScrollBar(QtCore.Qt.Vertical,self)
         self.scrollbar.setTracking(False)
+        self.scrollbar.setMinimum(0)
+        self.scrollbar.setPageStep(self.view2D.stackWidth)
         self.scrollbar.valueChanged.connect(self.view2D.browseToViewIndex)
         self.view2D.indexProjector.projectionChanged.connect(self.update)
-        #self.view2D.stackWidthChanged.connect(self.update)
+        self.view2D.stackWidthChanged.connect(self.update)
         hbox.addWidget(self.scrollbar)
         self.setLayout(hbox)
-    def update(self,indexProjector):
-        if indexProjector.projectedIndices == None or indexProjector.stackSize == None:
+    def update(self,foo=None):
+        if self.view2D.indexProjector.projectedIndices == None or self.view2D.indexProjector.stackSize == None:
             self.scrollbar.hide()
         else:
-            NViewIndices = len(indexProjector.projectedIndices)
-            #stackWidth = self.view2D.stackWidth
-            #self.setMinimum(0)
-            #self.scrollbar.setMaximum(NViewIndices/self.view2D)
-            self.scrollbar.setPageStep(1)
+            NViewIndices = len(self.view2D.indexProjector.projectedIndices)
+            self.scrollbar.setPageStep(self.view2D.stackWidth)
+            self.scrollbar.setMaximum(int(numpy.ceil(NViewIndices/self.view2D.stackWidth))*self.view2D.stackWidth)
             self.scrollbar.show()
-    
 
         
 class View2D(View,QtOpenGL.QGLWidget):
@@ -301,6 +280,8 @@ class View2D(View,QtOpenGL.QGLWidget):
         format.setVersion(1,1);
         QtOpenGL.QGLWidget.__init__(self,format,parent)
         self.viewer = viewer
+        self.visibleImg = 0
+        # translation in unit of window pixels
         self.translation = [0,0]
         self.zoom = 4.0
         #self.setFocusPolicy(QtCore.Qt.ClickFocus)
@@ -312,6 +293,7 @@ class View2D(View,QtOpenGL.QGLWidget):
         self.parent = parent
         self.setMouseTracking(True)
         self.dragging = False
+        # subplot border in unit window pixels (independent of zoom)
         self.subplotBorder = 10
         self.selectedImage = None
         self.lastHoveredImage = None
@@ -609,8 +591,8 @@ class View2D(View,QtOpenGL.QGLWidget):
             glEnd()
     def paintLoadingImage(self,img):
         frame = self.loadingImageAnimationFrame%24
-        img_width = self.data.getCXIWidth()
-        img_height = self.data.getCXIHeight()
+        img_width = self.getImgWidth("scene",False)
+        img_height = self.getImgHeight("scene",False)
         glPushMatrix()
         (x,y,z) = self.imageToScene(img,imagePos='BottomLeft',withBorder=False)
         glTranslatef(x,y,z)
@@ -640,8 +622,8 @@ class View2D(View,QtOpenGL.QGLWidget):
         glPopMatrix()
 
     def paintImage(self,img):
-        img_width = self.data.getCXIWidth()
-        img_height = self.data.getCXIHeight()
+        img_width = self.getImgWidth("scene",False)
+        img_height = self.getImgHeight("scene",False)
         glPushMatrix()
 
         (x,y,z) = self.imageToScene(img,imagePos='BottomLeft',withBorder=False)
@@ -729,8 +711,8 @@ class View2D(View,QtOpenGL.QGLWidget):
         glTranslatef(-(self.width()/self.zoom)/2.,(self.height()/self.zoom)/2.,0)
         if(self.has_data):
             if(self.data.getCXIFormat() == 2):
-                img_width = self.data.getCXIWidth()
-                img_height = self.data.getCXIHeight()
+                img_width = self.getImgWidth("scene",False)
+                img_height = self.getImgHeight("scene",False)
                 visible = self.visibleImages()
                 self.updateTextures(visible)
                 for i,img in enumerate(set.intersection(set(self.imageTextures),set(visible))):
@@ -740,8 +722,10 @@ class View2D(View,QtOpenGL.QGLWidget):
                     self.paintLoadingImage(img)
                     #pass
                 if len(visible) > 0:
-                    # Emit current index
-                    self.visibleImgChanged.emit(visible[0])
+                    # Set and emit current view index
+                    # set to 0.1 instead of 0 due to rounding issues in windowToViewIndex
+                    self.visibleImg = self.windowToImage(0.1,0.1,0,False,False)
+                    self.visibleImgChanged.emit(self.visibleImg)
 #        glFlush()
 #        time4 = time.time()
 #        print '%s function took %0.3f ms' % ("paintGL", (time4-time3)*1000.0)
@@ -750,10 +734,11 @@ class View2D(View,QtOpenGL.QGLWidget):
         pass
     def loadStack(self,data):
         self.setData(data)
-        self.setStackWidth(self.stackWidth)
+        self.zoomFromStackWidth()
     def loadImage(self,data):
         if(data.getCXIFormat() == 2):        
             self.setData(data)
+            self.stackWidth = 1
             self.setStackWidth(self.stackWidth)
             self.clearTextures()
             self.updateGL()
@@ -775,6 +760,22 @@ class View2D(View,QtOpenGL.QGLWidget):
                 return self.getNImages()
             else:
                 return len(pindices)
+    def getImgHeight(self,reference,border=False):
+        imgHeight = self.data.getCXIHeight()
+        if border == True:
+            imgHeight += self.subplotSceneBorder()
+        if reference == "window":
+            return imgHeight*self.zoom
+        elif reference == "scene":
+            return imgHeight 
+    def getImgWidth(self,reference,border=False):
+        imgWidth = self.data.getCXIWidth()+self.subplotSceneBorder()
+        if border == True:
+            imgWidth += self.subplotSceneBorder()
+        if reference == "window":
+            return imgWidth*self.zoom
+        elif reference == "scene":
+            return imgWidth 
     def visibleImages(self):
         visible = []
         if(self.has_data is False):
@@ -790,7 +791,7 @@ class View2D(View,QtOpenGL.QGLWidget):
             for y in numpy.arange(max(0,math.floor(top_left[1])),math.floor(bottom_right[1]+1)):
                 viewIndex = y*self.stackWidth+x
                 if(viewIndex < nImagesVisible):
-                    img = self.indexProjector.projectIndex(viewIndex)
+                    img = self.indexProjector.indexToImg(viewIndex)
                     visible.append(img)
         return visible
     @QtCore.Slot(int)
@@ -824,7 +825,7 @@ class View2D(View,QtOpenGL.QGLWidget):
         # Translation is bounded by top_margin < translation < bottom_margin
         if(self.has_data):
             margin = self.subplotBorder*3
-            img_height = (self.data.getCXIHeight()+self.subplotSceneBorder())*self.zoom
+            img_height = self.getImgHeight("window",True)
             top_margin = -margin
             if(self.translation[1] < top_margin):
                 self.translation[1] = top_margin
@@ -844,7 +845,7 @@ class View2D(View,QtOpenGL.QGLWidget):
        # self.scaleZoom(1+(event.delta()/8.0)/360)
     def keyPressEvent(self, event):
         delta = self.width()/20
-        img_height =  self.data.getCXIHeight()*self.zoom+self.subplotBorder
+        img_height =  self.getImgHeight("window",True)
         stack_height = math.ceil(((self.getNImages()-0.0001)/self.stackWidth))*img_height
         if(event.key() == QtCore.Qt.Key_Up):
             self.translation[1] -= delta
@@ -910,14 +911,14 @@ class View2D(View,QtOpenGL.QGLWidget):
     def previousRow(self,wrap=False):
         self.changeRowBy(count=-1,wrap=wrap)
     def changeRowBy(self,count=1,wrap=False):
-        img_height =  self.data.getCXIHeight()*self.zoom+self.subplotBorder
+        img_height = self.getImgHeight("window",True)
         self.translation[1] += count*img_height
         self.clipTranslation(wrap)
         self.updateGL()
     def browseToViewIndex(self,index):
-        print index
-        img_height =  self.data.getCXIHeight()*self.zoom+self.subplotBorder
-        self.translation[1] = img_height*index/self.stackWidth
+        img_height =  self.getImgHeight("window",True)
+        self.translation[1] = img_height*int(numpy.floor(index/self.stackWidth))
+        self.clipTranslation()
         self.updateGL()
     def mouseReleaseEvent(self, event):
         self.dragging = False
@@ -925,10 +926,10 @@ class View2D(View,QtOpenGL.QGLWidget):
         if(event.button() == QtCore.Qt.LeftButton):
             self.selectedImage = self.lastHoveredImage
             self.imageSelected.emit(self.selectedImage)
-            self.browseToViewIndex(self.indexProjector.projectIndex(self.selectedImage))
+            self.browseToViewIndex(self.indexProjector.imgToIndex(self.selectedImage))
             self.updateGL()
     def selectViewIndex(self,index):
-        img = self.indexProjector.backProjectIndex(index)
+        img = self.indexProjector.indexToImg(index)
         self.selectedImage = img
         self.imageSelected.emit(self.selectedImage)
         self.browseToViewIndex(index)
@@ -962,8 +963,8 @@ class View2D(View,QtOpenGL.QGLWidget):
     # By default the coordinate of the TopLeft corner of the image is returned
     # By default the border is considered part of the image
     def imageToScene(self,imgIndex,imagePos='TopLeft',withBorder=True):
-        img_width = self.data.getCXIWidth()+self.subplotSceneBorder()
-        img_height = self.data.getCXIHeight()+self.subplotSceneBorder()
+        img_width = self.getImgWidth("scene",True)
+        img_height = self.getImgHeight("scene",True)
         (col,row) = self.imageToCell(imgIndex)
         x = img_width*col
         y = -img_height*row
@@ -1020,7 +1021,6 @@ class View2D(View,QtOpenGL.QGLWidget):
             projection = glGetDoublev(GL_PROJECTION_MATRIX)
             viewport = glGetIntegerv(GL_VIEWPORT);
             (x,y,z) =  gluUnProject(x, viewport[3]-y,z , model=modelview, proj=projection, view=viewport)
-            
             (x,y) = (int(numpy.floor(x/(self.data.getCXIWidth()+self.subplotSceneBorder()))),int(numpy.floor(-y/(self.data.getCXIHeight()+self.subplotSceneBorder()))))
             if(clip and (x < 0 or x >= self.stackWidth or y < 0)):
                 return None            
@@ -1029,7 +1029,7 @@ class View2D(View,QtOpenGL.QGLWidget):
             return x + y*self.stackWidth
     # Returns the index of the image that is at a particular window location
     def windowToImage(self,x,y,z,checkExistance=True, clip=True):
-        return self.indexProjector.projectIndex(self.windowToViewIndex(x,y,z,checkExistance,clip))
+        return self.indexProjector.indexToImg(self.windowToViewIndex(x,y,z,checkExistance,clip))
     # Returns the column and row from an view index
     def viewIndexToCell(self,img):
         if(img is None):
@@ -1041,16 +1041,20 @@ class View2D(View,QtOpenGL.QGLWidget):
         if(img is None):
             return img
         else:
-            img0 = self.indexProjector.backProjectIndex(img)
-            return self.viewIndexToCell(img0)
+            viewIndex = self.indexProjector.imgToIndex(img)
+            return self.viewIndexToCell(viewIndex)
 
     def scaleZoom(self,ratio):
         self.zoom *= ratio
         self.translation[0] *= ratio
-        self.translation[1] *= ratio
-        self.updateGL()
+        viewIndex = self.indexProjector.imgToIndex(self.visibleImg)
+        if viewIndex != None: 
+            self.browseToViewIndex(viewIndex)
+        else:
+            self.updateGL()
     # Calculate the appropriate zoom level such that the windows will exactly fill the viewport widthwise
-    def zoomFromStackWidth(self,width):
+    def zoomFromStackWidth(self):
+        width = self.stackWidth
         # We'll assume all images have the same size and the projection is isometric
         if(self.has_data is not True):
             return 1
@@ -1072,19 +1076,14 @@ class View2D(View,QtOpenGL.QGLWidget):
         self.maskTextures = {}
         self.loaderThread.clear()
 #        self.clearLoaderThread.emit(0)
-    def setStackWidth(self,width):  
-        ratio = float(self.stackWidth)/width 
+    def setStackWidth(self,width):
         self.stackWidth = width 
         # If there's no data just set the width and return
         if(self.has_data is not True):        
             return
-
-        # Now change the width and zoom to match
-        self.stackWidth = width
-        self.zoomFromStackWidth(width)            
-        self.translation[1] = (self.translation[1] + self.height()/2.0)*ratio-self.height()/2.0
-        self.clipTranslation()
         self.stackWidthChanged.emit(self.stackWidth)
+        # Now change the width and zoom to match
+        self.zoomFromStackWidth()            
     def stackSceneWidth(self,width):
         return 
     def subplotSceneBorder(self):

@@ -260,7 +260,6 @@ class Viewer(QtGui.QMainWindow):
         format = dataset.getCXIFormat()
         if format == 2:        
             self.CXINavigation.datasetBoxes["image"].button.setName(datasetName)
-            self.datasetProp.clear()
             self.view.view2D.clear()
             if dataset.isCXIStack():
                 self.view.view2D.loadStack(dataset)
@@ -287,11 +286,16 @@ class Viewer(QtGui.QMainWindow):
         else:
             dataset = self.CXINavigation.CXITree.datasets[datasetName]
             maskOutBits = self.CXINavigation.datasetMenus["mask"].getMaskOutBits()
-            self.view.view2D.setMask(dataset,maskOutBits)
-            self.view.view2D.clearTextures()
-            self.view.view2D.updateGL()
-            self.CXINavigation.datasetBoxes["mask"].button.setName(datasetName)
-            self.statusBar.showMessage("Loaded mask: %s" % dataset.name,1000)
+            maskShape = dataset.getCXIImageShape()
+            imageShape = self.view.view2D.data.getCXIImageShape()
+            if maskShape != imageShape:
+                self.statusBar.showMessage("Mask shape missmatch. Do not load mask: %s" % dataset.name,1000)
+            else:
+                self.view.view2D.setMask(dataset,maskOutBits)
+                self.view.view2D.clearTextures()
+                self.view.view2D.updateGL()
+                self.CXINavigation.datasetBoxes["mask"].button.setName(datasetName)
+                self.statusBar.showMessage("Loaded mask: %s" % dataset.name,1000)
     def handleMaskOutBitsChanged(self,action):
         self.view.view2D.setMaskOutBits(self.CXINavigation.datasetMenus["mask"].getMaskOutBits())
     def handleNeedDatasetFilter(self,datasetName):

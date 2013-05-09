@@ -24,6 +24,12 @@ def getCXIFormat(dataset):
         N = 2
     return N
 h5py.Dataset.getCXIFormat = getCXIFormat
+def getCXIImageShape(dataset):
+    if dataset.getCXIFormat() == 2:
+        return (dataset.shape[-2],dataset.shape[-1])
+    else:
+        return None
+h5py.Dataset.getCXIImageShape = getCXIImageShape
 def isCXIText(dataset):
     return (dataset.dtype.name[-6:] == "string")
 h5py.Dataset.isCXIText = isCXIText
