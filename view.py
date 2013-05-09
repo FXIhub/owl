@@ -865,7 +865,7 @@ class View2D(View,QtOpenGL.QGLWidget):
             top_margin = -margin
             if(self.translation[1] < top_margin):
                 self.translation[1] = top_margin
-            stack_height = (self.getNImages()/self.stackWidth+1)*img_height
+            stack_height = math.ceil(float(self.getNImagesVisible())/self.stackWidth)*img_height
             bottom_margin = max(0,stack_height+margin-self.height())
             if(self.translation[1] > bottom_margin):
                 if not wrap:
