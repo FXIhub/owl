@@ -775,11 +775,10 @@ class View2D(View,QtOpenGL.QGLWidget):
         if not self.data.isCXIStack():
             return 1
         else:
-            pindices = self.indexProjector.viewIndices
-            if pindices == None:
+            if self.indexProjector.imgs == None:
                 return self.getNImages()
             else:
-                return len(pindices)
+                return len(self.indexProjector.imgs)
     def getImgHeight(self,reference,border=False):
         imgHeight = self.data.getCXIHeight()
         if border == True:
