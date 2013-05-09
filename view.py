@@ -613,7 +613,7 @@ class View2D(View,QtOpenGL.QGLWidget):
         img_height = self.getImgHeight("scene",False)
         glPushMatrix()
         (x,y,z) = self.imageToScene(img,imagePos='BottomLeft',withBorder=False)
-        glTranslatef(x,y,z)
+        glTranslated(x,y,z)
         # Draw a ball in the center                
         path_radius = min(img_width,img_height)/10.0
         path_center = (img_width/2.0,6*img_height/10.0)
@@ -645,7 +645,8 @@ class View2D(View,QtOpenGL.QGLWidget):
         glPushMatrix()
 
         (x,y,z) = self.imageToScene(img,imagePos='BottomLeft',withBorder=False)
-        glTranslatef(x,y,z)
+        print "Image %i y=%f" % (img,y)
+        glTranslated(x,y,z)
 
         glUseProgram(self.shader)
         glActiveTexture(GL_TEXTURE0+1)
@@ -720,13 +721,14 @@ class View2D(View,QtOpenGL.QGLWidget):
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
         glLoadIdentity()
         # Set GL origin in the middle of the widget
-        glTranslatef(self.width()/2.,self.height()/2.,0)
+        glTranslated(self.width()/2.,self.height()/2.,0)
         # Apply user defined translation
-        glTranslatef(self.translation[0],self.translation[1],0)
+        glTranslated(self.translation[0],self.translation[1],0)
+        print self.translation
         # Apply user defined zoom
         glScalef(self.zoom,self.zoom,1.0);
         # Put GL origin on the top left corner of the widget
-        glTranslatef(-(self.width()/self.zoom)/2.,(self.height()/self.zoom)/2.,0)
+        glTranslated(-(self.width()/self.zoom)/2.,(self.height()/self.zoom)/2.,0)
         if(self.has_data):
             if(self.data.getCXIFormat() == 2):
                 img_width = self.getImgWidth("scene",False)
@@ -784,7 +786,7 @@ class View2D(View,QtOpenGL.QGLWidget):
         elif reference == "scene":
             return imgHeight 
     def getImgWidth(self,reference,border=False):
-        imgWidth = self.data.getCXIWidth()+self.subplotSceneBorder()
+        imgWidth = self.data.getCXIWidth()
         if border == True:
             imgWidth += self.subplotSceneBorder()
         if reference == "window":
