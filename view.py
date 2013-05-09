@@ -276,7 +276,7 @@ class View2DScrollWidget(QtGui.QWidget):
             NViewIndices = len(self.view2D.indexProjector.viewIndices)
             imgHeight = self.view2D.getImgHeight("window",True)
             self.scrollbar.setPageStep(imgHeight)
-            maximum = numpy.ceil(NViewIndices/float(self.view2D.stackWidth))*imgHeight
+            maximum = numpy.ceil((NViewIndices-1)/float(self.view2D.stackWidth))*imgHeight
             print "Maximum: %i" % maximum
             self.scrollbar.setMaximum(maximum)
             self.scrollbar.show()
