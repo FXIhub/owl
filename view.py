@@ -645,6 +645,7 @@ class View2D(View,QtOpenGL.QGLWidget):
         glPushMatrix()
 
         (x,y,z) = self.imageToScene(img,imagePos='BottomLeft',withBorder=False)
+        print "Image %i y=%i" % (img,y)
         glTranslatef(x,y,z)
 
         glUseProgram(self.shader)
@@ -723,6 +724,7 @@ class View2D(View,QtOpenGL.QGLWidget):
         glTranslatef(self.width()/2.,self.height()/2.,0)
         # Apply user defined translation
         glTranslatef(self.translation[0],self.translation[1],0)
+        print self.translation
         # Apply user defined zoom
         glScalef(self.zoom,self.zoom,1.0);
         # Put GL origin on the top left corner of the widget
@@ -784,7 +786,7 @@ class View2D(View,QtOpenGL.QGLWidget):
         elif reference == "scene":
             return imgHeight 
     def getImgWidth(self,reference,border=False):
-        imgWidth = self.data.getCXIWidth()+self.subplotSceneBorder()
+        imgWidth = self.data.getCXIWidth()
         if border == True:
             imgWidth += self.subplotSceneBorder()
         if reference == "window":
