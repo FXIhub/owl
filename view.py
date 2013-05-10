@@ -18,25 +18,29 @@ class IndexProjector(QtCore.QObject):
         QtCore.QObject.__init__(self)
         self.stackSize = None
         self.clear()
-    def setFilterMask(self,filterMask):
+    def setProjector(self,sortingDataset,sortingInverted,filterMask):
+        self.sortingDataset = sortingDataset
+        self.sortingInverted = sortingInverted
         self.filterMask = filterMask
-        self.update()
-    def setSortingArray(self,data=None):
-        self.sortingArray = data
         self.update()
     def update(self):
         if self.stackSize != None:
-            self.imgs = numpy.arange(self.stackSize)
-            self.viewIndices = numpy.arange(self.stackSize)
-            # apply filter
-            if self.filterMask != []:
+            self.imgs = numpy.arange(self.stackSize,dtype="int")
+            if self.sortingDataset != None:
+                sortingDataset = numpy.array(self.sortingDataset)
+            else:
+                sortingDataset = numpy.arange(self.stackSize,dtype="int")
+            if self.filterMask != None:
+                sortingDatasetFiltered = sortingDataset[self.filterMask]
                 self.imgs = self.imgs[self.filterMask]
-            # apply sorting
-            if self.sortingArray != None:
-                self.imgs = numpy.argsort(self.sortingArray[self.filterMask])[-1::-1]
-            # lookup table for back projection
-            self.viewIndices[self.filterMask==0] = 0
-            self.viewIndices[self.imgs] = numpy.arange(len(self.imgs))
+            else:
+                sortingDatasetFiltered = sortingDataset
+            if self.sortingInverted:
+                self.imgs = self.imgs[numpy.argsort(sortingDatasetFiltered)]
+            else:
+                self.imgs = self.imgs[numpy.argsort(sortingDatasetFiltered)[-1::-1]]
+            self.viewIndices = numpy.zeros(self.stackSize,dtype="int")
+            self.viewIndices[self.imgs] = numpy.arange(len(self.imgs),dtype="int")
         else:
             self.viewIndices = None
             self.imgs = None
@@ -71,8 +75,9 @@ class IndexProjector(QtCore.QObject):
         self.update()
     def clear(self):
         self.stackSize = None
-        self.filterMask = []
-        self.sortingArray = None
+        self.filterMask = None
+        self.sortingDataset = None
+        self.sortingInverted = False
         self.viewIndices = None
         self.imgs = None
         self.projectionChanged.emit(self)
@@ -151,18 +156,6 @@ class View(QtCore.QObject):
             # do not apply maskBits, we'll do it in shader
 #            return ((mask & self.maskOutBits) == 0)
             return mask
-    # SORTING
-    def setSortingIndices(self, dataset=None):
-        if dataset != None:
-            self.sortingIndices = numpy.argsort(dataset)
-        else:
-            self.sortingIndices = None
-        self.datasetChanged.emit(dataset,"sorting")
-    def getSortedIndex(self,index):
-        if self.sortingIndices != None:
-            return self.sortingIndices[index]
-        else:
-            return index
     def dragEnterEvent(self, e):
         if e.mimeData().hasFormat('text/plain'):
             e.accept()
@@ -1101,7 +1094,7 @@ class View2D(View,QtOpenGL.QGLWidget):
                 self.normClamp = 0
             self.colormapText = datasetProp["colormapText"]
             self.setStackWidth(datasetProp["imageStackSubplotsValue"])
-            self.indexProjector.setFilterMask(datasetProp["filterMask"])
+            self.indexProjector.setProjector(datasetProp["sortingDataset"],datasetProp["sortingInverted"],datasetProp["filterMask"])
         self.updateGL()
 
 # Temporary code to fix a bug in PyOpenGL which validates shaders too early

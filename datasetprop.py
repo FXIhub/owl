@@ -162,8 +162,21 @@ class DatasetProp(QtGui.QWidget):
         self.imageBox.vbox.addLayout(hbox)
 
         self.imageBox.hide()
-
-        self.filterBox = QtGui.QGroupBox("Filters");
+        # sorting
+        self.sortingBox = QtGui.QGroupBox("Sorting")
+        self.sortingBox.vbox = QtGui.QVBoxLayout()
+        self.sortingDatasetLabel = QtGui.QLabel("",parent=self)
+        self.sortingBox.vbox.addWidget(self.sortingDatasetLabel)
+        hbox = QtGui.QHBoxLayout()
+        hbox.addWidget(QtGui.QLabel("Invert"))
+        self.invertSortingCheckBox = QtGui.QCheckBox("",parent=self)
+        hbox.addWidget(self.invertSortingCheckBox)
+        hbox.addStretch()
+        self.sortingBox.vbox.addLayout(hbox)
+        self.sortingBox.setLayout(self.sortingBox.vbox)
+        self.clearSorting()
+        # filters
+        self.filterBox = QtGui.QGroupBox("Filters")
         self.filterBox.vbox = QtGui.QVBoxLayout()
         self.filterBox.setLayout(self.filterBox.vbox)
         self.filterBox.hide()
@@ -175,6 +188,7 @@ class DatasetProp(QtGui.QWidget):
         self.vboxScroll.addWidget(self.imageStackBox)
         self.vboxScroll.addWidget(self.imageBox)
         self.vboxScroll.addWidget(self.displayBox)
+        self.vboxScroll.addWidget(self.sortingBox)
         self.vboxScroll.addWidget(self.filterBox)
         self.vboxScroll.addStretch()
         self.setLayout(self.vbox)
@@ -189,6 +203,7 @@ class DatasetProp(QtGui.QWidget):
         self.displayLog.toggled.connect(self.emitDisplayProp)
         self.displayPow.toggled.connect(self.emitDisplayProp)
         self.displayGamma.editingFinished.connect(self.emitDisplayProp)
+        self.invertSortingCheckBox.toggled.connect(self.emitDisplayProp)
         self.viewer.colormapActionGroup.triggered.connect(self.emitDisplayProp)
     def clear(self):
         self.clearDisplayProp()
@@ -319,6 +334,24 @@ class DatasetProp(QtGui.QWidget):
     def clearImageStackSubplots(self):
         self.imageStackSubplots.setValue(1)
         self.setImageStackSubplots()
+    # SORTING
+    def setSorting(self,foo=None):
+        P = self.currDisplayProp
+        P["sortingInverted"] = self.invertSortingCheckBox.isChecked()
+        P["sortingDataset"] = self.sortingDataset
+    def clearSorting(self):
+        self.sortingDataset = None
+        self.sortingInverted = False
+        self.sortingDatasetLabel.setText("")
+        self.sortingBox.hide()
+    def refreshSorting(self,dataset):
+        if dataset != None:
+            self.sortingDataset = dataset
+            self.sortingBox.show()
+            self.sortingDatasetLabel.setText(dataset.name)
+            self.emitDisplayProp()
+        else:
+            self.clearSorting()
     # FILTERS
     def addFilter(self,dataset):
         if self.inactiveFilters == []:
@@ -344,12 +377,12 @@ class DatasetProp(QtGui.QWidget):
         self.setFilters()
         if self.activeFilters == []:
             self.filterBox.hide()
-    def setFilters(self,fooRegion=None):
+    def setFilters(self,foo=None):
         P = self.currDisplayProp
-        P["filterMask"] = []
+        P["filterMask"] = None
         if self.activeFilters != []:
             for f in self.activeFilters:
-                if P["filterMask"] == []:
+                if P["filterMask"] == None:
                     P["filterMask"] = numpy.ones(len(f.dataset),dtype="bool")
                 vmin = float(f.vminLineEdit.text())
                 vmax= float(f.vmaxLineEdit.text())
@@ -370,12 +403,14 @@ class DatasetProp(QtGui.QWidget):
         self.setImageStackSubplots()
         self.setNorm()
         self.setColormap()
+        self.setSorting()
         self.setFilters()
         self.displayPropChanged.emit(self.currDisplayProp)
     def checkLimits(self,foovalue=None):
         self.displayMax.setMinimum(self.displayMin.value())
         self.displayMin.setMaximum(self.displayMax.value())
         self.emitDisplayProp()
+    # still needed?
     def keyPressEvent(self,event):
         if event.key() == QtCore.Qt.Key_H:
             if self.isVisible():

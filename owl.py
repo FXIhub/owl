@@ -320,17 +320,19 @@ class Viewer(QtGui.QMainWindow):
                 self.statusBar.showMessage("Loaded filter dataset: %s" % dataset.name,1000)
     def handleNeedDatasetSorting(self,datasetName):
         if str(datasetName) == "":
-            self.view.view2D.indexProjector.setSortingArray()
+            self.datasetProp.clearSorting()
             self.CXINavigation.datasetBoxes["sort"].button.setName()
-            self.statusBar.showMessage("Reser sorting.",1000)
-            self.view.view2D.updateGL()
+            self.datasetProp.displayPropChanged.emit(self.datasetProp.currDisplayProp)
+            self.statusBar.showMessage("Reset sorting.",1000)
         else:
             dataset = self.CXINavigation.CXITree.datasets[datasetName]
-            if dataset.getCXIFormat() == 0:
-                self.view.view2D.indexProjector.setSortingArray(dataset)
+            if dataset.getCXIFormat() == 1:
+                self.datasetProp.refreshSorting(dataset)
                 self.CXINavigation.datasetBoxes["sort"].button.setName(datasetName)
+                self.datasetProp.displayPropChanged.emit(self.datasetProp.currDisplayProp)
                 self.statusBar.showMessage("Loaded sorting dataset: %s" % dataset.name,1000)
-                self.view.view2D.updateGL()
+            else:
+                self.statusBar.showMessage("Dataset has inadequate shape for sorting stack: %s" % dataset.name,1000)
     def handleNeedDatasetPlot(self,datasetName):
         if str(datasetName) == "":
             self.view1D.hide()
