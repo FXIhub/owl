@@ -133,8 +133,17 @@ class View(QtCore.QObject):
             return None
         elif nDims == 1:
             if index != 0:
-                (ix,iy) = index
-                return numpy.array(self.data)[:,ix,iy]
+                (ix,iy,Nz) = index
+                if Nz == None:
+                    return numpy.array(self.data[:,iy,ix])
+                else:
+                    iz = numpy.random.randint(0,len(self.data),Nz)
+                    iz.sort()
+                    data = numpy.zeros(Nz)
+                    for i in range(Nz):
+                        data[i] = self.data[iz[i],iy,ix]
+                    #data[:] = self.data[iz,:,:]
+                    return data
             else:
                 return numpy.array(self.data).flatten()                
         elif nDims == 2:
@@ -184,6 +193,8 @@ class View1D(View,QtGui.QFrame):
         self.plotMode = "plot"
         self.ix = None
         self.iy = None
+        self.N = None
+        self.applyIndexProjector = True
     def initPlot(self):
         self.plot = pyqtgraph.PlotWidget()
         line = pyqtgraph.InfiniteLine(0,90,None,True)
@@ -195,11 +206,16 @@ class View1D(View,QtGui.QFrame):
         self.plot.getAxis("bottom").setHeight(space)
         self.plot.getAxis("left").setWidth(space)
         self.plot.getAxis("right").setWidth(space)
-    def loadData(self,dataset,plotMode,ix=None,iy=None):
+    def loadData(self,dataset,plotMode,ix=None,iy=None,N=None):
         self.setData(dataset)
         self.plotMode = plotMode
         self.ix = ix
         self.iy = iy
+        self.N = N
+        if N != None:
+            self.applyIndexProjector = False
+        else:
+            self.applyIndexProjector = True
         datasetName = self.data.name
         if ix != None and iy != None:
             datasetName += (" (%i,%i)" % (ix,iy))
@@ -211,9 +227,9 @@ class View1D(View,QtGui.QFrame):
             self.plot.setLabel("left","#")
         self.refreshPlot()
     def refreshPlot(self):
-        data = self.getData(1,(self.ix,self.iy)) 
+        data = self.getData(1,(self.ix,self.iy,self.N)) 
         if data != None:
-            if self.indexProjector.imgs != None:
+            if self.indexProjector.imgs != None and self.applyIndexProjector:
                 data = data[self.indexProjector.imgs]
             if self.p == None:
                 self.p = self.plot.plot(numpy.zeros(1), pen=(255,0,0))

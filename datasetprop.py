@@ -23,7 +23,7 @@ def sizeof_fmt(num):
 #
 class DatasetProp(QtGui.QWidget):
     displayPropChanged = QtCore.Signal(dict)
-    pixelStackChanged = QtCore.Signal(h5py.Dataset,int,int)
+    pixelStackChanged = QtCore.Signal(h5py.Dataset,int,int,int)
     def __init__(self,parent=None):
         QtGui.QWidget.__init__(self,parent)
         self.setFocusPolicy(QtCore.Qt.ClickFocus)
@@ -91,6 +91,13 @@ class DatasetProp(QtGui.QWidget):
         self.imageBox.vbox.addLayout(hbox)
 
         hbox = QtGui.QHBoxLayout()
+        hbox.addWidget(QtGui.QLabel("Sum:"))
+        widget = QtGui.QLabel("None",parent=self)
+        hbox.addWidget(widget)
+        self.imageSum = widget
+        self.imageBox.vbox.addLayout(hbox)
+
+        hbox = QtGui.QHBoxLayout()
         hbox.addWidget(QtGui.QLabel("Mean value:"))
         widget = QtGui.QLabel("None",parent=self)
         hbox.addWidget(widget)
@@ -104,12 +111,6 @@ class DatasetProp(QtGui.QWidget):
         self.imageStd = widget
         self.imageBox.vbox.addLayout(hbox)
 
-        hbox = QtGui.QHBoxLayout()
-        hbox.addWidget(QtGui.QLabel("Sum:"))
-        widget = QtGui.QLabel("None",parent=self)
-        hbox.addWidget(widget)
-        self.imageSum = widget
-        self.imageBox.vbox.addLayout(hbox)
         self.imageBox.setLayout(self.imageBox.vbox)
         self.imageBox.hide()
 
@@ -226,13 +227,16 @@ class DatasetProp(QtGui.QWidget):
         hbox0 = QtGui.QHBoxLayout()
 
         validator = QtGui.QIntValidator()
-        validator.setRange(0,10000)
+        validator.setBottom(0)
         self.pixelStackXEdit = QtGui.QLineEdit(self)
         self.pixelStackXEdit.setMaximumWidth(100)
         self.pixelStackXEdit.setValidator(validator)
         self.pixelStackYEdit = QtGui.QLineEdit(self)
         self.pixelStackYEdit.setMaximumWidth(100)
         self.pixelStackYEdit.setValidator(validator)
+        self.pixelStackNEdit = QtGui.QLineEdit(self)
+        self.pixelStackNEdit.setMaximumWidth(100)
+        self.pixelStackNEdit.setValidator(validator)
 
         vbox = QtGui.QVBoxLayout()
 
@@ -246,16 +250,21 @@ class DatasetProp(QtGui.QWidget):
         hbox.addWidget(self.pixelStackYEdit)
         vbox.addLayout(hbox)
 
+        hbox = QtGui.QHBoxLayout()
+        hbox.addWidget(QtGui.QLabel("N:"))
+        hbox.addWidget(self.pixelStackNEdit)
+        vbox.addLayout(hbox)
+
         hbox0.addLayout(vbox)
 
         self.pixelStackPickButton = QtGui.QPushButton("Pick",self)
         self.pixelStackPick = False
         hbox0.addWidget(self.pixelStackPickButton)
-
         self.pixelStackBox.vbox.addLayout(hbox0)
+
         self.pixelStackPlotButton = QtGui.QPushButton("Plot",self)
         self.pixelStackBox.vbox.addWidget(self.pixelStackPlotButton)
-
+        
         self.pixelStackBox.setLayout(self.pixelStackBox.vbox)
         self.pixelStackBox.show()
         # add all widgets to main vbox
@@ -331,8 +340,8 @@ class DatasetProp(QtGui.QWidget):
             self.imageMin.setText(str(int(info["imageMin"])))
             self.imageMax.setText(str(int(info["imageMax"])))
             self.imageSum.setText(str(int(info["imageSum"])))
-            self.imageMean.setText(str(int(info["imageMean"])))
-            self.imageStd.setText(str(int(info["imageStd"])))
+            self.imageMean.setText("%.3e" % float(info["imageMean"]))
+            self.imageStd.setText("%.3e" % float(info["imageStd"]))
             self.pixelBox.setTitle("Selected Pixel (x: %i, y: %i)" % (int(info["ix"]),int(info["iy"])))
             self.pixelImageValue.setText(str(int(info["imageValue"])))
             if info["maskValue"] == None:
@@ -355,6 +364,7 @@ class DatasetProp(QtGui.QWidget):
                 self.pixelStackPick = False
                 self.pixelStackXEdit.setText(str(int(info["ix"])))
                 self.pixelStackYEdit.setText(str(int(info["iy"])))
+                self.pixelStackNEdit.setText(str(len(self.dataset)))
         else:
             self.imageBox.hide()
             self.pixelBox.hide()
@@ -506,12 +516,17 @@ class DatasetProp(QtGui.QWidget):
     def clearPixelStack(self):
         self.pixelStackXEdit.setText("")
         self.pixelStackYEdit.setText("")
+        self.pixelStackNEdit.setText("")
     def onPixelStackPickButton(self):
         self.pixelStackPick = True
     def onPixelStackPlotButton(self):
         ix = int(self.pixelStackXEdit.text())
         iy = int(self.pixelStackYEdit.text())
-        self.pixelStackChanged.emit(self.dataset.name,ix,iy)
+        if self.pixelStackNEdit.text() == "" or int(self.pixelStackNEdit.text()) == len(self.dataset):
+            N = None
+        else:
+            N = int(self.pixelStackNEdit.text())
+        self.pixelStackChanged.emit(self.dataset.name,ix,iy,N)
     # update and emit current diplay properties
     def emitDisplayProp(self,foovalue=None):
         self.setImageStackSubplots()

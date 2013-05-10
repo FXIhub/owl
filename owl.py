@@ -352,14 +352,14 @@ class Viewer(QtGui.QMainWindow):
             self.CXINavigation.datasetBoxes["plot"].button.setName(datasetName)
             self.statusBar.showMessage("Loaded plot: %s" % dataset.name,1000)
             self.viewActions["View 1D"].setChecked(True)
-    def handlePixelStackChanged(self,datasetName,ix,iy):
+    def handlePixelStackChanged(self,datasetName,ix,iy,N):
         dataset = self.CXINavigation.CXITree.datasets[datasetName]
         plotMode = self.CXINavigation.datasetMenus["plot"].getPlotMode()
         self.view.view1D.show()
         self.viewActions["View 1D"].setChecked(True)
-        self.view.view1D.loadData(dataset,plotMode,ix,iy)
+        self.view.view1D.loadData(dataset,plotMode,ix,iy,N)
         self.CXINavigation.datasetBoxes["plot"].button.setName("%s (%i,%i)" % (datasetName,ix,iy))
-        self.statusBar.showMessage("Loaded pixel stack to plot: %s [:,%i,%i]" % (dataset.name,iy,ix),1000)
+        self.statusBar.showMessage("Loaded pixel stack to plot: %s (%i,%i)" % (dataset.name,iy,ix),1000)
         self.viewActions["View 1D"].setChecked(True)
     def handlePlotModeTriggered(self,foovalue=None):
         self.view.view1D.setPlotMode(self.CXINavigation.datasetMenus["plot"].getPlotMode())
