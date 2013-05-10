@@ -27,7 +27,7 @@ class IndexProjector(QtCore.QObject):
         if self.stackSize != None:
             self.imgs = numpy.arange(self.stackSize,dtype="int")
             if self.sortingDataset != None:
-                sortingDataset = numpy.array(self.sortingDataset)
+                sortingDataset = -numpy.array(self.sortingDataset)
             else:
                 sortingDataset = numpy.arange(self.stackSize,dtype="int")
             if self.filterMask != None:
@@ -36,9 +36,9 @@ class IndexProjector(QtCore.QObject):
             else:
                 sortingDatasetFiltered = sortingDataset
             if self.sortingInverted:
-                self.imgs = self.imgs[numpy.argsort(sortingDatasetFiltered)]
-            else:
                 self.imgs = self.imgs[numpy.argsort(sortingDatasetFiltered)[-1::-1]]
+            else:
+                self.imgs = self.imgs[numpy.argsort(sortingDatasetFiltered)]
             self.viewIndices = numpy.zeros(self.stackSize,dtype="int")
             self.viewIndices[self.imgs] = numpy.arange(len(self.imgs),dtype="int")
         else:
