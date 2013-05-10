@@ -349,7 +349,6 @@ class DatasetProp(QtGui.QWidget):
             self.sortingDataset = dataset
             self.sortingBox.show()
             self.sortingDatasetLabel.setText(dataset.name)
-            self.emitDisplayProp()
         else:
             self.clearSorting()
     # FILTERS

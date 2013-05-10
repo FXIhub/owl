@@ -305,6 +305,7 @@ class Viewer(QtGui.QMainWindow):
             if dataset.getCXIFormat() == 1:
                 targetBox = self.CXINavigation.addFilterBox()
                 self.datasetProp.addFilter(dataset)
+                self.datasetProp.displayPropChanged.emit(self.datasetProp.currDisplayProp)
                 targetBox.button.setName(datasetName)
                 targetBox.button.needDataset.connect(self.handleNeedDatasetFilter)
         else:
@@ -312,23 +313,27 @@ class Viewer(QtGui.QMainWindow):
             if str(datasetName) == "":
                 self.datasetProp.removeFilter(i)
                 self.CXINavigation.removeFilterBox(senderBox)
+                self.datasetProp.displayPropChanged.emit(self.datasetProp.currDisplayProp)
             else:
                 targetBox = senderBox
                 dataset = self.CXINavigation.CXITree.datasets[datasetName]
                 self.datasetProp.refreshFilter(dataset,i)
+                self.datasetProp.displayPropChanged.emit(self.datasetProp.currDisplayProp)
                 targetBox.button.setName(datasetName)
                 self.statusBar.showMessage("Loaded filter dataset: %s" % dataset.name,1000)
     def handleNeedDatasetSorting(self,datasetName):
         if str(datasetName) == "":
-            self.datasetProp.clearSorting()
             self.CXINavigation.datasetBoxes["sort"].button.setName()
+            self.datasetProp.clearSorting()
+            self.datasetProp.setSorting()
             self.datasetProp.displayPropChanged.emit(self.datasetProp.currDisplayProp)
             self.statusBar.showMessage("Reset sorting.",1000)
         else:
             dataset = self.CXINavigation.CXITree.datasets[datasetName]
             if dataset.getCXIFormat() == 1:
-                self.datasetProp.refreshSorting(dataset)
                 self.CXINavigation.datasetBoxes["sort"].button.setName(datasetName)
+                self.datasetProp.refreshSorting(dataset)
+                self.datasetProp.setSorting()
                 self.datasetProp.displayPropChanged.emit(self.datasetProp.currDisplayProp)
                 self.statusBar.showMessage("Loaded sorting dataset: %s" % dataset.name,1000)
             else:
