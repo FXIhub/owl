@@ -247,6 +247,7 @@ class ImageLoader(QtCore.QObject):
     def clear(self):
         self.loaded = {}
         self.imageData = {}
+        self.maskData = {}
 
 class View2DScrollWidget(QtGui.QWidget):
     def __init__(self,parent,view2D):
@@ -808,6 +809,8 @@ class View2D(View,QtOpenGL.QGLWidget):
         return visible
     @QtCore.Slot(int)
     def generateTexture(self,img):
+        if img not in self.loaderThread.imageData.keys():
+            return
         imageData = self.loaderThread.imageData[img]
         maskData = self.loaderThread.maskData[img]
         texture = glGenTextures(1)
