@@ -128,14 +128,18 @@ class View(QtCore.QObject):
         else:
             self.has_data = False
         self.datasetChanged.emit(dataset,self.datasetMode)
-    def getData(self,nDims=2,img=0):
+    def getData(self,nDims=2,index=0):
         if self.data == None:
             return None
         elif nDims == 1:
-            return numpy.array(self.data).flatten()
+            if index != 0:
+                (ix,iy) = index
+                return numpy.array(self.data)[:,ix,iy]
+            else:
+                return numpy.array(self.data).flatten()                
         elif nDims == 2:
             if self.data.isCXIStack():
-                return self.data[img,:,:]
+                return self.data[index,:,:]
             else:
                 return numpy.array(self.data[:,:])
     # MASK
@@ -178,6 +182,8 @@ class View1D(View,QtGui.QFrame):
         self.p = None
         self.setAcceptDrops(True)
         self.plotMode = "plot"
+        self.ix = None
+        self.iy = None
     def initPlot(self):
         self.plot = pyqtgraph.PlotWidget()
         line = pyqtgraph.InfiniteLine(0,90,None,True)
@@ -189,30 +195,38 @@ class View1D(View,QtGui.QFrame):
         self.plot.getAxis("bottom").setHeight(space)
         self.plot.getAxis("left").setWidth(space)
         self.plot.getAxis("right").setWidth(space)
-    def loadData(self,dataset,plotMode):
+    def loadData(self,dataset,plotMode,ix=None,iy=None):
         self.setData(dataset)
         self.plotMode = plotMode
+        self.ix = ix
+        self.iy = iy
+        datasetName = self.data.name
+        if ix != None and iy != None:
+            datasetName += (" (%i,%i)" % (ix,iy))
         if plotMode == "plot":
             self.plot.setLabel("bottom","index")
-            self.plot.setLabel("left",self.data.name)
+            self.plot.setLabel("left",datasetName)
         elif plotMode == "histogram":
             self.plot.setLabel("bottom",self.data.name)
             self.plot.setLabel("left","#")
         self.refreshPlot()
     def refreshPlot(self):
-        if self.getData(1) != None:
-            if self.indexProjector.viewIndices == None:
-                data = self.getData(1)
-            else:
-                data = self.getData(1)[self.indexProjector.viewIndices]
+        data = self.getData(1,(self.ix,self.iy)) 
+        if data != None:
+            if self.indexProjector.imgs != None:
+                data = data[self.indexProjector.imgs]
             if self.p == None:
                 self.p = self.plot.plot(numpy.zeros(1), pen=(255,0,0))
             if self.plotMode == "plot":
                 self.p.setData(data)
+                # does not seem to work
+                self.line.show()
             elif self.plotMode == "histogram":
                 (hist,edges) = numpy.histogram(data,bins=200)
                 edges = (edges[:-1]+edges[1:])/2.0
                 self.p.setData(edges,hist)        
+                # does not seem to work
+                self.line.hide()
     def emitViewIndexSelected(self,foovalue=None):
         index = int(self.line.getXPos())
         self.viewIndexSelected.emit(index)
@@ -287,10 +301,11 @@ class View2DScrollWidget(QtGui.QWidget):
         
 class View2D(View,QtOpenGL.QGLWidget):
     needsImage = QtCore.Signal(int)
-    imageSelected = QtCore.Signal(int)
-    visibleImgChanged = QtCore.Signal(int)
+    #imageSelected = QtCore.Signal(int)
+    visibleImgChanged = QtCore.Signal(int,int,int,int)
     translationChanged = QtCore.Signal(int,int)
     stackWidthChanged = QtCore.Signal(int)
+    pixelClicked = QtCore.Signal(dict)
     def __init__(self,viewer,parent=None):
         View.__init__(self,parent,"image")
         format =  QtOpenGL.QGLFormat();
@@ -739,7 +754,7 @@ class View2D(View,QtOpenGL.QGLWidget):
                 if len(visible) > 0:
                     # Set and emit current view index
                     self.visibleImg = self.windowToImage(self.getImgWidth("window",True)/2,self.getImgHeight("window",True)/2,0,False,False)
-                    self.visibleImgChanged.emit(self.visibleImg)
+                    self.visibleImgChanged.emit(self.visibleImg,self.getNImages(),self.indexProjector.imgToIndex(self.visibleImg),self.getNImagesVisible())
 #        glFlush()
 #        time4 = time.time()
 #        print '%s function took %0.3f ms' % ("paintGL", (time4-time3)*1000.0)
@@ -809,6 +824,7 @@ class View2D(View,QtOpenGL.QGLWidget):
         return visible
     @QtCore.Slot(int)
     def generateTexture(self,img):
+        # strange that this IF is needed for picking up rare events when generateTexture is called without the respective img present in imageData
         if img not in self.loaderThread.imageData.keys():
             return
         imageData = self.loaderThread.imageData[img]
@@ -913,21 +929,40 @@ class View2D(View,QtOpenGL.QGLWidget):
     def mouseReleaseEvent(self, event):
         self.dragging = False
         # Select even when draggin
-        if(event.button() == QtCore.Qt.LeftButton):
-            self.selectedImage = self.indexProjector.indexToImg(self.lastHoveredViewIndex)
-            self.imageSelected.emit(self.selectedImage)
-            #self.browseToViewIndex(self.indexProjector.imgToIndex(self.selectedImage))
-            self.updateGL()
-    def selectViewIndex(self,index):
-        img = self.indexProjector.indexToImg(index)
-        self.selectedImage = img
-        self.imageSelected.emit(self.selectedImage)
-        self.browseToViewIndex(index)
+        #if(event.button() == QtCore.Qt.LeftButton):
+        #    self.selectedImage = self.indexProjector.indexToImg(self.lastHoveredViewIndex)
+        #    self.imageSelected.emit(self.selectedImage)
+        #    self.updateGL()
     def mousePressEvent(self, event):
+        pos = self.mapFromGlobal(QtGui.QCursor.pos())
+        x = pos.x()
+        y = pos.y()
+        img = self.windowToImage(x,y,0)
+        (ix,iy) = self.windowToImageCoordinates(x,y,0)
+        info = self.getPixelInfo(img,ix,iy)
+        self.selectedImage = info["img"]
+        self.pixelClicked.emit(info)
         self.dragStart = event.pos()
         self.dragPos = event.pos()
         self.dragging = True
         self.updateGL()
+    def getPixelInfo(self,img,ix,iy):
+        info = {}
+        info["ix"] = ix
+        info["iy"] = iy
+        info["img"] = img
+        info["viewIndex"] = self.indexProjector.imgToIndex(img)
+        info["imageValue"] = self.loaderThread.imageData[img][iy,ix]
+        if self.loaderThread.maskData[img] == None:
+            info["maskValue"] = None
+        else:
+            info["maskValue"] = self.loaderThread.maskData[img][iy,ix]
+        info["imageMin"] = numpy.min(self.loaderThread.imageData[img])
+        info["imageMax"] = numpy.max(self.loaderThread.imageData[img])
+        info["imageSum"] = numpy.sum(self.loaderThread.imageData[img])
+        info["imageMean"] = numpy.mean(self.loaderThread.imageData[img])
+        info["imageStd"] = numpy.std(self.loaderThread.imageData[img])
+        return info
     def mouseMoveEvent(self, event):
         if(self.dragging):
             self.translateBy([0,-(event.pos()-self.dragPos).y()])
@@ -1005,6 +1040,15 @@ class View2D(View,QtOpenGL.QGLWidget):
         viewport = glGetIntegerv(GL_VIEWPORT);
         (x,y,z) =  gluUnProject(x, viewport[3]-y,z , model=modelview, proj=projection, view=viewport)
         return (x,y,z)
+    # Returns pixel corrdinates in image
+    def windowToImageCoordinates(self,x,y,z):
+        (xw,yw,zw) = self.windowToScene(x,y,z)
+        imageWidth = self.getImgWidth("scene",True)
+        imageHeight = self.getImgHeight("scene",True)
+        border = self.subplotSceneBorder()
+        ix = int(round(xw%imageWidth - border/2.))
+        iy = int(round(imageHeight - yw%imageHeight))
+        return (ix,iy)
     # Returns the view index (index after sorting and filtering) of the image that is at a particular window location
     def windowToViewIndex(self,x,y,z,checkExistance=True, clip=True):
         if(self.has_data > 0):

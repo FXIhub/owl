@@ -23,6 +23,7 @@ def sizeof_fmt(num):
 #
 class DatasetProp(QtGui.QWidget):
     displayPropChanged = QtCore.Signal(dict)
+    pixelStackChanged = QtCore.Signal(h5py.Dataset,int,int)
     def __init__(self,parent=None):
         QtGui.QWidget.__init__(self,parent)
         self.setFocusPolicy(QtCore.Qt.ClickFocus)
@@ -51,12 +52,14 @@ class DatasetProp(QtGui.QWidget):
         self.datatype = QtGui.QLabel("Data Type:", parent=self)
         self.datasize = QtGui.QLabel("Data Size:", parent=self)
         self.dataform = QtGui.QLabel("Data Form:", parent=self)
+        self.currentViewIndex = QtGui.QLabel("Visible View Index:", parent=self)
         self.currentImg = QtGui.QLabel("Visible Image:", parent=self)
         self.generalBox.vbox.addWidget(self.dimensionality)
         self.generalBox.vbox.addWidget(self.datatype)
         self.generalBox.vbox.addWidget(self.datasize)
         self.generalBox.vbox.addWidget(self.dataform)
         self.generalBox.vbox.addWidget(self.currentImg)
+        self.generalBox.vbox.addWidget(self.currentViewIndex)
         # properties: image stack
         self.imageStackBox = QtGui.QGroupBox("Image Stack Properties");
         self.imageStackBox.vbox = QtGui.QVBoxLayout()
@@ -66,19 +69,72 @@ class DatasetProp(QtGui.QWidget):
         hbox.addWidget(QtGui.QLabel("Width:"))
         self.imageStackSubplots = QtGui.QSpinBox(parent=self)
         self.imageStackSubplots.setMinimum(1)
-#        self.imageStackSubplots.setMaximum(5)
+#       self.imageStackSubplots.setMaximum(5)
         hbox.addWidget(self.imageStackSubplots)
         self.imageStackBox.vbox.addLayout(hbox)
         # properties: selected image
+        self.imageBox = QtGui.QGroupBox("Selected Image");
+        self.imageBox.vbox = QtGui.QVBoxLayout()
+        
         hbox = QtGui.QHBoxLayout()
-        hbox.addWidget(QtGui.QLabel("Selected Image:"))
-        self.imageStackImageSelected = QtGui.QLabel("None",parent=self)
-        hbox.addWidget(self.imageStackImageSelected)
-        self.imageStackBox.vbox.addLayout(hbox)
+        hbox.addWidget(QtGui.QLabel("Minimum value:"))
+        widget = QtGui.QLabel("None",parent=self)
+        hbox.addWidget(widget)
+        self.imageMin = widget
+        self.imageBox.vbox.addLayout(hbox)
+
+        hbox = QtGui.QHBoxLayout()
+        hbox.addWidget(QtGui.QLabel("Maximum value:"))
+        widget = QtGui.QLabel("None",parent=self)
+        hbox.addWidget(widget)
+        self.imageMax = widget
+        self.imageBox.vbox.addLayout(hbox)
+
+        hbox = QtGui.QHBoxLayout()
+        hbox.addWidget(QtGui.QLabel("Mean value:"))
+        widget = QtGui.QLabel("None",parent=self)
+        hbox.addWidget(widget)
+        self.imageMean = widget
+        self.imageBox.vbox.addLayout(hbox)
+
+        hbox = QtGui.QHBoxLayout()
+        hbox.addWidget(QtGui.QLabel("Std. deviation:"))
+        widget = QtGui.QLabel("None",parent=self)
+        hbox.addWidget(widget)
+        self.imageStd = widget
+        self.imageBox.vbox.addLayout(hbox)
+
+        hbox = QtGui.QHBoxLayout()
+        hbox.addWidget(QtGui.QLabel("Sum:"))
+        widget = QtGui.QLabel("None",parent=self)
+        hbox.addWidget(widget)
+        self.imageSum = widget
+        self.imageBox.vbox.addLayout(hbox)
+        self.imageBox.setLayout(self.imageBox.vbox)
+        self.imageBox.hide()
+
+        self.pixelBox = QtGui.QGroupBox("Selected Pixel");
+        self.pixelBox.vbox = QtGui.QVBoxLayout()
+
+        hbox = QtGui.QHBoxLayout()
+        hbox.addWidget(QtGui.QLabel("Image value:"))
+        widget = QtGui.QLabel("None",parent=self)
+        hbox.addWidget(widget)
+        self.pixelImageValue = widget
+        self.pixelBox.vbox.addLayout(hbox)
+
+        hbox = QtGui.QHBoxLayout()
+        hbox.addWidget(QtGui.QLabel("Mask value:"))
+        widget = QtGui.QLabel("None",parent=self)
+        hbox.addWidget(widget)
+        self.pixelMaskValue = widget
+        self.pixelBox.vbox.addLayout(hbox)
+
+        self.pixelBox.setLayout(self.pixelBox.vbox)
+        self.pixelBox.hide()
         # DISPLAY PROPERTIES
         self.displayBox = QtGui.QGroupBox("Display Properties");
         self.displayBox.vbox = QtGui.QVBoxLayout()
-
         self.intensityHistogram = pyqtgraph.PlotWidget()
         self.intensityHistogram.hideAxis('left')
         self.intensityHistogram.hideAxis('bottom')
@@ -144,24 +200,6 @@ class DatasetProp(QtGui.QWidget):
         vbox.addLayout(hbox)
         self.displayBox.vbox.addLayout(vbox)
         self.displayBox.setLayout(self.displayBox.vbox)
-
-        # properties: IMAGE
-        self.imageBox = QtGui.QGroupBox("Image Properties");
-        self.imageBox.vbox = QtGui.QVBoxLayout()
-        hbox = QtGui.QHBoxLayout()
-        hbox.addWidget(QtGui.QLabel("Image Range:"))
-        self.imageRange = QtGui.QLabel("None",parent=self)
-        hbox.addWidget(self.imageRange)
-        self.imageBox.vbox.addLayout(hbox)
-        self.imageBox.setLayout(self.imageBox.vbox)
-
-        hbox = QtGui.QHBoxLayout()
-        hbox.addWidget(QtGui.QLabel("Image Sum:"))
-        self.imageSum = QtGui.QLabel("None",parent=self)
-        hbox.addWidget(self.imageSum)
-        self.imageBox.vbox.addLayout(hbox)
-
-        self.imageBox.hide()
         # sorting
         self.sortingBox = QtGui.QGroupBox("Sorting")
         self.sortingBox.vbox = QtGui.QVBoxLayout()
@@ -182,11 +220,50 @@ class DatasetProp(QtGui.QWidget):
         self.filterBox.hide()
         self.activeFilters = []
         self.inactiveFilters = []
+        # pixel stack
+        self.pixelStackBox = QtGui.QGroupBox("Pixel stack")
+        self.pixelStackBox.vbox = QtGui.QVBoxLayout()
+        hbox0 = QtGui.QHBoxLayout()
 
+        validator = QtGui.QIntValidator()
+        validator.setRange(0,10000)
+        self.pixelStackXEdit = QtGui.QLineEdit(self)
+        self.pixelStackXEdit.setMaximumWidth(100)
+        self.pixelStackXEdit.setValidator(validator)
+        self.pixelStackYEdit = QtGui.QLineEdit(self)
+        self.pixelStackYEdit.setMaximumWidth(100)
+        self.pixelStackYEdit.setValidator(validator)
+
+        vbox = QtGui.QVBoxLayout()
+
+        hbox = QtGui.QHBoxLayout()
+        hbox.addWidget(QtGui.QLabel("X:"))
+        hbox.addWidget(self.pixelStackXEdit)
+        vbox.addLayout(hbox)
+
+        hbox = QtGui.QHBoxLayout()
+        hbox.addWidget(QtGui.QLabel("Y:"))
+        hbox.addWidget(self.pixelStackYEdit)
+        vbox.addLayout(hbox)
+
+        hbox0.addLayout(vbox)
+
+        self.pixelStackPickButton = QtGui.QPushButton("Pick",self)
+        self.pixelStackPick = False
+        hbox0.addWidget(self.pixelStackPickButton)
+
+        self.pixelStackBox.vbox.addLayout(hbox0)
+        self.pixelStackPlotButton = QtGui.QPushButton("Plot",self)
+        self.pixelStackBox.vbox.addWidget(self.pixelStackPlotButton)
+
+        self.pixelStackBox.setLayout(self.pixelStackBox.vbox)
+        self.pixelStackBox.show()
         # add all widgets to main vbox
         self.vboxScroll.addWidget(self.generalBox)
+        self.vboxScroll.addWidget(self.imageBox)        
+        self.vboxScroll.addWidget(self.pixelBox)        
         self.vboxScroll.addWidget(self.imageStackBox)
-        self.vboxScroll.addWidget(self.imageBox)
+        self.vboxScroll.addWidget(self.pixelStackBox)
         self.vboxScroll.addWidget(self.displayBox)
         self.vboxScroll.addWidget(self.sortingBox)
         self.vboxScroll.addWidget(self.filterBox)
@@ -205,6 +282,8 @@ class DatasetProp(QtGui.QWidget):
         self.displayGamma.editingFinished.connect(self.emitDisplayProp)
         self.invertSortingCheckBox.toggled.connect(self.emitDisplayProp)
         self.viewer.colormapActionGroup.triggered.connect(self.emitDisplayProp)
+        self.pixelStackPickButton.released.connect(self.onPixelStackPickButton)
+        self.pixelStackPlotButton.released.connect(self.onPixelStackPlotButton)
     def clear(self):
         self.clearDisplayProp()
         self.clearDataset()
@@ -235,8 +314,9 @@ class DatasetProp(QtGui.QWidget):
                 self.imageStackBox.hide()
         else:
             self.clearDataset()
-    def refreshDatasetImg(self,img):
-        self.currentImg.setText("Visible Image: %i" % img)
+    def refreshDatasetCurrent(self,img,NImg,viewIndex,NViewIndex):
+        self.currentImg.setText("Visible Image: %i (%i)" % (img,NImg))
+        self.currentViewIndex.setText("Visible Index: %i (%i)" % (viewIndex,NViewIndex))
     def clearDataset(self):
         self.dataset = None
         self.dimensionality.setText("Dimensions: ")
@@ -245,13 +325,23 @@ class DatasetProp(QtGui.QWidget):
         self.dataform.setText("Data Form: ")
         self.imageStackBox.hide()
     # VIEW
-    def onImageSelected(self,selectedImage):
-        self.imageStackImageSelected.setText(str(selectedImage))
-        if self.dataset != None and selectedImage != None:
-            self.imageRange.setText("%d to %d" %(numpy.min(self.dataset[selectedImage]),numpy.max(self.dataset[selectedImage])))
-            self.imageSum.setText(str(numpy.sum(self.dataset[selectedImage])))
+    def onPixelClicked(self,info):
+        if self.dataset != None and info != None:
+            self.imageBox.setTitle("Selected Image (image: %i, index: %i)" % (int(info["viewIndex"]),int(info["img"])))
+            self.imageMin.setText(str(int(info["imageMin"])))
+            self.imageMax.setText(str(int(info["imageMax"])))
+            self.imageSum.setText(str(int(info["imageSum"])))
+            self.imageMean.setText(str(int(info["imageMean"])))
+            self.imageStd.setText(str(int(info["imageStd"])))
+            self.pixelBox.setTitle("Selected Pixel (x: %i, y: %i)" % (int(info["ix"]),int(info["iy"])))
+            self.pixelImageValue.setText(str(int(info["imageValue"])))
+            if info["maskValue"] == None:
+                self.pixelMaskValue.setText("None")
+            else:
+                self.pixelMaskValue.setText(str(int(info["maskValue"])))
             self.imageBox.show()
-            (hist,edges) = numpy.histogram(self.dataset[selectedImage],bins=100)
+            self.pixelBox.show()
+            (hist,edges) = numpy.histogram(self.dataset[info["img"]],bins=100)
             self.intensityHistogram.clear()
             edges = (edges[:-1]+edges[1:])/2.0
             item = self.intensityHistogram.plot(edges,hist,fillLevel=0,fillBrush=QtGui.QColor(255, 255, 255, 128),antialias=True)
@@ -261,8 +351,13 @@ class DatasetProp(QtGui.QWidget):
             self.intensityHistogram.addItem(region)
             self.intensityHistogram.autoRange()
             self.intensityHistogramRegion = region
+            if self.pixelStackPick:
+                self.pixelStackPick = False
+                self.pixelStackXEdit.setText(str(int(info["ix"])))
+                self.pixelStackYEdit.setText(str(int(info["iy"])))
         else:
             self.imageBox.hide()
+            self.pixelBox.hide()
     def onHistogramClicked(self,region):
         (min,max) = region.getRegion()
         self.displayMin.setValue(min)
@@ -397,6 +492,26 @@ class DatasetProp(QtGui.QWidget):
         self.filterBox.setTitle("Filters (yield: %.2f%% - %i/%i)" % (p,Nsel,Ntot))
     def refreshFilter(self,dataset,index):
         self.activeFilters[index].refreshDataset(dataset)
+    # pixel stack histogram
+    #def setPixelStack(self):
+    #    P = self.currDisplayProp
+    #    x = self.pixelStackXEdit.text()
+    #    y = self.pixelStackYEdit.text()
+    #    if x == "" or y == "":
+    #        P["pixelStackX"] = None
+    #        P["pixelStackY"] = None
+    #    else:
+    #        P["pixelStackX"] = int(x)
+    #        P["pixekStackY"] = int(y)
+    def clearPixelStack(self):
+        self.pixelStackXEdit.setText("")
+        self.pixelStackYEdit.setText("")
+    def onPixelStackPickButton(self):
+        self.pixelStackPick = True
+    def onPixelStackPlotButton(self):
+        ix = int(self.pixelStackXEdit.text())
+        iy = int(self.pixelStackYEdit.text())
+        self.pixelStackChanged.emit(self.dataset.name,ix,iy)
     # update and emit current diplay properties
     def emitDisplayProp(self,foovalue=None):
         self.setImageStackSubplots()
@@ -466,17 +581,15 @@ class FilterWidget(QtGui.QWidget):
         hbox.addWidget(QtGui.QLabel("Max.:"))
         vbox.addLayout(hbox)
         hbox = QtGui.QHBoxLayout()
-        vminLineEdit = QtGui.QLineEdit(self)
-        vminLineEdit.setText("%.3e" % (vmin*0.999))
         validator = QtGui.QDoubleValidator()
         validator.setDecimals(3)
         validator.setNotation(QtGui.QDoubleValidator.ScientificNotation)
+        vminLineEdit = QtGui.QLineEdit(self)
+        vminLineEdit.setText("%.3e" % (vmin*0.999))
         vminLineEdit.setValidator(validator)
         hbox.addWidget(vminLineEdit)
         vmaxLineEdit = QtGui.QLineEdit(self)
         vmaxLineEdit.setText("%.3e" % (vmax*1.001))
-        validator = QtGui.QDoubleValidator()
-        validator.setNotation(QtGui.QDoubleValidator.ScientificNotation)
         vmaxLineEdit.setValidator(validator)
         hbox.addWidget(vmaxLineEdit)
         vbox.addLayout(hbox)

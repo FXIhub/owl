@@ -192,8 +192,9 @@ class Viewer(QtGui.QMainWindow):
         self.CXINavigation.datasetMenus["plot"].triggered.connect(self.handlePlotModeTriggered)
         self.CXINavigation.datasetBoxes["filter0"].button.needDataset.connect(self.handleNeedDatasetFilter)
         self.datasetProp.displayPropChanged.connect(self.handleDisplayPropChanged)
-        self.view.view2D.imageSelected.connect(self.datasetProp.onImageSelected)
-        self.view.view2D.visibleImgChanged.connect(self.datasetProp.refreshDatasetImg)
+        self.datasetProp.pixelStackChanged.connect(self.handlePixelStackChanged)
+        self.view.view2D.pixelClicked.connect(self.datasetProp.onPixelClicked)
+        self.view.view2D.visibleImgChanged.connect(self.datasetProp.refreshDatasetCurrent)
         self.view.view1D.viewIndexSelected.connect(self.handleViewIndexSelected)   
         self.goMenu.nextRow.triggered.connect(self.view.view2D.nextRow)
         self.goMenu.previousRow.triggered.connect(self.view.view2D.previousRow)
@@ -351,10 +352,20 @@ class Viewer(QtGui.QMainWindow):
             self.CXINavigation.datasetBoxes["plot"].button.setName(datasetName)
             self.statusBar.showMessage("Loaded plot: %s" % dataset.name,1000)
             self.viewActions["View 1D"].setChecked(True)
+    def handlePixelStackChanged(self,datasetName,ix,iy):
+        dataset = self.CXINavigation.CXITree.datasets[datasetName]
+        plotMode = self.CXINavigation.datasetMenus["plot"].getPlotMode()
+        self.view.view1D.show()
+        self.viewActions["View 1D"].setChecked(True)
+        self.view.view1D.loadData(dataset,plotMode,ix,iy)
+        self.CXINavigation.datasetBoxes["plot"].button.setName("%s (%i,%i)" % (datasetName,ix,iy))
+        self.statusBar.showMessage("Loaded pixel stack to plot: %s [:,%i,%i]" % (dataset.name,iy,ix),1000)
+        self.viewActions["View 1D"].setChecked(True)
     def handlePlotModeTriggered(self,foovalue=None):
-        datasetName = self.CXINavigation.datasetBoxes["plot"].button.text()
-        if datasetName in self.CXINavigation.CXITree.datasets.keys():
-            self.handleNeedDatasetPlot(datasetName)
+        self.view.view1D.setPlotMode(self.CXINavigation.datasetMenus["plot"].getPlotMode())
+        if self.view.view1D.data != None:
+            self.viewActions["View 1D"].setChecked(False)
+            self.view.view1D.show()
     def handleDisplayPropChanged(self,prop):
         self.view.view2D.refreshDisplayProp(prop)
         self.view.view1D.refreshDisplayProp(prop)
@@ -375,7 +386,7 @@ class Viewer(QtGui.QMainWindow):
             n = None
         self.CXINavigation.datasetBoxes[datasetMode].button.setName(n)
     def handleViewIndexSelected(self,index):
-        self.view.view2D.selectViewIndex(index)
+        self.view.view2D.browseToViewIndex(index)
 
 
 class PreferencesDialog(QtGui.QDialog):
