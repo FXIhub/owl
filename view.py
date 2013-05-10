@@ -134,9 +134,10 @@ class View(QtCore.QObject):
         elif nDims == 1:
             if index != 0:
                 (ix,iy,Nz) = index
-                if Nz == None:
+                if Nz == 0:
                     return numpy.array(self.data[:,iy,ix])
                 else:
+                    print Nz
                     iz = numpy.random.randint(0,len(self.data),Nz)
                     iz.sort()
                     data = numpy.zeros(Nz)

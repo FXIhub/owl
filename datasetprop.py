@@ -523,7 +523,7 @@ class DatasetProp(QtGui.QWidget):
         ix = int(self.pixelStackXEdit.text())
         iy = int(self.pixelStackYEdit.text())
         if self.pixelStackNEdit.text() == "" or int(self.pixelStackNEdit.text()) == len(self.dataset):
-            N = None
+            N = 0
         else:
             N = int(self.pixelStackNEdit.text())
         self.pixelStackChanged.emit(self.dataset.name,ix,iy,N)
