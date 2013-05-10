@@ -234,6 +234,13 @@ class ImageLoader(QtCore.QObject):
         if(img in self.loaded):
            return
         self.loaded[img] = True
+        ################### Important Note ##################
+        # The reason why everything gets stuck here is that #
+        # h5py lock the GIL when doing things. To fix it we #
+        # would need to move the loader to a different      #
+        # process and this would prevent Carl's hack with   #
+        # cheetah and the loader sharing the same hdf5 lib. #
+        #####################################################
         data = self.view.getData(2,img)
         mask = self.view.getMask(2,img)
         self.imageData[img] = numpy.ones((self.view.data.getCXIHeight(),self.view.data.getCXIWidth()),dtype=numpy.float32)
