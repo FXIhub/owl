@@ -11,7 +11,8 @@ import math
 from geometry import *
 from datasetprop import *
 from cxitree import *
-from view import *
+from view1D import *
+from view2D import *
 
 """
 Wishes:
@@ -425,6 +426,21 @@ class PreferencesDialog(QtGui.QDialog):
         self.layout().addWidget(f)
         self.layout().addWidget(buttonBox)
 
+class ViewSplitter(QtGui.QSplitter):
+    def __init__(self,parent=None):
+        QtGui.QSplitter.__init__(self,parent)
+        self.setOrientation(QtCore.Qt.Vertical)
+
+        self.view2D = View2D(parent,self)
+        self.view2DScrollWidget = View2DScrollWidget(self,self.view2D)
+        self.addWidget(self.view2DScrollWidget)
+        #self.addWidget(self.view2D)
+
+        self.view1D = View1D(self)
+        self.view1D.hide()
+        self.addWidget(self.view1D)
+
+        self.setSizes([1000,1000])
 
 QtCore.QCoreApplication.setOrganizationName("CXIDB");
 QtCore.QCoreApplication.setOrganizationDomain("cxidb.org");
