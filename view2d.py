@@ -536,8 +536,14 @@ class View2D(View,QtOpenGL.QGLWidget):
     @QtCore.Slot(int)
     def generateTexture(self,img):
         # strange that this IF is needed for picking up rare events when generateTexture is called without the respective img present in imageData
-        if img not in self.loaderThread.imageData.keys():
-            return
+
+        # FM: You're gonna have to give an explanation why you think this 
+        # can happen. I suspect you're just maskerading another bug.
+        # Meanwhile I'm going comment the code below
+
+        # if img not in self.loaderThread.imageData.keys():
+        #    return
+
         imageData = self.loaderThread.imageData[img]
         maskData = self.loaderThread.maskData[img]
         texture = glGenTextures(1)
