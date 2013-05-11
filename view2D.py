@@ -33,10 +33,10 @@ class ImageLoader(QtCore.QObject):
         data = self.view.getData(2,img)
         mask = self.view.getMask(2,img)
         self.imageData[img] = numpy.ones((self.view.data.getCXIHeight(),self.view.data.getCXIWidth()),dtype=numpy.float32)
-        self.imageData[img] = data[:]
+        self.imageData[img] = data[:,:]
         if(mask != None):
             self.maskData[img] = numpy.ones((self.view.data.getCXIHeight(),self.view.data.getCXIWidth()),dtype=numpy.float32)
-            self.maskData[img] = mask[:]
+            self.maskData[img] = mask[:,:]
         else:
             self.maskData[img] = None
         self.imageLoaded.emit(img)
@@ -829,7 +829,7 @@ class View2D(View,QtOpenGL.QGLWidget):
         imageHeight = self.getImgHeight("scene",True)
         border = self.subplotSceneBorder()
         ix = int(round(xw%imageWidth - border/2.))
-        iy = int(round(imageHeight - yw%imageHeight))
+        iy = int(round(imageHeight - yw%imageHeight - border/2.))
         return (ix,iy)
     # Returns the view index (index after sorting and filtering) of the image that is at a particular window location
     def windowToViewIndex(self,x,y,z,checkExistance=True, clip=True):
