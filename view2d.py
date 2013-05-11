@@ -43,7 +43,6 @@ class View2D(View,QtOpenGL.QGLWidget):
         self.lastHoveredViewIndex = None
         self.stackWidth = 1;
         self.has_data = False
-        self.imageData = {}
 
         self.loaderThread = ImageLoader(None,self)
         self.needsImage.connect(self.loaderThread.loadImage)
