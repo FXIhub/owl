@@ -12,6 +12,7 @@ from geometry import *
 from datasetprop import *
 from cxitree import *
 from view import *
+from viewsplitter import ViewSplitter
 
 """
 Wishes:
@@ -425,6 +426,14 @@ class PreferencesDialog(QtGui.QDialog):
         self.layout().addWidget(f)
         self.layout().addWidget(buttonBox)
 
+
+def exceptionHandler(type, value, traceback):
+    sys.__excepthook__(type,value,traceback)    
+    app.exit()
+    sys.exit(-1)
+
+# Set exception handler
+sys.excepthook = exceptionHandler
 
 QtCore.QCoreApplication.setOrganizationName("CXIDB");
 QtCore.QCoreApplication.setOrganizationDomain("cxidb.org");
