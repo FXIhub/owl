@@ -436,9 +436,6 @@ def exceptionHandler(type, value, traceback):
 # Set exception handler
 sys.excepthook = exceptionHandler
 
-# Set logging level
-# logging.basicConfig(level=logging.DEBUG)
-
 QtCore.QCoreApplication.setOrganizationName("CXIDB");
 QtCore.QCoreApplication.setOrganizationDomain("cxidb.org");
 QtCore.QCoreApplication.setApplicationName("CXI Viewer");

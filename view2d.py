@@ -9,7 +9,7 @@ import OpenGL.GL.ARB.texture_float
 import numpy
 import math
 from shaderprogram import compileProgram, compileShader
-
+import logging
         
 class View2D(View,QtOpenGL.QGLWidget):
     needsImage = QtCore.Signal(int)
@@ -20,9 +20,11 @@ class View2D(View,QtOpenGL.QGLWidget):
     pixelClicked = QtCore.Signal(dict)
     def __init__(self,viewer,parent=None):
         View.__init__(self,parent,"image")
-        format =  QtOpenGL.QGLFormat();
-        format.setVersion(1,1);
-        QtOpenGL.QGLWidget.__init__(self,format,parent)
+        QtOpenGL.QGLWidget.__init__(self,parent)
+        self.logger = logging.getLogger("View2D")
+        # If you want to see debug messages change level here
+        self.logger.setLevel(logging.WARNING)
+
         self.viewer = viewer
         self.visibleImg = 0
         # translation in unit of window pixels
@@ -458,7 +460,7 @@ class View2D(View,QtOpenGL.QGLWidget):
                 img_height = self.getImgHeight("scene",False)
                 visible = self.visibleImages()
                 self.updateTextures(visible)
-                for i,img in enumerate(set.intersection(set(self.imageTextures),set(visible))):
+                for i,img in enumerate(set.intersection(set(self.imageTextures),set(visible),set(self.loaderThread.loadedImages()))):
                     self.paintImage(img)
                 for img in (set(visible) - set(self.imageTextures)):
                     self.paintLoadingImage(img)
@@ -544,7 +546,12 @@ class View2D(View,QtOpenGL.QGLWidget):
         # if img not in self.loaderThread.imageData.keys():
         #    return
 
-        imageData = self.loaderThread.getImage(img)
+        # If we already have the texture we just return
+        if(img in self.imageTextures):
+            return
+
+        self.logger.debug("Generating texture %d"  % (img))
+        imageData = self.loaderThread.imageData[img]
         maskData = self.loaderThread.maskData[img]
         texture = glGenTextures(1)
         glBindTexture(GL_TEXTURE_2D, texture)
@@ -565,8 +572,12 @@ class View2D(View,QtOpenGL.QGLWidget):
         self.updateGL()
     def updateTextures(self,images):
         for img in images:
-            if(img not in self.imageTextures):
+            if(img not in set.intersection(set(self.imageTextures),set(self.loaderThread.loadedImages()))):
                 self.needsImage.emit(img)
+            else:
+                # Let the cache know we're using these images
+                self.loaderThread.imageData.touch(img)
+
     # positive counts correspond to upwards movement of window / downwards movement of images
     def scrollBy(self,count=1,wrap=False):
         stepSize = 1
@@ -667,16 +678,16 @@ class View2D(View,QtOpenGL.QGLWidget):
         info["iy"] = iy
         info["img"] = img
         info["viewIndex"] = self.indexProjector.imgToIndex(img)
-        info["imageValue"] = self.loaderThread.getImage(img)[iy,ix]
+        info["imageValue"] = self.loaderThread.imageData[img][iy,ix]
         if self.loaderThread.maskData[img] == None:
             info["maskValue"] = None
         else:
             info["maskValue"] = self.loaderThread.maskData[img][iy,ix]
-        info["imageMin"] = numpy.min(self.loaderThread.getImage(img))
-        info["imageMax"] = numpy.max(self.loaderThread.getImage(img))
-        info["imageSum"] = numpy.sum(self.loaderThread.getImage(img))
-        info["imageMean"] = numpy.mean(self.loaderThread.getImage(img))
-        info["imageStd"] = numpy.std(self.loaderThread.getImage(img))
+        info["imageMin"] = numpy.min(self.loaderThread.imageData[img])
+        info["imageMax"] = numpy.max(self.loaderThread.imageData[img])
+        info["imageSum"] = numpy.sum(self.loaderThread.imageData[img])
+        info["imageMean"] = numpy.mean(self.loaderThread.imageData[img])
+        info["imageStd"] = numpy.std(self.loaderThread.imageData[img])
         return info
     def mouseMoveEvent(self, event):
         if(self.dragging):
