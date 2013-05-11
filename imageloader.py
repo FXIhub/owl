@@ -15,8 +15,13 @@ class ImageLoader(QtCore.QObject):
 
     @QtCore.Slot(int,int)
     def loadImage(self,img):
+#        print "here"
         if(img in self.loadedImages()):
-           return
+            # this might seem dangerous but it's not
+            # as there is always only 1 thread running
+            # loadImage
+            self.imageLoaded.emit(img)
+            return
         self.logger.debug("Loading image %d"  % (img))
         ################### Important Note ##################
         # The reason why everything gets stuck here is that #
@@ -37,8 +42,10 @@ class ImageLoader(QtCore.QObject):
         self.imageLoaded.emit(img)
     def clear(self):
         # Unlimited cache
-        self.imageData = ArrayCache(0)
-        self.maskData = {}
+        self.imageData = ArrayCache(1024*1024*
+                                    QtCore.QSettings().value("imageCacheSize"))
+        self.maskData = ArrayCache(1024*1024*
+                                    QtCore.QSettings().value("maskCacheSize"))
     def loadedImages(self):
         return self.imageData.keys()
         

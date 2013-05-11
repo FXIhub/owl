@@ -10,6 +10,7 @@ import numpy
 import math
 from shaderprogram import compileProgram, compileShader
 import logging
+from cache import GLCache
         
 class View2D(View,QtOpenGL.QGLWidget):
     needsImage = QtCore.Signal(int)
@@ -33,7 +34,8 @@ class View2D(View,QtOpenGL.QGLWidget):
         #self.setFocusPolicy(QtCore.Qt.ClickFocus)
         self.data = {}
         self.texturesLoading = {}
-        self.imageTextures = {}
+        
+        self.imageTextures = GLCache(0)
         self.maskTextures = {}
         self.texture = {}
         self.parent = parent
@@ -460,9 +462,9 @@ class View2D(View,QtOpenGL.QGLWidget):
                 img_height = self.getImgHeight("scene",False)
                 visible = self.visibleImages()
                 self.updateTextures(visible)
-                for i,img in enumerate(set.intersection(set(self.imageTextures),set(visible),set(self.loaderThread.loadedImages()))):
+                for i,img in enumerate(set.intersection(set(self.imageTextures.keys()),set(visible),set(self.loaderThread.loadedImages()))):
                     self.paintImage(img)
-                for img in (set(visible) - set(self.imageTextures)):
+                for img in (set(visible) - set(self.imageTextures.keys())):
                     self.paintLoadingImage(img)
                 if len(visible) > 0:
                     # Set and emit current view index
@@ -549,7 +551,6 @@ class View2D(View,QtOpenGL.QGLWidget):
         # If we already have the texture we just return
         if(img in self.imageTextures):
             return
-
         self.logger.debug("Generating texture %d"  % (img))
         imageData = self.loaderThread.imageData[img]
         maskData = self.loaderThread.maskData[img]
@@ -572,7 +573,7 @@ class View2D(View,QtOpenGL.QGLWidget):
         self.updateGL()
     def updateTextures(self,images):
         for img in images:
-            if(img not in set.intersection(set(self.imageTextures),set(self.loaderThread.loadedImages()))):
+            if(img not in set.intersection(set(self.imageTextures.keys()),set(self.loaderThread.loadedImages()))):
                 self.needsImage.emit(img)
             else:
                 # Let the cache know we're using these images
@@ -831,7 +832,8 @@ class View2D(View,QtOpenGL.QGLWidget):
     def clearTextures(self):
         glDeleteTextures(self.imageTextures.values())
         glDeleteTextures(self.maskTextures.values())
-        self.imageTextures = {}
+        self.imageTextures = GLCache(1024*1024*
+                                     QtCore.QSettings().value("textureCacheSize"))
         self.maskTextures = {}
         self.loaderThread.clear()
 #        self.clearLoaderThread.emit(0)
