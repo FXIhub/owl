@@ -544,7 +544,7 @@ class View2D(View,QtOpenGL.QGLWidget):
         # if img not in self.loaderThread.imageData.keys():
         #    return
 
-        imageData = self.loaderThread.imageData[img]
+        imageData = self.loaderThread.getImage(img)
         maskData = self.loaderThread.maskData[img]
         texture = glGenTextures(1)
         glBindTexture(GL_TEXTURE_2D, texture)
@@ -667,16 +667,16 @@ class View2D(View,QtOpenGL.QGLWidget):
         info["iy"] = iy
         info["img"] = img
         info["viewIndex"] = self.indexProjector.imgToIndex(img)
-        info["imageValue"] = self.loaderThread.imageData[img][iy,ix]
+        info["imageValue"] = self.loaderThread.getImage(img)[iy,ix]
         if self.loaderThread.maskData[img] == None:
             info["maskValue"] = None
         else:
             info["maskValue"] = self.loaderThread.maskData[img][iy,ix]
-        info["imageMin"] = numpy.min(self.loaderThread.imageData[img])
-        info["imageMax"] = numpy.max(self.loaderThread.imageData[img])
-        info["imageSum"] = numpy.sum(self.loaderThread.imageData[img])
-        info["imageMean"] = numpy.mean(self.loaderThread.imageData[img])
-        info["imageStd"] = numpy.std(self.loaderThread.imageData[img])
+        info["imageMin"] = numpy.min(self.loaderThread.getImage(img))
+        info["imageMax"] = numpy.max(self.loaderThread.getImage(img))
+        info["imageSum"] = numpy.sum(self.loaderThread.getImage(img))
+        info["imageMean"] = numpy.mean(self.loaderThread.getImage(img))
+        info["imageStd"] = numpy.std(self.loaderThread.getImage(img))
         return info
     def mouseMoveEvent(self, event):
         if(self.dragging):
