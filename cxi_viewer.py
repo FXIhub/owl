@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 
-import sys
+# Add our own script to the path, because the self path is not added for embedding
+import sys,os
+sys.path.append(os.path.dirname(os.path.realpath(__file__)))
+
 from OpenGL.GL import *
 from OpenGL.GLU import *
 #from PyQt4 import QtGui, QtCore, QtOpenGL, Qt
@@ -58,7 +61,7 @@ class Viewer(QtGui.QMainWindow):
         QtCore.QTimer.singleShot(0,self.after_show)
 
     def after_show(self):
-        if(len(sys.argv) > 1):
+        if(hasattr(sys, 'argv') and len(sys.argv) > 1):
             self.CXITree.buildTree(sys.argv[1])
         
     def init_menus(self):
@@ -166,7 +169,11 @@ class PreferencesDialog(QtGui.QDialog):
 QtCore.QCoreApplication.setOrganizationName("CXIDB");
 QtCore.QCoreApplication.setOrganizationDomain("cxidb.org");
 QtCore.QCoreApplication.setApplicationName("CXI Viewer");
-app = QtGui.QApplication(sys.argv)
+if (hasattr(sys, 'argv')):
+    app = QtGui.QApplication(sys.argv)
+else:
+    app = QtGui.QApplication([])
+
 aw = Viewer()
 aw.show()
 ret = app.exec_()
