@@ -4,19 +4,22 @@ from OpenGL.GLU import *
 from PySide import QtGui, QtCore, QtOpenGL
 import numpy
 import math
+from threading import Lock
 
 class ImageLoader(QtCore.QObject):
-    imageLoaded = QtCore.Signal(int) 
+    imageLoaded = QtCore.Signal(int)
     def __init__(self,parent = None,view = None):
         QtCore.QObject.__init__(self,parent)  
         self.view = view
         self.imageData = {}
         self.loaded = {}
-    @QtCore.Slot(int,int)
+        self.loadedLock = Lock()
+    @QtCore.Slot(int)
     def loadImage(self,img):
-        if(img in self.loaded):
-            return
-        self.loaded[img] = True
+        with self.loadedLock:
+            if(img in self.loaded):
+                return
+            self.loaded[img] = True
         data = self.view.data[img,:]
         offset = float(numpy.min(data));
         scale = float(numpy.max(data)-offset)
