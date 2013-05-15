@@ -36,7 +36,7 @@ class View2D(View,QtOpenGL.QGLWidget):
         self.texturesLoading = {}
         
         self.imageTextures = GLCache(0)
-        self.maskTextures = {}
+        self.maskTextures = GLCache(0)
         self.texture = {}
         self.parent = parent
         self.setMouseTracking(True)
@@ -834,7 +834,7 @@ class View2D(View,QtOpenGL.QGLWidget):
         glDeleteTextures(self.imageTextures.values())
         glDeleteTextures(self.maskTextures.values())
         self.imageTextures = GLCache(1024*1024*int(QtCore.QSettings().value("textureCacheSize")))
-        self.maskTextures = {}
+        self.maskTextures = GLCache(1024*1024*int(QtCore.QSettings().value("textureCacheSize")))
         self.loaderThread.clear()
 #        self.clearLoaderThread.emit(0)
     def setStackWidth(self,width):
