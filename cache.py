@@ -64,10 +64,10 @@ class ArrayCache(Cache):
     def __init__(self, sizeInBytes=1024*1024*10):
         Cache.__init__(self)
         self.itemSize = None
-        self.sizeInBytes = sizeInBytes
+        self.sizeInBytes = int(sizeInBytes)
     def __setitem__(self,key,value):
         if(self.itemSize is None and value is not None):
-            self.itemSize = value.nbytes
+            self.itemSize = int(value.nbytes)
             size = self.sizeInBytes/self.itemSize
             self.setMaxSize(size)
             self.logger.debug("Setting ArrayCache size to %d" % size)

@@ -832,8 +832,7 @@ class View2D(View,QtOpenGL.QGLWidget):
     def clearTextures(self):
         glDeleteTextures(self.imageTextures.values())
         glDeleteTextures(self.maskTextures.values())
-        self.imageTextures = GLCache(1024*1024*
-                                     QtCore.QSettings().value("textureCacheSize"))
+        self.imageTextures = GLCache(1024*1024*int(QtCore.QSettings().value("textureCacheSize")))
         self.maskTextures = {}
         self.loaderThread.clear()
 #        self.clearLoaderThread.emit(0)
