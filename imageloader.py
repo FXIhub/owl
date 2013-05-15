@@ -13,7 +13,7 @@ class ImageLoader(QtCore.QObject):
         # If you want to see debug messages change level here
         self.logger.setLevel(logging.WARNING)
 
-    @QtCore.Slot(int,int)
+    @QtCore.Slot(int)
     def loadImage(self,img):
 #        print "here"
         if(img in self.loadedImages()):
