@@ -11,8 +11,9 @@ import math
 from geometry import *
 from datasetprop import *
 from cxitree import *
-from view1D import *
-from view2D import *
+from view import *
+from viewsplitter import ViewSplitter
+import logging
 
 """
 Wishes:
@@ -35,9 +36,12 @@ class Viewer(QtGui.QMainWindow):
 
         self.statusBar = self.statusBar()
         self.statusBar.showMessage("Initializing...")
-        self.splitter = QtGui.QSplitter(self)
+        self.init_settings()
+        self.splitter = QtGui.QSplitter(self)        
         self.view = ViewSplitter(self)
         self.init_menus()
+
+
         self.datasetProp = DatasetProp(self)
         self.CXINavigation = CXINavigation(self)
         self.splitter.addWidget(self.CXINavigation)
@@ -57,8 +61,6 @@ class Viewer(QtGui.QMainWindow):
             self.restoreGeometry(settings.value("geometry"));
         if(settings.contains("windowState")):
             self.restoreState(settings.value("windowState"));
-        if(not settings.contains("scrollDirection")):
-            settings.setValue("scrollDirection", 1);  
         QtCore.QTimer.singleShot(0,self.after_show)
         
 
@@ -75,6 +77,19 @@ class Viewer(QtGui.QMainWindow):
     def openCXIFile(self,filename):
         self.CXINavigation.CXITree.buildTree(filename)
         self.handleNeedDatasetImage("/entry_1/data_1/data")
+    def init_settings(self):
+        settings = QtCore.QSettings()
+        if(not settings.contains("scrollDirection")):
+            settings.setValue("scrollDirection", 1);  
+        if(not settings.contains("imageCacheSize")):
+            # Default to 1 GB
+            settings.setValue("imageCacheSize", 1024);  
+        if(not settings.contains("maskCacheSize")):
+            # Default to 1 GB
+            settings.setValue("maskCacheSize", 1024);  
+        if(not settings.contains("textureCacheSize")):
+            # Default to 256 MB
+            settings.setValue("textureCacheSize", 256);  
     def init_menus(self):
         self.fileMenu = self.menuBar().addMenu(self.tr("&File"));
         self.openFile = QtGui.QAction("Open",self)
@@ -255,6 +270,15 @@ class Viewer(QtGui.QMainWindow):
                 settings.setValue("scrollDirection",-1)
             else:
                 settings.setValue("scrollDirection",1)
+            v = diag.imageCacheSpin.value()
+            settings.setValue("imageCacheSize",v)
+            self.view.view2D.loaderThread.imageData.setSizeInBytes(v*1024*1024)
+            v = diag.maskCacheSpin.value()
+            settings.setValue("maskCacheSize",v)
+            self.view.view2D.loaderThread.maskData.setSizeInBytes(v*1024*1024)
+            v = diag.textureCacheSpin.value()
+            settings.setValue("textureCacheSize",v)
+            self.view.view2D.imageTextures.setSizeInBytes(v*1024*1024)
     def handleNeedDatasetImage(self,datasetName=None):
         if str(datasetName) == "":
             self.CXINavigation.CXITree.loadData1()
@@ -403,8 +427,9 @@ class PreferencesDialog(QtGui.QDialog):
         buttonBox.accepted.connect(self.accept)
         buttonBox.rejected.connect(self.reject)
         self.setLayout(QtGui.QVBoxLayout());
+        row = 0
         grid = QtGui.QGridLayout()
-        grid.addWidget(QtGui.QLabel("Scroll Direction:",self),0,0)
+        grid.addWidget(QtGui.QLabel("Scroll Direction:",self),row,0)
         self.natural = QtGui.QRadioButton("Natural (Mac)")
         self.traditional = QtGui.QRadioButton("Traditional (Pc)")
         if(settings.value("scrollDirection") == -1):
@@ -413,12 +438,40 @@ class PreferencesDialog(QtGui.QDialog):
         else:
             self.natural.setChecked(False)
             self.traditional.setChecked(True)
-        grid.addWidget(self.traditional,0,1);
-        grid.addWidget(self.natural,1,1);
-#    We'll need this when we add more options
-#        f = QtGui.QFrame(self)
-#        f.setFrameStyle(QtGui.QFrame.HLine | (QtGui.QFrame.Sunken))
-#        grid.addWidget(f,2,0,1,2);
+        grid.addWidget(self.traditional,row,1)
+        row += 1
+        grid.addWidget(self.natural,row,1)
+        row += 1
+        #    We'll need this when we add more options
+        f = QtGui.QFrame(self)
+        f.setFrameStyle(QtGui.QFrame.HLine | (QtGui.QFrame.Sunken))
+        grid.addWidget(f,row,0,1,2);
+        row += 1
+
+        grid.addWidget(QtGui.QLabel("Image Cache (in MB):",self),row,0)
+        self.imageCacheSpin = QtGui.QSpinBox()
+        self.imageCacheSpin.setMaximum(1024*1024*1024)
+        self.imageCacheSpin.setSingleStep(512)
+        self.imageCacheSpin.setValue(settings.value("imageCacheSize"))
+        grid.addWidget(self.imageCacheSpin,row,1)
+        row += 1
+
+        grid.addWidget(QtGui.QLabel("Mask Cache (in MB):",self),row,0)
+        self.maskCacheSpin = QtGui.QSpinBox()
+        self.maskCacheSpin.setMaximum(1024*1024*1024)
+        self.maskCacheSpin.setSingleStep(512)
+        self.maskCacheSpin.setValue(settings.value("maskCacheSize"))
+        grid.addWidget(self.maskCacheSpin,row,1)
+        row += 1
+
+        grid.addWidget(QtGui.QLabel("Texture Cache (in MB):",self),row,0)
+        self.textureCacheSpin = QtGui.QSpinBox()
+        self.textureCacheSpin.setMaximum(1024*1024*1024)
+        self.textureCacheSpin.setSingleStep(128)
+        self.textureCacheSpin.setValue(settings.value("textureCacheSize"))
+        grid.addWidget(self.textureCacheSpin,row,1)
+        row += 1
+
         self.layout().addLayout(grid)
         self.layout().addStretch()
 
@@ -427,21 +480,15 @@ class PreferencesDialog(QtGui.QDialog):
         self.layout().addWidget(f)
         self.layout().addWidget(buttonBox)
 
-class ViewSplitter(QtGui.QSplitter):
-    def __init__(self,parent=None):
-        QtGui.QSplitter.__init__(self,parent)
-        self.setOrientation(QtCore.Qt.Vertical)
 
-        self.view2D = View2D(parent,self)
-        self.view2DScrollWidget = View2DScrollWidget(self,self.view2D)
-        self.addWidget(self.view2DScrollWidget)
-        #self.addWidget(self.view2D)
+def exceptionHandler(type, value, traceback):
+    sys.__excepthook__(type,value,traceback)    
+    app.exit()
+    sys.exit(-1)
 
-        self.view1D = View1D(self)
-        self.view1D.hide()
-        self.addWidget(self.view1D)
-
-        self.setSizes([1000,1000])
+# Set exception handler
+sys.excepthook = exceptionHandler
+logging.basicConfig()
 
 QtCore.QCoreApplication.setOrganizationName("CXIDB");
 QtCore.QCoreApplication.setOrganizationDomain("cxidb.org");
