@@ -393,22 +393,22 @@ class DatasetProp(QtGui.QWidget):
     def clearNorm(self):
         settings = QtCore.QSettings()
         if(settings.contains("normVmax")):
-            normVmax = settings.value('normVmax')
+            normVmax = float(settings.value('normVmax'))
         else:
             normVmax = 1000.
         if(settings.contains("normVmin")):
-            normVmin = settings.value('normVmin')
+            normVmin = float(settings.value('normVmin'))
         else:
             normVmin = 10.
         self.displayMin.setValue(normVmin)
         self.displayMax.setValue(normVmax)
         if(settings.contains("normClamp")):
-            normClamp = settings.value('normClamp')
+            normClamp = bool(settings.value('normClamp'))
         else:
             normClamp = True
         self.displayClamp.setChecked(normClamp)
         if(settings.contains("normGamma")):
-            self.displayGamma.setValue(settings.value("normGamma"))
+            self.displayGamma.setValue(float(settings.value("normGamma")))
         else:
             self.displayGamma.setValue(0.25)
         if(settings.contains("normScaling")):

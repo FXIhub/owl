@@ -545,8 +545,9 @@ class View2D(View,QtOpenGL.QGLWidget):
         # can happen. I suspect you're just maskerading another bug.
         # Meanwhile I'm going comment the code below
 
-        # if img not in self.loaderThread.imageData.keys():
-        #    return
+        if img not in self.loaderThread.imageData.keys():
+            self.logger.warning("This should not happen!!")
+            return
 
         # If we already have the texture we just return
         if(img in self.imageTextures):
@@ -779,7 +780,7 @@ class View2D(View,QtOpenGL.QGLWidget):
         return (ix,iy)
     # Returns the view index (index after sorting and filtering) of the image that is at a particular window location
     def windowToViewIndex(self,x,y,z,checkExistance=True, clip=True):
-        if(self.has_data > 0):
+        if(self.has_data is True):
             shape = (self.data.getCXIHeight(),self.data.getCXIWidth())
             modelview = glGetDoublev(GL_MODELVIEW_MATRIX)
             projection = glGetDoublev(GL_PROJECTION_MATRIX)
