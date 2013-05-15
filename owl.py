@@ -14,6 +14,8 @@ from cxitree import *
 from view import *
 from viewsplitter import ViewSplitter
 import logging
+import argparse
+import gc
 
 """
 Wishes:
@@ -71,8 +73,8 @@ class Viewer(QtGui.QMainWindow):
         
 
     def after_show(self):
-        if(len(sys.argv) > 1):
-            self.openCXIFile(sys.argv[1])        
+        if(args.filename != ""):
+            self.openCXIFile(args.filename)        
     def openCXIFile(self,filename):
         self.CXINavigation.CXITree.buildTree(filename)
         self.handleNeedDatasetImage("/entry_1/data_1/data")
@@ -451,7 +453,7 @@ class PreferencesDialog(QtGui.QDialog):
         self.imageCacheSpin = QtGui.QSpinBox()
         self.imageCacheSpin.setMaximum(1024*1024*1024)
         self.imageCacheSpin.setSingleStep(512)
-        self.imageCacheSpin.setValue(settings.value("imageCacheSize"))
+        self.imageCacheSpin.setValue(int(settings.value("imageCacheSize")))
         grid.addWidget(self.imageCacheSpin,row,1)
         row += 1
 
@@ -459,7 +461,7 @@ class PreferencesDialog(QtGui.QDialog):
         self.maskCacheSpin = QtGui.QSpinBox()
         self.maskCacheSpin.setMaximum(1024*1024*1024)
         self.maskCacheSpin.setSingleStep(512)
-        self.maskCacheSpin.setValue(settings.value("maskCacheSize"))
+        self.maskCacheSpin.setValue(int(settings.value("maskCacheSize")))
         grid.addWidget(self.maskCacheSpin,row,1)
         row += 1
 
@@ -467,7 +469,7 @@ class PreferencesDialog(QtGui.QDialog):
         self.textureCacheSpin = QtGui.QSpinBox()
         self.textureCacheSpin.setMaximum(1024*1024*1024)
         self.textureCacheSpin.setSingleStep(128)
-        self.textureCacheSpin.setValue(settings.value("textureCacheSize"))
+        self.textureCacheSpin.setValue(int(settings.value("textureCacheSize")))
         grid.addWidget(self.textureCacheSpin,row,1)
         row += 1
 
@@ -485,14 +487,24 @@ def exceptionHandler(type, value, traceback):
     app.exit()
     sys.exit(-1)
 
-# Set exception handler
-sys.excepthook = exceptionHandler
+    
 logging.basicConfig()
 
 QtCore.QCoreApplication.setOrganizationName("CXIDB");
 QtCore.QCoreApplication.setOrganizationDomain("cxidb.org");
 QtCore.QCoreApplication.setApplicationName("CXI Viewer");
 app = QtGui.QApplication(sys.argv)
+
+parser = argparse.ArgumentParser(description='')
+parser.add_argument('-d','--debug',dest='debuggingMode', action='store_true',help='debugging mode')
+parser.add_argument('filename',nargs="?",type=str,help='CXI file to load',default="")
+args = parser.parse_args()
+
+if args.debuggingMode:
+    # Set exception handler
+    print "Running owl in debugging mode."
+    sys.excepthook = exceptionHandler
+
 aw = Viewer()
 aw.show()
 ret = app.exec_()
