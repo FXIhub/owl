@@ -42,10 +42,8 @@ class ImageLoader(QtCore.QObject):
         self.imageLoaded.emit(img)
     def clear(self):
         # Unlimited cache
-        self.imageData = ArrayCache(1024*1024*
-                                    QtCore.QSettings().value("imageCacheSize"))
-        self.maskData = ArrayCache(1024*1024*
-                                    QtCore.QSettings().value("maskCacheSize"))
+        self.imageData = ArrayCache(1024*1024*int(QtCore.QSettings().value("imageCacheSize")))
+        self.maskData = ArrayCache(1024*1024*int(QtCore.QSettings().value("maskCacheSize")))
     def loadedImages(self):
         return self.imageData.keys()
         
