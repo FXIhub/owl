@@ -41,11 +41,14 @@ class DatasetProp(QtGui.QWidget):
         self.scrollArea.setFrameShape(QtGui.QFrame.NoFrame)
         self.scrollArea.setWidget(self.scrollWidget)
         self.scrollArea.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
-        self.scrollArea.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAsNeeded)
+        self.scrollArea.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
+        #self.scrollArea.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAsNeeded)
         self.vbox.addWidget(self.scrollArea)
         # GENERAL PROPERTIES
         # properties: dataset
         self.generalBox = QtGui.QGroupBox("General Properties");
+        #self.generalBox.setCheckable(True)
+        #self.generalBox.isChecked(True)
         self.generalBox.vbox = QtGui.QVBoxLayout()
         self.generalBox.setLayout(self.generalBox.vbox)
         self.dimensionality = QtGui.QLabel("Dimensions:", parent=self)

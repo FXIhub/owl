@@ -3,12 +3,10 @@ import numpy
 import h5py
 from indexprojector import IndexProjector
 
-
 class View(QtCore.QObject):
     needDataset = QtCore.Signal(str)
     datasetChanged = QtCore.Signal(h5py.Dataset,str)
     indexProjector = IndexProjector()
-    # THIS SIGNAL NEEDS TO BE IMPLEMENTED FOR ONLINE MODE!
     stackSizeChanged = QtCore.Signal(int)
     def __init__(self,parent=None,datasetMode="image"):
         QtCore.QObject.__init__(self)
@@ -42,7 +40,6 @@ class View(QtCore.QObject):
                 if Nz == 0:
                     return numpy.array(self.data[:,iy,ix])
                 else:
-                    print Nz
                     iz = numpy.random.randint(0,len(self.data),Nz)
                     iz.sort()
                     data = numpy.zeros(Nz)
@@ -82,8 +79,3 @@ class View(QtCore.QObject):
             e.ignore() 
     def dropEvent(self, e):
         self.needDataset.emit(e.mimeData().text())
-
-
-
-
-

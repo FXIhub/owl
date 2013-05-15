@@ -1,7 +1,11 @@
-from PySide import QtGui, QtCore
+from OpenGL.GL import *
+from OpenGL.GLU import *
+#from PyQt4 import QtGui, QtCore, QtOpenGL, Qt
+from PySide import QtGui, QtCore, QtOpenGL
+import numpy,h5py
 import pyqtgraph
-import numpy
-from view import View
+
+from view import *
 
 class View1D(View,QtGui.QFrame):
     viewIndexSelected = QtCore.Signal(int)
@@ -74,3 +78,4 @@ class View1D(View,QtGui.QFrame):
         self.viewIndexSelected.emit(index)
     def refreshDisplayProp(self,datasetProp):
         self.refreshPlot()
+

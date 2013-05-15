@@ -1,16 +1,85 @@
-from PySide import QtGui, QtCore, QtOpenGL
-from matplotlib import colors
-from matplotlib import cm
-from view import View
-from imageloader import ImageLoader
 from OpenGL.GL import *
 from OpenGL.GLU import *
+#from PyQt4 import QtGui, QtCore, QtOpenGL, Qt
+from PySide import QtGui, QtCore, QtOpenGL
 import OpenGL.GL.ARB.texture_float
-import numpy
+import numpy,h5py
 import math
-from shaderprogram import compileProgram, compileShader
-import logging
-from cache import GLCache
+from matplotlib import colors
+from matplotlib import cm
+
+from view import *
+
+class ImageLoader(QtCore.QObject):
+    imageLoaded = QtCore.Signal(int) 
+    def __init__(self,parent = None,view = None):
+        QtCore.QObject.__init__(self,parent)  
+        self.view = view
+        self.loaded = {}
+        self.imageData = {}
+        self.maskData = {}
+    @QtCore.Slot(int,int)
+    def loadImage(self,img):
+        if(img in self.loaded):
+           return
+        self.loaded[img] = True
+        ################### Important Note ##################
+        # The reason why everything gets stuck here is that #
+        # h5py lock the GIL when doing things. To fix it we #
+        # would need to move the loader to a different      #
+        # process and this would prevent Carl's hack with   #
+        # cheetah and the loader sharing the same hdf5 lib. #
+        #####################################################
+        data = self.view.getData(2,img)
+        mask = self.view.getMask(2,img)
+        self.imageData[img] = numpy.ones((self.view.data.getCXIHeight(),self.view.data.getCXIWidth()),dtype=numpy.float32)
+        self.imageData[img] = data[:,:]
+        if(mask != None):
+            self.maskData[img] = numpy.ones((self.view.data.getCXIHeight(),self.view.data.getCXIWidth()),dtype=numpy.float32)
+            self.maskData[img] = mask[:,:]
+        else:
+            self.maskData[img] = None
+        self.imageLoaded.emit(img)
+    def clear(self):
+        self.loaded = {}
+        self.imageData = {}
+        self.maskData = {}
+
+class View2DScrollWidget(QtGui.QWidget):
+    def __init__(self,parent,view2D):
+        QtGui.QWidget.__init__(self,parent)
+        self.view2D = view2D
+        hbox = QtGui.QHBoxLayout()
+        hbox.setSpacing(0) 
+        hbox.addWidget(view2D)
+        self.scrollbar = QtGui.QScrollBar(QtCore.Qt.Vertical,self)
+        self.scrollbar.setTracking(False)
+        self.scrollbar.setMinimum(self.view2D.minimumTranslation())
+        self.scrollbar.setPageStep(1)
+        self.scrollbar.valueChanged.connect(self.onValueChanged)
+        self.view2D.indexProjector.projectionChanged.connect(self.update)
+        self.view2D.stackWidthChanged.connect(self.update)
+        self.view2D.translationChanged.connect(self.onTranslationChanged)
+        hbox.addWidget(self.scrollbar)
+        self.setLayout(hbox)
+    def onValueChanged(self,value):
+        self.view2D.scrollTo(value)
+    def update(self,foo=None):
+        if self.view2D.indexProjector.viewIndices == None or self.view2D.indexProjector.stackSize == None:
+            self.scrollbar.hide()
+        else:
+            NViewIndices = len(self.view2D.indexProjector.viewIndices)
+            imgHeight = self.view2D.getImgHeight("window",True)
+            self.scrollbar.setPageStep(imgHeight)
+            maximum = self.view2D.maximumTranslation()            
+            self.scrollbar.setMaximum(maximum)
+            self.scrollbar.setValue(0)
+            self.view2D.scrollTo(0)
+            self.scrollbar.show()
+    def onTranslationChanged(self,x,y):
+        self.scrollbar.setValue(y)
+        
+
         
 class View2D(View,QtOpenGL.QGLWidget):
     needsImage = QtCore.Signal(int)
@@ -21,11 +90,9 @@ class View2D(View,QtOpenGL.QGLWidget):
     pixelClicked = QtCore.Signal(dict)
     def __init__(self,viewer,parent=None):
         View.__init__(self,parent,"image")
-        QtOpenGL.QGLWidget.__init__(self,parent)
-        self.logger = logging.getLogger("View2D")
-        # If you want to see debug messages change level here
-        self.logger.setLevel(logging.WARNING)
-
+        format =  QtOpenGL.QGLFormat();
+        format.setVersion(1,1);
+        QtOpenGL.QGLWidget.__init__(self,format,parent)
         self.viewer = viewer
         self.visibleImg = 0
         # translation in unit of window pixels
@@ -34,8 +101,7 @@ class View2D(View,QtOpenGL.QGLWidget):
         #self.setFocusPolicy(QtCore.Qt.ClickFocus)
         self.data = {}
         self.texturesLoading = {}
-        
-        self.imageTextures = GLCache(0)
+        self.imageTextures = {}
         self.maskTextures = {}
         self.texture = {}
         self.parent = parent
@@ -47,6 +113,7 @@ class View2D(View,QtOpenGL.QGLWidget):
         self.lastHoveredViewIndex = None
         self.stackWidth = 1;
         self.has_data = False
+        self.imageData = {}
 
         self.loaderThread = ImageLoader(None,self)
         self.needsImage.connect(self.loaderThread.loadImage)
@@ -462,9 +529,9 @@ class View2D(View,QtOpenGL.QGLWidget):
                 img_height = self.getImgHeight("scene",False)
                 visible = self.visibleImages()
                 self.updateTextures(visible)
-                for i,img in enumerate(set.intersection(set(self.imageTextures.keys()),set(visible),set(self.loaderThread.loadedImages()))):
+                for i,img in enumerate(set.intersection(set(self.imageTextures),set(visible))):
                     self.paintImage(img)
-                for img in (set(visible) - set(self.imageTextures.keys())):
+                for img in (set(visible) - set(self.imageTextures)):
                     self.paintLoadingImage(img)
                 if len(visible) > 0:
                     # Set and emit current view index
@@ -540,24 +607,16 @@ class View2D(View,QtOpenGL.QGLWidget):
     @QtCore.Slot(int)
     def generateTexture(self,img):
         # strange that this IF is needed for picking up rare events when generateTexture is called without the respective img present in imageData
-
-        # FM: You're gonna have to give an explanation why you think this 
-        # can happen. I suspect you're just maskerading another bug.
-        # Meanwhile I'm going comment the code below
-
-        # if img not in self.loaderThread.imageData.keys():
-        #    return
-
-        # If we already have the texture we just return
-        if(img in self.imageTextures):
+        if img not in self.loaderThread.imageData.keys():
             return
-        self.logger.debug("Generating texture %d"  % (img))
         imageData = self.loaderThread.imageData[img]
         maskData = self.loaderThread.maskData[img]
         texture = glGenTextures(1)
         glBindTexture(GL_TEXTURE_2D, texture)
         glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
         glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
+        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE)
+        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE)
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1)
         glTexImage2D(GL_TEXTURE_2D, 0, OpenGL.GL.ARB.texture_float.GL_ALPHA32F_ARB, imageData.shape[1], imageData.shape[0], 0, GL_ALPHA, GL_FLOAT, imageData);
         self.imageTextures[img] = texture
@@ -573,12 +632,8 @@ class View2D(View,QtOpenGL.QGLWidget):
         self.updateGL()
     def updateTextures(self,images):
         for img in images:
-            if(img not in set.intersection(set(self.imageTextures.keys()),set(self.loaderThread.loadedImages()))):
+            if(img not in self.imageTextures):
                 self.needsImage.emit(img)
-            else:
-                # Let the cache know we're using these images
-                self.loaderThread.imageData.touch(img)
-
     # positive counts correspond to upwards movement of window / downwards movement of images
     def scrollBy(self,count=1,wrap=False):
         stepSize = 1
@@ -661,19 +716,18 @@ class View2D(View,QtOpenGL.QGLWidget):
         #    self.imageSelected.emit(self.selectedImage)
         #    self.updateGL()
     def mousePressEvent(self, event):
-        self.dragStart = event.pos()
-        self.dragPos = event.pos()
-        self.dragging = True
         pos = self.mapFromGlobal(QtGui.QCursor.pos())
         x = pos.x()
         y = pos.y()
         img = self.windowToImage(x,y,0)
-        if img in self.loaderThread.imageData.keys():
-            (ix,iy) = self.windowToImageCoordinates(x,y,0)
-            info = self.getPixelInfo(img,ix,iy)
-            self.selectedImage = info["img"]
-            self.pixelClicked.emit(info)
-            self.updateGL()
+        (ix,iy) = self.windowToImageCoordinates(x,y,0)
+        info = self.getPixelInfo(img,ix,iy)
+        self.selectedImage = info["img"]
+        self.pixelClicked.emit(info)
+        self.dragStart = event.pos()
+        self.dragPos = event.pos()
+        self.dragging = True
+        self.updateGL()
     def getPixelInfo(self,img,ix,iy):
         info = {}
         info["ix"] = ix
@@ -775,7 +829,7 @@ class View2D(View,QtOpenGL.QGLWidget):
         imageHeight = self.getImgHeight("scene",True)
         border = self.subplotSceneBorder()
         ix = int(round(xw%imageWidth - border/2.))
-        iy = int(round(imageHeight - yw%imageHeight))
+        iy = int(round(imageHeight - yw%imageHeight - border/2.))
         return (ix,iy)
     # Returns the view index (index after sorting and filtering) of the image that is at a particular window location
     def windowToViewIndex(self,x,y,z,checkExistance=True, clip=True):
@@ -833,7 +887,7 @@ class View2D(View,QtOpenGL.QGLWidget):
     def clearTextures(self):
         glDeleteTextures(self.imageTextures.values())
         glDeleteTextures(self.maskTextures.values())
-        self.imageTextures = GLCache(1024*1024*int(QtCore.QSettings().value("textureCacheSize")))
+        self.imageTextures = {}
         self.maskTextures = {}
         self.loaderThread.clear()
 #        self.clearLoaderThread.emit(0)
@@ -871,3 +925,158 @@ class View2D(View,QtOpenGL.QGLWidget):
             self.setStackWidth(datasetProp["imageStackSubplotsValue"])
             self.indexProjector.setProjector(datasetProp["sortingDataset"],datasetProp["sortingInverted"],datasetProp["filterMask"])
         self.updateGL()
+
+# Temporary code to fix a bug in PyOpenGL which validates shaders too early
+
+class ShaderProgram( int ):
+    """Integer sub-class with context-manager operation"""
+    def __enter__( self ):
+        """Start use of the program"""
+        glUseProgram( self )
+    def __exit__( self, typ, val, tb ):
+        """Stop use of the program"""
+        glUseProgram( 0 )
+    
+    def check_validate( self ):
+        """Check that the program validates
+        
+        Validation has to occur *after* linking/loading
+        
+        raises RuntimeError on failures
+        """
+        glValidateProgram( self )
+        validation = glGetProgramiv( self, GL_VALIDATE_STATUS )
+        if validation == GL_FALSE:
+            raise RuntimeError(
+                """Validation failure (%s): %s"""%(
+                validation,
+                glGetProgramInfoLog( self ),
+            ))
+        return self
+
+    def check_linked( self ):
+        """Check link status for this program
+        
+        raises RuntimeError on failures
+        """
+        link_status = glGetProgramiv( self, GL_LINK_STATUS )
+        if link_status == GL_FALSE:
+            raise RuntimeError(
+                """Link failure (%s): %s"""%(
+                link_status,
+                glGetProgramInfoLog( self ),
+            ))
+        return self
+
+    def retrieve( self ):
+        """Attempt to retrieve binary for this compiled shader
+        
+        Note that binaries for a program are *not* generally portable,
+        they should be used solely for caching compiled programs for 
+        local use; i.e. to reduce compilation overhead.
+        
+        returns (format,binaryData) for the shader program
+        """
+        from OpenGL.constants import GLint,GLenum 
+        from OpenGL.arrays import GLbyteArray
+        size = GLint()
+        glGetProgramiv( self, get_program_binary.GL_PROGRAM_BINARY_LENGTH, size )
+        result = GLbyteArray.zeros( (size.value,))
+        size2 = GLint()
+        format = GLenum()
+        get_program_binary.glGetProgramBinary( self, size.value, size2, format, result )
+        return format.value, result 
+    def load( self, format, binary ):
+        """Attempt to load binary-format for a pre-compiled shader
+        
+        See notes in retrieve
+        """
+        get_program_binary.glProgramBinary( self, format, binary, len(binary))
+        self.check_validate()
+        self.check_linked()
+        return self
+
+def compileProgram(*shaders, **named):
+    """Create a new program, attach shaders and validate
+
+    shaders -- arbitrary number of shaders to attach to the
+        generated program.
+    separable (keyword only) -- set the separable flag to allow 
+        for partial installation of shader into the pipeline (see 
+        glUseProgramStages)
+    retrievable (keyword only) -- set the retrievable flag to 
+        allow retrieval of the program binary representation, (see 
+        glProgramBinary, glGetProgramBinary)
+
+    This convenience function is *not* standard OpenGL,
+    but it does wind up being fairly useful for demos
+    and the like.  You may wish to copy it to your code
+    base to guard against PyOpenGL changes.
+
+    Usage:
+
+        shader = compileProgram(
+            compileShader( source, GL_VERTEX_SHADER ),
+            compileShader( source2, GL_FRAGMENT_SHADER ),
+        )
+        glUseProgram( shader )
+
+    Note:
+        If (and only if) validation of the linked program
+        *passes* then the passed-in shader objects will be
+        deleted from the GL.
+
+    returns ShaderProgram() (GLuint) program reference
+    raises RuntimeError when a link/validation failure occurs
+    """
+    program = glCreateProgram()
+    if named.get('separable'):
+        glProgramParameteri( program, separate_shader_objects.GL_PROGRAM_SEPARABLE, GL_TRUE )
+    if named.get('retrievable'):
+        glProgramParameteri( program, get_program_binary.GL_PROGRAM_BINARY_RETRIEVABLE_HINT, GL_TRUE )
+    for shader in shaders:
+        glAttachShader(program, shader)
+    program = ShaderProgram( program )
+    glLinkProgram(program)
+#    program.check_validate()
+    program.check_linked()
+    for shader in shaders:
+        glDeleteShader(shader)
+    return program
+def as_bytes( s ):
+    """Utility to retrieve s as raw string (8-bit)"""
+    if isinstance( s, unicode ):
+        s = s.encode( ) # TODO: can we use latin-1 or utf-8?
+    return s
+def compileShader( source, shaderType ):
+    """Compile shader source of given type
+
+    source -- GLSL source-code for the shader
+    shaderType -- GLenum GL_VERTEX_SHADER, GL_FRAGMENT_SHADER, etc,
+
+    returns GLuint compiled shader reference
+    raises RuntimeError when a compilation failure occurs
+    """
+    if isinstance( source, (str,unicode)):
+        source = [ source ]
+    source = [ as_bytes(s) for s in source ]
+    shader = glCreateShader(shaderType)
+    glShaderSource( shader, source )
+    glCompileShader( shader )
+    result = glGetShaderiv( shader, GL_COMPILE_STATUS )
+    if not(result):
+        # TODO: this will be wrong if the user has
+        # disabled traditional unpacking array support.
+        raise RuntimeError(
+            """Shader compile failure (%s): %s"""%(
+                result,
+                glGetShaderInfoLog( shader ),
+            ),
+            source,
+            shaderType,
+        )
+    return shader
+
+
+
+     

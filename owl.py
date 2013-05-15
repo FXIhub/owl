@@ -35,7 +35,7 @@ Multiple tags per image
 class Viewer(QtGui.QMainWindow):
     def __init__(self):
         QtGui.QMainWindow.__init__(self)
-        
+
         self.statusBar = self.statusBar()
         self.statusBar.showMessage("Initializing...")
         self.init_settings()
@@ -71,6 +71,7 @@ class Viewer(QtGui.QMainWindow):
 
         self.setStyle()
         
+
 
     def after_show(self):
         if(args.filename != ""):
