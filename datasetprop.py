@@ -375,6 +375,7 @@ class DatasetProp(QtGui.QWidget):
         (min,max) = region.getRegion()
         self.displayMin.setValue(min)
         self.displayMax.setValue(max)
+        self.checkLimits()
         self.emitDisplayProp()
     # NORM
     def setNorm(self):
@@ -538,7 +539,7 @@ class DatasetProp(QtGui.QWidget):
         self.setSorting()
         self.setFilters()
         self.displayPropChanged.emit(self.currDisplayProp)
-    def checkLimits(self,foovalue=None):
+    def checkLimits(self):
         self.displayMax.setMinimum(self.displayMin.value())
         self.displayMin.setMaximum(self.displayMax.value())
         self.emitDisplayProp()
