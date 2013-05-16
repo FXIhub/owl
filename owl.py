@@ -16,6 +16,7 @@ from viewsplitter import ViewSplitter
 import logging
 import argparse
 import gc
+import time
 
 """
 Wishes:
@@ -400,7 +401,7 @@ class Viewer(QtGui.QMainWindow):
     def handleDatasetClicked(self,datasetName):
         dataset = self.CXINavigation.CXITree.datasets[datasetName]
         format = dataset.getCXIFormat()
-        if format == 1:
+        if format == 1 and not dataset.isCXIText():
             self.handleNeedDatasetPlot(datasetName)
         elif format == 2:
             if datasetName[:4] == "mask":

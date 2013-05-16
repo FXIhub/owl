@@ -546,7 +546,7 @@ class View2D(View,QtOpenGL.QGLWidget):
         # Meanwhile I'm going comment the code below
 
         if img not in self.loaderThread.imageData.keys():
-            self.logger.warning("This should not happen!!")
+            self.logger.warning("This should not happen!! image %d " % (img))
             return
 
         # If we already have the texture we just return
@@ -824,6 +824,8 @@ class View2D(View,QtOpenGL.QGLWidget):
         new_zoom = float(self.width()-width*self.subplotBorder)/(self.data.getCXIWidth()*width)
         self.scaleZoom(new_zoom/self.zoom)
     def clear(self):
+        QtCore.QCoreApplication.sendPostedEvents()
+        QtCore.QCoreApplication.processEvents()
         self.setData()
         self.setMask()
         #self.setSortingIndices()

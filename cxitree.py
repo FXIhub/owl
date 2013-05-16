@@ -31,7 +31,7 @@ def getCXIImageShape(dataset):
         return None
 h5py.Dataset.getCXIImageShape = getCXIImageShape
 def isCXIText(dataset):
-    return (dataset.dtype.name[-6:] == "string")
+    return (str(dataset.dtype.name).find("string") != -1)
 h5py.Dataset.isCXIText = isCXIText
 def getCXIMasks(dataset):
     masks = {}

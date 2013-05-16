@@ -53,7 +53,10 @@ class View1D(View,QtGui.QFrame):
             self.plot.setLabel("left","#")
         self.refreshPlot()
     def refreshPlot(self):
-        data = self.getData(1,(self.ix,self.iy,self.N)) 
+        if self.ix != None and self.iy != None:
+            data = self.getData(1,(self.ix,self.iy,self.N)) 
+        else:
+            data = self.getData(1) 
         if data != None:
             if self.indexProjector.imgs != None and self.applyIndexProjector:
                 data = data[self.indexProjector.imgs]

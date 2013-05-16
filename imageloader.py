@@ -15,7 +15,6 @@ class ImageLoader(QtCore.QObject):
 
     @QtCore.Slot(int)
     def loadImage(self,img):
-#        print "here"
         if(img in self.loadedImages()):
             # this might seem dangerous but it's not
             # as there is always only 1 thread running
@@ -39,6 +38,7 @@ class ImageLoader(QtCore.QObject):
             self.maskData[img] = mask[:]
         else:
             self.maskData[img] = None
+        #print "Emitting draw request %d " % (img)
         self.imageLoaded.emit(img)
     def clear(self):
         # Unlimited cache
