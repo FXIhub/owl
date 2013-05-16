@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import sys,os
+sys.path.append(os.path.dirname(os.path.realpath(__file__)))
 from OpenGL.GL import *
 from OpenGL.GLU import *
 #from PyQt4 import QtGui, QtCore, QtOpenGL, Qt
@@ -495,7 +496,10 @@ logging.basicConfig()
 QtCore.QCoreApplication.setOrganizationName("CXIDB");
 QtCore.QCoreApplication.setOrganizationDomain("cxidb.org");
 QtCore.QCoreApplication.setApplicationName("CXI Viewer");
-app = QtGui.QApplication(sys.argv)
+if hasattr(sys, 'argv'):
+    app = QtGui.QApplication(sys.argv)
+else:
+    app = QtGui.QApplication([])
 
 parser = argparse.ArgumentParser(description='')
 parser.add_argument('-d','--debug',dest='debuggingMode', action='store_true',help='debugging mode')
