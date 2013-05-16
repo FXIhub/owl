@@ -53,7 +53,7 @@ class View(QtCore.QObject):
             if self.data.isCXIStack():
                 return self.data[index,:,:]
             else:
-                return numpy.array(self.data[:,:])
+                return self.data[:,:]
     # MASK
     def setMask(self,maskDataset=None,maskOutBits=0):
         self.mask = maskDataset

@@ -42,16 +42,10 @@ def getCXIMasks(dataset):
     return masks
 h5py.Dataset.getCXIMasks = getCXIMasks
 def getCXIWidth(dataset):
-    if dataset.isCXIStack():
-        return dataset.shape[2]
-    else:
-        return dataset.shape[1]
+    return dataset.shape[-1]
 h5py.Dataset.getCXIWidth = getCXIWidth
 def getCXIHeight(dataset):
-    if dataset.isCXIStack():
-        return dataset.shape[1]
-    else:
-        return dataset.shape[0]
+    return dataset.shape[-2]
 h5py.Dataset.getCXIHeight = getCXIHeight
 
 class DatasetButton(QtGui.QPushButton):
