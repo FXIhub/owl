@@ -67,7 +67,7 @@ class Viewer(QtGui.QMainWindow):
             self.restoreState(settings.value("windowState"));
         QtCore.QTimer.singleShot(0,self.after_show)
         self.updateTimer = QtCore.QTimer()
-        self.updateTimer.setInterval(10000)
+        self.updateTimer.setInterval(int(settings.value("updateTimer")))
         self.updateTimer.timeout.connect(self.updateData)
         
 
@@ -97,6 +97,8 @@ class Viewer(QtGui.QMainWindow):
         if(not settings.contains("textureCacheSize")):
             # Default to 256 MB
             settings.setValue("textureCacheSize", 256);  
+        if(not settings.contains("updateTimer")):
+            settings.setValue("updateTimer", 10000);  
     def init_menus(self):
         self.fileMenu = self.menuBar().addMenu(self.tr("&File"));
         self.openFile = QtGui.QAction("Open",self)
@@ -298,6 +300,9 @@ class Viewer(QtGui.QMainWindow):
             v = diag.textureCacheSpin.value()
             settings.setValue("textureCacheSize",v)
             self.view.view2D.imageTextures.setSizeInBytes(v*1024*1024)
+            v = diag.updateTimerSpin.value()
+            settings.setValue("updateTimer",v)
+            self.updateTimer.setInterval(v)
     def handleNeedDatasetImage(self,datasetName=None):
         if str(datasetName) == "":
             self.CXINavigation.CXITree.loadData1()
@@ -497,6 +502,19 @@ class PreferencesDialog(QtGui.QDialog):
         self.textureCacheSpin.setSingleStep(128)
         self.textureCacheSpin.setValue(int(settings.value("textureCacheSize")))
         grid.addWidget(self.textureCacheSpin,row,1)
+        row += 1
+
+        f = QtGui.QFrame(self)
+        f.setFrameStyle(QtGui.QFrame.HLine | (QtGui.QFrame.Sunken))
+        grid.addWidget(f,row,0,1,2);
+        row += 1
+
+        grid.addWidget(QtGui.QLabel("Auto update timer (in ms):",self),row,0)
+        self.updateTimerSpin = QtGui.QSpinBox()
+        self.updateTimerSpin.setMaximum(86400000)
+        self.updateTimerSpin.setSingleStep(1000)
+        self.updateTimerSpin.setValue(int(settings.value("updateTimer")))
+        grid.addWidget(self.updateTimerSpin,row,1)
         row += 1
 
         self.layout().addLayout(grid)

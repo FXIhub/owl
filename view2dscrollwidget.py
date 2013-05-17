@@ -29,8 +29,9 @@ class View2DScrollWidget(QtGui.QWidget):
             self.scrollbar.setPageStep(imgHeight)
             maximum = self.view2D.maximumTranslation()            
             self.scrollbar.setMaximum(maximum)
-            self.scrollbar.setValue(0)
-            self.view2D.scrollTo(0)
+            if self.scrollbar.value() > maximum:
+                self.scrollbar.setValue(0)
+                self.view2D.scrollTo(0)
             self.scrollbar.show()
     def onTranslationChanged(self,x,y):
         self.scrollbar.setValue(y)

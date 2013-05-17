@@ -33,17 +33,17 @@ class View(QtCore.QObject):
             self.has_data = True        
             if self.data.isCXIStack():
                 self.stackSize = self.data.getCXIStackSize()
-                self.stackSizeChanged.emit(self.stackSize)
             else:                
                 self.stackSize = self.data.attrs.get("numEvents", [len(self.data)])[0]
         else:
             self.stackSize = 0
             self.has_data = False
-        if emitChanged == True and self.stackSize != oldSize:
+        if emitChanged == True and self.stackSize != oldSize and (self.data == None or self.data.isCXIStack()):
           self.stackSizeChanged.emit(self.stackSize)
     def setData(self,dataset=None):
-        self.data = dataset
-        self.updateStackSize(emitChanged=False)
+        print "Setting data"
+        self.data = dataset        
+        self.updateStackSize()
         self.datasetChanged.emit(dataset,self.datasetMode)
     def getData(self,nDims=2,index=0):
         if self.data == None:
