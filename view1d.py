@@ -51,6 +51,9 @@ class View1D(View,QtGui.QFrame):
         elif plotMode == "histogram":
             self.plot.setLabel("bottom",self.data.name)
             self.plot.setLabel("left","#")
+        elif plotMode == "average":
+            self.plot.setLabel("bottom","index")
+            self.plot.setLabel("left",datasetName)            
         self.refreshPlot()
     def refreshPlot(self):
         if self.ix != None and self.iy != None:
@@ -72,8 +75,14 @@ class View1D(View,QtGui.QFrame):
                 self.p.setData(edges,hist)        
                 # does not seem to work
                 self.line.hide()
+            elif self.plotMode == "average":
+                self.p.setData(self.movingAverage(data,100))
+                self.line.hide()
     def emitViewIndexSelected(self,foovalue=None):
         index = int(self.line.getXPos())
         self.viewIndexSelected.emit(index)
     def refreshDisplayProp(self,datasetProp):
         self.refreshPlot()
+    def movingAverage(data, window_size):
+        window= numpy.ones(int(window_size))/float(window_size)
+        return numpy.convolve(data, window, 'same')

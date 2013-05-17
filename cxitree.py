@@ -140,7 +140,7 @@ class DatasetPlotMenu(DatasetMenu):
         actionGroup = QtGui.QActionGroup(self)
         actionGroup.setExclusive(True)
         self.plotActions = {}
-        keys = ["plot","histogram"]
+        keys = ["plot","average","histogram"]
         for key in keys:
             self.plotActions[key] = actionGroup.addAction(key)
             self.addAction(self.plotActions[key])
