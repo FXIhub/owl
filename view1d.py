@@ -69,19 +69,26 @@ class View1D(View,QtGui.QFrame):
                     data = data[self.indexProjector.imgs]
             if self.p == None:
                 self.p = self.plot.plot(numpy.zeros(1), pen=(255,0,0))
+                self.plot.enableAutoRange('xy')
             if self.plotMode == "plot":
+                self.plot.enableAutoRange('xy')
                 self.p.setData(data)
                 # does not seem to work
                 self.line.show()
+                #self.refreshPlot() #tomas test
             elif self.plotMode == "histogram":
                 (hist,edges) = numpy.histogram(data,bins=200)
                 edges = (edges[:-1]+edges[1:])/2.0
+                self.plot.enableAutoRange('xy')
                 self.p.setData(edges,hist)        
                 # does not seem to work
                 self.line.hide()
+                #self.refreshPlot() #tomas test
             elif self.plotMode == "average":
+                self.plot.enableAutoRange('xy')
                 self.p.setData(self.movingAverage(data,1000))
                 self.line.hide()
+                #self.refreshPlot() #tomas test
     def emitViewIndexSelected(self,foovalue=None):
         index = int(self.line.getXPos())
         self.viewIndexSelected.emit(index)
@@ -90,3 +97,4 @@ class View1D(View,QtGui.QFrame):
     def movingAverage(self,data, window_size):
         window= numpy.ones(int(window_size))/float(window_size)
         return numpy.convolve(data, window, 'same')
+    
