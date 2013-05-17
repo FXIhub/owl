@@ -66,6 +66,9 @@ class Viewer(QtGui.QMainWindow):
         if(settings.contains("windowState")):
             self.restoreState(settings.value("windowState"));
         QtCore.QTimer.singleShot(0,self.after_show)
+        self.updateTimer = QtCore.QTimer()
+        self.updateTimer.setInterval(10000)
+        self.updateTimer.timeout.connect(self.updateData)
         
 
         self.initConnections()
@@ -139,6 +142,18 @@ class Viewer(QtGui.QMainWindow):
         act.setCheckable(True)
         act.setShortcut(QtGui.QKeySequence("Ctrl+S"))
         act.triggered.connect(self.view.view2D.toggleSlideShow)
+        self.viewMenu.addAction(act)
+
+        act = QtGui.QAction("Auto last",self)
+        act.setCheckable(True)
+        act.setShortcut(QtGui.QKeySequence("Ctrl+L"))
+        act.triggered.connect(self.view.view2D.toggleAutoLast)
+        self.viewMenu.addAction(act)
+
+        act = QtGui.QAction("Auto update",self)
+        act.setCheckable(True)
+        act.setShortcut(QtGui.QKeySequence("Ctrl+U"))
+        act.triggered.connect(self.toggleUpdate)
         self.viewMenu.addAction(act)
 
         self.viewMenu.addSeparator()
@@ -417,6 +432,14 @@ class Viewer(QtGui.QMainWindow):
         self.CXINavigation.datasetBoxes[datasetMode].button.setName(n)
     def handleViewIndexSelected(self,index):
         self.view.view2D.browseToViewIndex(index)
+    def toggleUpdate(self):
+        if self.updateTimer.isActive():
+            self.updateTimer.stop()
+        else:
+            self.updateTimer.start()
+    def updateData(self):
+        self.view.view2D.updateStackSize()
+        self.view.view1D.updateStackSize()
 
 
 class PreferencesDialog(QtGui.QDialog):

@@ -11,25 +11,39 @@ class View(QtCore.QObject):
     def __init__(self,parent=None,datasetMode="image"):
         QtCore.QObject.__init__(self)
         self.parent = parent
+        self.autoLast = False
+        self.stackSize = 0
         self.datasetMode = datasetMode
         self.setData()
         self.setMask()
         #self.setSortingIndices()
         self.stackSizeChanged.connect(self.indexProjector.handleStackSizeChanged)
     def getStackSize(self):
-        if self.data == None:
-            return 0
-        else:
-            len(self.data)
+        return self.stackSize
+        #if self.data == None:
+        #    return 0
+        #else:
+        #    len(self.data)
+    def toggleAutoLast(self):
+        self.autoLast = not self.autoLast
     # DATA
+    def updateStackSize(self, emitChanged=True):
+        oldSize = self.stackSize
+        if self.data != None:
+            self.has_data = True        
+            if self.data.isCXIStack():
+                self.stackSize = self.data.getCXIStackSize()
+                self.stackSizeChanged.emit(self.stackSize)
+            else:                
+                self.stackSize = self.data.attrs.get("numEvents", [len(self.data)])[0]
+        else:
+            self.stackSize = 0
+            self.has_data = False
+        if emitChanged == True and self.stackSize != oldSize:
+          self.stackSizeChanged.emit(self.stackSize)
     def setData(self,dataset=None):
         self.data = dataset
-        if self.data != None:
-            self.has_data = True
-            if dataset.isCXIStack():
-                self.stackSizeChanged.emit(dataset.getCXIStackSize())
-        else:
-            self.has_data = False
+        self.updateStackSize(emitChanged=False)
         self.datasetChanged.emit(dataset,self.datasetMode)
     def getData(self,nDims=2,index=0):
         if self.data == None:

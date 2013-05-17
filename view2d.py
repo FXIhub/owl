@@ -22,6 +22,7 @@ class View2D(View,QtOpenGL.QGLWidget):
     def __init__(self,viewer,parent=None):
         View.__init__(self,parent,"image")
         QtOpenGL.QGLWidget.__init__(self,parent)
+        self.autoLast = False
         self.logger = logging.getLogger("View2D")
         # If you want to see debug messages change level here
         self.logger.setLevel(logging.WARNING)
@@ -68,6 +69,8 @@ class View2D(View,QtOpenGL.QGLWidget):
         self.slideshowTimer = QtCore.QTimer()
         self.slideshowTimer.setInterval(2000)
         self.slideshowTimer.timeout.connect(self.nextSlideRow)
+
+        self.stackSizeChanged.connect(self.browseToLastIfAuto)
 
     def stopThreads(self):
         while(self.imageLoader.isRunning()):
@@ -641,6 +644,7 @@ class View2D(View,QtOpenGL.QGLWidget):
             self.slideshowTimer.stop()
         else:
             self.slideshowTimer.start()
+
     def nextSlideRow(self):
         self.nextRow(wrap=True)
     def nextRow(self,wrap=False):
@@ -654,6 +658,10 @@ class View2D(View,QtOpenGL.QGLWidget):
     def browseToViewIndex(self,index):
         img_height =  self.getImgHeight("window",True)
         self.translateTo([0,img_height*int(numpy.floor(index/self.stackWidth))])
+    def browseToLastIfAuto(self,size):
+        self.indexProjector.handleStackSizeChanged
+        if self.autoLast:
+            self.browseToViewIndex(size-1)
     def mouseReleaseEvent(self, event):
         self.dragging = False
         # Select even when draggin

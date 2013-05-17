@@ -309,7 +309,10 @@ class DatasetProp(QtGui.QWidget):
         if dataset != None:
             self.dataset = dataset
             string = "Dimensions: "
-            for d in dataset.shape:
+            shape = list(dataset.shape)
+            if dataset.getCXIStackSize():
+                shape[0] = dataset.getCXIStackSize()
+            for d in shape:
                 string += str(d)+"x"
             string = string[:-1]
             self.dimensionality.setText(string)

@@ -9,21 +9,24 @@ import sys,os
 def isCXIStack(dataset):
     items = dataset.attrs.items()
     if len(items) > 0:
-        return ("axes" == items[0][0])
+        cacheCXIStack = ("axes" == items[0][0])
     else:
-        return False
+        cacheCXIStack = False
+    return cacheCXIStack
+        
 h5py.Dataset.isCXIStack = isCXIStack 
 def getCXIStackSize(dataset):
     if dataset.isCXIStack():
-        return dataset.shape[0]
+        return dataset.attrs.get("numEvents", [dataset.shape[0]])[0]
     else:
         None
 h5py.Dataset.getCXIStackSize = getCXIStackSize 
 def getCXIFormat(dataset):
-    N = len(dataset.shape)
-    if dataset.isCXIStack() and N == 3:
-        N = 2
-    return N
+    cacheCXIformat = len(dataset.shape)
+    if dataset.isCXIStack() and cacheCXIformat == 3:
+        cacheCXIformat = 2
+    return cacheCXIformat
+
 h5py.Dataset.getCXIFormat = getCXIFormat
 def getCXIImageShape(dataset):
     if dataset.getCXIFormat() == 2:
