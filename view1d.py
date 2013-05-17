@@ -34,7 +34,6 @@ class View1D(View,QtGui.QFrame):
         self.plot.getAxis("right").setWidth(space)
     def loadData(self,dataset,plotMode,ix=None,iy=None,N=None):
         self.setData(dataset)
-        self.plotMode = plotMode
         self.ix = ix
         self.iy = iy
         self.N = N
@@ -42,27 +41,32 @@ class View1D(View,QtGui.QFrame):
             self.applyIndexProjector = False
         else:
             self.applyIndexProjector = True
-        datasetName = self.data.name
+        self.datasetName = self.data.name
         if ix != None and iy != None:
-            datasetName += (" (%i,%i)" % (ix,iy))
+            self.datasetName += (" (%i,%i)" % (ix,iy))
+        self.setPlotMode(plotMode)
+        self.refreshPlot()
+    def setPlotMode(self,plotMode):
+        self.plotMode = plotMode
         if plotMode == "plot":
             self.plot.setLabel("bottom","index")
-            self.plot.setLabel("left",datasetName)
+            self.plot.setLabel("left",self.datasetName)
         elif plotMode == "histogram":
-            self.plot.setLabel("bottom",self.data.name)
+            self.plot.setLabel("bottom",self.datasetName)
             self.plot.setLabel("left","#")
         elif plotMode == "average":
             self.plot.setLabel("bottom","index")
-            self.plot.setLabel("left",datasetName)            
-        self.refreshPlot()
+            self.plot.setLabel("left",self.datasetName)           
     def refreshPlot(self):
         if self.ix != None and self.iy != None:
             data = self.getData(1,(self.ix,self.iy,self.N)) 
         else:
             data = self.getData(1) 
         if data != None:
+            # that is not nice but works:
             if self.indexProjector.imgs != None and self.applyIndexProjector:
-                data = data[self.indexProjector.imgs]
+                if data.shape == self.indexProjector.imgs.shape:
+                    data = data[self.indexProjector.imgs]
             if self.p == None:
                 self.p = self.plot.plot(numpy.zeros(1), pen=(255,0,0))
             if self.plotMode == "plot":
@@ -76,13 +80,13 @@ class View1D(View,QtGui.QFrame):
                 # does not seem to work
                 self.line.hide()
             elif self.plotMode == "average":
-                self.p.setData(self.movingAverage(data,100))
+                self.p.setData(self.movingAverage(data,1000))
                 self.line.hide()
     def emitViewIndexSelected(self,foovalue=None):
         index = int(self.line.getXPos())
         self.viewIndexSelected.emit(index)
     def refreshDisplayProp(self,datasetProp):
         self.refreshPlot()
-    def movingAverage(data, window_size):
+    def movingAverage(self,data, window_size):
         window= numpy.ones(int(window_size))/float(window_size)
         return numpy.convolve(data, window, 'same')

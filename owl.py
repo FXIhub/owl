@@ -413,6 +413,7 @@ class Viewer(QtGui.QMainWindow):
         self.viewActions["View 1D"].setChecked(True)
     def handlePlotModeTriggered(self,foovalue=None):
         self.view.view1D.setPlotMode(self.CXINavigation.datasetMenus["plot"].getPlotMode())
+        self.view.view1D.refreshPlot()
         if self.view.view1D.data != None:
             self.viewActions["View 1D"].setChecked(False)
             self.view.view1D.show()
