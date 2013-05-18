@@ -21,6 +21,7 @@ class View1D(View,QtGui.QFrame):
         self.iy = None
         self.N = None
         self.applyIndexProjector = True
+        self.stackSizeChanged.connect(self.refreshPlot)
     def initPlot(self):
         self.plot = pyqtgraph.PlotWidget()
         line = pyqtgraph.InfiniteLine(0,90,None,True)
@@ -63,8 +64,8 @@ class View1D(View,QtGui.QFrame):
         else:
             data = self.getData(1) 
         if data != None:
-            # that is not nice but works:
             if self.indexProjector.imgs != None and self.applyIndexProjector:
+                # that is not nice but works:
                 if data.shape == self.indexProjector.imgs.shape:
                     data = data[self.indexProjector.imgs]
             if self.p == None:
@@ -90,3 +91,4 @@ class View1D(View,QtGui.QFrame):
     def movingAverage(self,data, window_size):
         window= numpy.ones(int(window_size))/float(window_size)
         return numpy.convolve(data, window, 'same')
+    

@@ -270,6 +270,69 @@ class DatasetProp(QtGui.QWidget):
         
         self.pixelStackBox.setLayout(self.pixelStackBox.vbox)
         self.pixelStackBox.show()
+
+###
+
+        #self.plotBox = QtGui.QGroupBox("Plot")
+        #self.plotBox.vbox = QtGui.QVBoxLayout()
+        #hbox0 = QtGui.QHBoxLayout()
+
+        #validatorInt = QtGui.QIntValidator()
+        #validatorInt.setBottom(0)
+        #validatorSci = QtGui.QDoubleValidator()
+        #validatorSci.setDecimals(3)
+        #validatorSci.setNotation(QtGui.QDoubleValidator.ScientificNotation)
+
+        #self.plotNBinsEdit = QtGui.QLineEdit(self)
+        #self.plotNBinsEdit.setMaximumWidth(100)
+        #self.plotNBinsEdit.setValidator(validatorInt)
+
+        #self.plotXMinEdit = QtGui.QLineEdit(self)
+        #self.plotXMinEdit.setMaximumWidth(100)
+        #self.plotXMinEdit.setValidator(validatorSci)
+
+        #self.plotXMaxEdit = QtGui.QLineEdit(self)
+        #self.plotXMaxEdit.setMaximumWidth(100)
+        #self.plotXMaxEdit.setValidator(validatorSci)
+
+        #self.plotNEdit = QtGui.QLineEdit(self)
+        #self.plotNEdit.setMaximumWidth(100)
+        #self.plotNEdit.setValidator(validatorSci)
+
+        #vbox = QtGui.QVBoxLayout()
+
+        #hbox = QtGui.QHBoxLayout()
+        #hbox.addWidget(QtGui.QLabel("X:"))
+        #hbox.addWidget(self.plotXEdit)
+        #vbox.addLayout(hbox)
+
+        #hbox = QtGui.QHBoxLayout()
+        #hbox.addWidget(QtGui.QLabel("Y:"))
+        #hbox.addWidget(self.plotYEdit)
+        #vbox.addLayout(hbox)
+
+        #hbox = QtGui.QHBoxLayout()
+        #hbox.addWidget(QtGui.QLabel("N:"))
+        #hbox.addWidget(self.plotNEdit)
+        #vbox.addLayout(hbox)
+
+        #hbox0.addLayout(vbox)
+
+        #self.plotPickButton = QtGui.QPushButton("Pick",self)
+        #self.plotPick = False
+        #hbox0.addWidget(self.plotPickButton)
+        #self.plotBox.vbox.addLayout(hbox0)
+
+        #self.plotPlotButton = QtGui.QPushButton("Plot",self)
+        #self.plotBox.vbox.addWidget(self.plotPlotButton)
+        
+        #self.plotBox.setLayout(self.plotBox.vbox)
+        #self.plotBox.show()
+
+
+
+###
+
         # add all widgets to main vbox
         self.vboxScroll.addWidget(self.generalBox)
         self.vboxScroll.addWidget(self.imageBox)        

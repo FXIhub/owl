@@ -62,7 +62,8 @@ class View(QtCore.QObject):
                     #data[:] = self.data[iz,:,:]
                     return data
             else:
-                return numpy.array(self.data).flatten()                
+		if "numEvents" in self.data.attrs.keys():
+		    return numpy.array(self.data).flatten()[:self.data.attrs["numEvents"]]
         elif nDims == 2:
             if self.data.isCXIStack():
                 return self.data[index,:,:]
