@@ -71,6 +71,7 @@ class View2D(View,QtOpenGL.QGLWidget):
         self.slideshowTimer.timeout.connect(self.nextSlideRow)
 
         self.stackSizeChanged.connect(self.browseToLastIfAuto)
+	self.saveToPNGAuto = False
 
     def stopThreads(self):
         while(self.imageLoader.isRunning()):
@@ -473,10 +474,13 @@ class View2D(View,QtOpenGL.QGLWidget):
                     # Set and emit current view index
                     self.visibleImg = self.windowToImage(self.getImgWidth("window",True)/2,self.getImgHeight("window",True)/2,0,False,False)
                     self.visibleImgChanged.emit(self.visibleImg,self.getNImages(),self.indexProjector.imgToIndex(self.visibleImg),self.getNImagesVisible())
+		    if self.saveToPNGAuto:
+			self.saveToPNG()
 #        glFlush()
 #        time4 = time.time()
 #        print '%s function took %0.3f ms' % ("paintGL", (time4-time3)*1000.0)
 #        self.time1 = time.time()
+
     def addToStack(self,data):
         pass
     def loadStack(self,data):
@@ -882,3 +886,56 @@ class View2D(View,QtOpenGL.QGLWidget):
             self.setStackWidth(datasetProp["imageStackSubplotsValue"])
             self.indexProjector.setProjector(datasetProp["sortingDataset"],datasetProp["sortingInverted"],datasetProp["filterMask"])
         self.updateGL()
+
+
+    def saveToPNG(self):
+	img = self.visibleImg
+	imageData = self.loaderThread.imageData[img]
+        maskData = self.loaderThread.maskData[img]
+	toPNG("%s_%i.png" % (self.viewer.filename[:-4],img),numpy.log10(imageData)*numpy.log10(10*(maskData==0)),background="black")
+	
+    def toggleSaveToPNGAuto(self):
+	if self.saveToPNGAuto:
+	    self.saveToPNGAuto = False
+	else:
+	    self.saveToPNGAuto = True
+	
+def toPNG(fname, arr, **kwargs):
+    from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+    from matplotlib.figure import Figure
+    from matplotlib.colors import ColorConverter as CC
+    C = CC()
+    
+    #if pylab.isinteractive():
+    #    i_was_on = True
+    #    pylab.ioff()
+    #else:
+    #    i_was_on = False
+        
+    fig = Figure(figsize=arr.shape[::-1], dpi=1, frameon=False)
+    canvas = FigureCanvas(fig)
+
+    if 'background' in kwargs.keys():
+        if kwargs['background'] != 'transparent':
+            [r,g,b] = C.to_rgb(kwargs['background'])
+            BG = numpy.ones(shape=(arr.shape[0],arr.shape[1],3))
+            BG[:,:,0] = r
+            BG[:,:,1] = g
+            BG[:,:,2] = b
+            fig.figimage(BG)
+
+    fig.figimage(arr,
+                 xo = kwargs.get('xo',0),
+                 yo = kwargs.get('yo',0),
+                 alpha = kwargs.get('alpha',None),
+                 norm = kwargs.get('norm',None),
+                 cmap = kwargs.get('cmap',None),
+                 vmin = kwargs.get('vmin',None),
+                 vmax = kwargs.get('vmax',None),
+                 origin = kwargs.get('origin',None))
+    
+    fig.savefig(fname,
+                dpi=1,
+                format = kwargs.get('format',None))
+    #if i_was_on:
+    #    pylab.ion()

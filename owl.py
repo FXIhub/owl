@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 
+
 import sys,os
 sys.path.append(os.path.dirname(os.path.realpath(__file__)))
+print (sys.version)
 from OpenGL.GL import *
 from OpenGL.GLU import *
 #from PyQt4 import QtGui, QtCore, QtOpenGL, Qt
@@ -18,6 +20,7 @@ import logging
 import argparse
 import gc
 import time
+
 
 """
 Wishes:
@@ -82,6 +85,7 @@ class Viewer(QtGui.QMainWindow):
         if(args.filename != ""):
             self.openCXIFile(args.filename)        
     def openCXIFile(self,filename):
+	self.filename = filename
         self.CXINavigation.CXITree.buildTree(filename)
         self.handleNeedDatasetImage("/entry_1/data_1/data")
     def init_settings(self):
@@ -122,6 +126,20 @@ class Viewer(QtGui.QMainWindow):
         act.setShortcut(QtGui.QKeySequence.MoveToNextPage)
         self.goMenu.nextRow = act
         self.goMenu.addAction(act)
+
+        self.saveMenu = self.menuBar().addMenu(self.tr("&Save"));
+
+        act = QtGui.QAction("To PNG",self)
+        act.setShortcut(QtGui.QKeySequence("Ctrl+S"))
+        self.saveMenu.toPNG = act
+        self.saveMenu.addAction(act)
+
+        act = QtGui.QAction("To PNG Auto",self)
+        #act.setShortcut(QtGui.QKeySequence("Ctrl+S"))
+	act.setCheckable(True)
+        act.setChecked(False)
+        self.saveMenu.toPNGAuto = act
+        self.saveMenu.addAction(act)
 
         self.viewMenu = self.menuBar().addMenu(self.tr("&View"));
 
@@ -236,6 +254,8 @@ class Viewer(QtGui.QMainWindow):
         self.view.view1D.viewIndexSelected.connect(self.handleViewIndexSelected)   
         self.goMenu.nextRow.triggered.connect(self.view.view2D.nextRow)
         self.goMenu.previousRow.triggered.connect(self.view.view2D.previousRow)
+	self.saveMenu.toPNG.triggered.connect(self.view.view2D.saveToPNG)
+	self.saveMenu.toPNGAuto.triggered.connect(self.view.view2D.toggleSaveToPNGAuto)
         
     def openFileClicked(self):
         fileName = QtGui.QFileDialog.getOpenFileName(self,"Open CXI File", None, "CXI Files (*.cxi)");
