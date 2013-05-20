@@ -10,6 +10,7 @@ import numpy
 import math
 from shaderprogram import compileProgram, compileShader
 import logging
+import time
 from cache import GLCache
         
 class View2D(View,QtOpenGL.QGLWidget):
@@ -48,6 +49,7 @@ class View2D(View,QtOpenGL.QGLWidget):
         self.lastHoveredViewIndex = None
         self.stackWidth = 1;
         self.has_data = False
+        self.remainSet = []
 
         self.loaderThread = ImageLoader(None,self)
         self.needsImage.connect(self.loaderThread.loadImage)
@@ -61,7 +63,8 @@ class View2D(View,QtOpenGL.QGLWidget):
         self.loadingImageAnimationFrame = 0
         self.loadingImageAnimationTimer = QtCore.QTimer()
         self.loadingImageAnimationTimer.timeout.connect(self.incrementLoadingImageAnimationFrame)
-        self.loadingImageAnimationTimer.start(100)
+        self.loadingImageAnimationTimer.setSingleShot(True)
+        self.loadingImageAnimationTimer.setInterval(100)
 
         self.setAcceptDrops(True)
 #        self.time1 = time.time()
@@ -203,6 +206,13 @@ class View2D(View,QtOpenGL.QGLWidget):
             }
         ''',GL_FRAGMENT_SHADER),
         )
+        self.vminLoc = glGetUniformLocation(self.shader, "vmin")
+        self.vmaxLoc = glGetUniformLocation(self.shader, "vmax")
+        self.gammaLoc = glGetUniformLocation(self.shader, "gamma")
+        self.normLoc = glGetUniformLocation(self.shader, "norm")
+        self.clampLoc = glGetUniformLocation(self.shader, "clamp")
+        self.maskedBitsLoc = glGetUniformLocation(self.shader, "maskedBits")
+
     def initColormapTextures(self):
         n = 1024
         a = numpy.linspace(0.,1.,n)
@@ -400,18 +410,12 @@ class View2D(View,QtOpenGL.QGLWidget):
             # If not mask is available load the default mask
             glBindTexture (GL_TEXTURE_2D, self.defaultMaskTexture);
 
-        loc = glGetUniformLocation(self.shader, "vmin")
-        glUniform1f(loc,self.normVmin)
-        loc = glGetUniformLocation(self.shader, "vmax")
-        glUniform1f(loc,self.normVmax)
-        loc = glGetUniformLocation(self.shader, "gamma")
-        glUniform1f(loc,self.normGamma)
-        loc = glGetUniformLocation(self.shader, "norm")
-        glUniform1i(loc,self.normScalingValue)
-        loc = glGetUniformLocation(self.shader, "clamp")
-        glUniform1i(loc,self.normClamp)
-        loc = glGetUniformLocation(self.shader, "maskedBits")
-        glUniform1f(loc,self.maskOutBits)
+        glUniform1f(self.vminLoc,self.normVmin)
+        glUniform1f(self.vmaxLoc,self.normVmax)
+        glUniform1f(self.gammaLoc,self.normGamma)
+        glUniform1i(self.normLoc,self.normScalingValue)
+        glUniform1i(self.clampLoc,self.normClamp)
+        glUniform1f(self.maskedBitsLoc,self.maskOutBits)
 
         glBegin (GL_QUADS);
         glTexCoord2f (0.0, 0.0);
@@ -446,7 +450,7 @@ class View2D(View,QtOpenGL.QGLWidget):
         Drawing routine
         '''
 #        self.time2 = time.time()
-#        time3 = time.time()
+        time3 = time.time()
 #        print '%s function took %0.3f ms' % ("Non paintGL", (self.time2-self.time1)*1000.0)
         if(not self.isValid() or not self.isVisible()):
             return
@@ -460,6 +464,7 @@ class View2D(View,QtOpenGL.QGLWidget):
         glScalef(self.zoom,self.zoom,1.0);
         # Put GL origin on the top left corner of the widget
         glTranslatef(-(self.width()/self.zoom)/2.,(self.height()/self.zoom)/2.,0)
+        startTimer = False
         if(self.has_data):
             if(self.data.getCXIFormat() == 2):
                 img_width = self.getImgWidth("scene",False)
@@ -468,18 +473,34 @@ class View2D(View,QtOpenGL.QGLWidget):
                 self.updateTextures(visible)
                 for i,img in enumerate(set.intersection(set(self.imageTextures.keys()),set(visible),set(self.loaderThread.loadedImages()))):
                     self.paintImage(img)
-                for img in (set(visible) - set(self.imageTextures.keys())):
-                    self.paintLoadingImage(img)
+                remainset = (set(visible) - set(self.imageTextures.keys()))
+                self.remainSet = remainset
+                if len(remainset) > 0:
+                    for img in remainset:
+                        self.paintLoadingImage(img)
+                    startTimer = True
+                else:
+                    self.loadingImageAnimationFrame = 0
+                    if self.loadingImageAnimationTimer.isActive():
+                        self.loadingImageAnimationTimer.stop()
+                    
                 if len(visible) > 0:
                     # Set and emit current view index
-                    self.visibleImg = self.windowToImage(self.getImgWidth("window",True)/2,self.getImgHeight("window",True)/2,0,False,False)
-                    self.visibleImgChanged.emit(self.visibleImg,self.getNImages(),self.indexProjector.imgToIndex(self.visibleImg),self.getNImagesVisible())
+                    newVal = self.windowToImage(self.getImgWidth("window",True)/2,self.getImgHeight("window",True)/2,0,False,False)
+                    if self.visibleImg != newVal:
+                        self.visibleImg = self.windowToImage(self.getImgWidth("window",True)/2,self.getImgHeight("window",True)/2,0,False,False)
+                        self.visibleImgChanged.emit(self.visibleImg,self.getNImages(),self.indexProjector.imgToIndex(self.visibleImg),self.getNImagesVisible())
 		    if self.saveToPNGAuto:
 			self.saveToPNG()
+        if startTimer:
+            # If we are slow-drawing, please wait more before drawing again...
+            time4 = time.time()
+            self.loadingImageAnimationTimer.setInterval(int((time4-time3)*1000 + 100))
+            self.loadingImageAnimationTimer.start()
 #        glFlush()
-#        time4 = time.time()
 #        print '%s function took %0.3f ms' % ("paintGL", (time4-time3)*1000.0)
 #        self.time1 = time.time()
+    
 
     def addToStack(self,data):
         pass
@@ -578,7 +599,10 @@ class View2D(View,QtOpenGL.QGLWidget):
             glPixelStorei(GL_UNPACK_ALIGNMENT, 1)
             glTexImage2D(GL_TEXTURE_2D, 0, OpenGL.GL.ARB.texture_float.GL_ALPHA32F_ARB, imageData.shape[1], imageData.shape[0], 0, GL_ALPHA, GL_FLOAT, maskData);
             self.maskTextures[img] = texture
-        self.updateGL()
+        self.remainSet = set.difference(self.remainSet, [img])
+        if len(self.remainSet) == 0:
+            self.updateGL()
+            
     def updateTextures(self,images):
         for img in images:
             if(img not in set.intersection(set(self.imageTextures.keys()),set(self.loaderThread.loadedImages()))):
@@ -882,7 +906,8 @@ class View2D(View,QtOpenGL.QGLWidget):
                 self.normClamp = 1
             else:
                 self.normClamp = 0
-            self.colormapText = datasetProp["colormapText"]
+            if not hasattr(self, 'colormapText') or self.colormapText != datasetProp["colormapText"]:
+                self.colormapText = datasetProp["colormapText"]
             self.setStackWidth(datasetProp["imageStackSubplotsValue"])
             self.indexProjector.setProjector(datasetProp["sortingDataset"],datasetProp["sortingInverted"],datasetProp["filterMask"])
         self.updateGL()

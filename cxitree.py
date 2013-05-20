@@ -10,6 +10,9 @@ def isCXIStack(dataset):
     items = dataset.attrs.items()
     if len(items) > 0:
         cacheCXIStack = ("axes" == items[0][0])
+        shape = dataset.shape
+        if len(shape) >= 3 and dataset.shape[2] == 1:
+            cacheCXIStack = False
     else:
         cacheCXIStack = False
     return cacheCXIStack
