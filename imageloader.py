@@ -32,12 +32,20 @@ class ImageLoader(QtCore.QObject):
         data = self.view.getData(2,img)
         mask = self.view.getMask(2,img)
         self.imageData[img] = numpy.ones((self.view.data.getCXIHeight(),self.view.data.getCXIWidth()),dtype=numpy.float32)
-        self.imageData[img] = data[:]
+        self.imageData[img][:] = data[:]
         if(mask != None):
             self.maskData[img] = numpy.ones((self.view.data.getCXIHeight(),self.view.data.getCXIWidth()),dtype=numpy.float32)
             self.maskData[img] = mask[:]
         else:
             self.maskData[img] = None
+
+        shape = (min(self.imageData[img].shape[0], 8192), min(self.imageData[img].shape[1], 8192))
+        if (shape[1] == 1):
+            shape = (shape[0], shape[0])
+            
+        #self.imageData[img] = self.imageData[img][0:shape[0],0:shape[1]]
+        self.imageData[img].resize(shape)
+        #        print "Debug b min %f max %f %s %s" % (numpy.amin(self.imageData[img]), numpy.amax(self.imageData[img]), self.imageData[img].shape, self.imageData[img].dtype)
         #print "Emitting draw request %d " % (img)
         self.imageLoaded.emit(img)
     def clear(self):

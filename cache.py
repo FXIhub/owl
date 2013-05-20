@@ -100,14 +100,15 @@ class GLCache(Cache):
                 self.logger.warning("Unsupported GL Texture Format %s" % format)
             self.itemSize = width*height*bytes_per_pixel
             size = self.sizeInBytes/self.itemSize
-            self.setMaxSize(size)
-            self.logger.debug("Setting GLCache size to %d" % size)
+            self.setMaxSize(size)            
+            self.logger.warning("Setting GLCache size to %d" % size)
         Cache.__setitem__(self,key,texture)
     def trim(self):
         with self.lock:
             if(self.maxSize > 0):
                 while len(self.dict) >= self.maxSize:
                     (k,v) = self.dict.popitem(last=False) # FIFO pop
+                    self.logger.warning("Texture %d , %s to be removed is %s" % (k, str(v), str(glIsTexture(v))))
                     glDeleteTextures(v)
                     self.logger.debug("Removing %d from GLCache" % k)
 
