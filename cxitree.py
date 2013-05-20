@@ -12,8 +12,7 @@ def isCXIStack(dataset):
         cacheCXIStack = ("axes" == items[0][0])
     else:
         cacheCXIStack = False
-    return cacheCXIStack
-        
+    return cacheCXIStack      
 h5py.Dataset.isCXIStack = isCXIStack 
 def getCXIStackSize(dataset):
     if dataset.isCXIStack():
@@ -163,19 +162,19 @@ class CXINavigation(QtGui.QWidget):
         self.datasetBoxes = {}
 
         self.datasetMenus["image"] = DatasetMenu(self)
-        basePath = os.path.dirname(os.path.realpath(__file__))
-        self.datasetBoxes["image"] = DatasetBox(basePath + "/icons/image.png","image",self.datasetMenus["image"])
+        self.basePath = os.path.dirname(os.path.realpath(__file__))
+        self.datasetBoxes["image"] = DatasetBox(self.basePath + "/icons/image.png","image",self.datasetMenus["image"])
         self.vbox.addLayout(self.datasetBoxes["image"])
 
         self.datasetMenus["mask"] = DatasetMaskMenu(self)
-        self.datasetBoxes["mask"] = DatasetBox(basePath + "/icons/mask_simple.png","mask",self.datasetMenus["mask"])
+        self.datasetBoxes["mask"] = DatasetBox(self.basePath + "/icons/mask_simple.png","mask",self.datasetMenus["mask"])
         self.vbox.addLayout(self.datasetBoxes["mask"])
 
         self.datasetMenus["sort"] = DatasetMenu(self)
-        self.datasetBoxes["sort"] = DatasetBox(basePath + "/icons/sort.png","sort",self.datasetMenus["sort"])
+        self.datasetBoxes["sort"] = DatasetBox(self.basePath + "/icons/sort.png","sort",self.datasetMenus["sort"])
         self.vbox.addLayout(self.datasetBoxes["sort"])
 
-        self.datasetBoxes["filter0"] = DatasetBox(basePath + "/icons/filter.png","filter",None)
+        self.datasetBoxes["filter0"] = DatasetBox(self.basePath + "/icons/filter.png","filter",None)
         self.vbox.addLayout(self.datasetBoxes["filter0"])
 
         self.vboxFilters = QtGui.QVBoxLayout()
@@ -189,7 +188,7 @@ class CXINavigation(QtGui.QWidget):
         self.vbox.addWidget(line)
 
         self.datasetMenus["plot"] = DatasetPlotMenu(self)
-        self.datasetBoxes["plot"] = DatasetBox(basePath + "/icons/plot.png","plot",self.datasetMenus["plot"])
+        self.datasetBoxes["plot"] = DatasetBox(self.basePath + "/icons/plot.png","plot",self.datasetMenus["plot"])
         self.vbox.addLayout(self.datasetBoxes["plot"])
 
         self.CXITree = CXITree(self)
@@ -198,7 +197,7 @@ class CXINavigation(QtGui.QWidget):
     def addFilterBox(self):
         menu = DatasetMenu(self)
         self.datasetMenus["filters"].append(menu)
-        box = DatasetBox(basePath + "/icons/filter.png","filter",menu)
+        box = DatasetBox(self.basePath + "/icons/filter.png","filter",menu)
         self.datasetBoxes["filters"].append(box)
         self.vboxFilters.addLayout(box)
         return box

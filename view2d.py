@@ -71,7 +71,11 @@ class View2D(View,QtOpenGL.QGLWidget):
         self.slideshowTimer.timeout.connect(self.nextSlideRow)
 
         self.stackSizeChanged.connect(self.browseToLastIfAuto)
+
+	settings = QtCore.QSettings()
 	self.saveToPNGAuto = False
+        self.PNGOutputPath = settings.value("PNGOutputPath")
+	print self.PNGOutputPath
 
     def stopThreads(self):
         while(self.imageLoader.isRunning()):
@@ -487,7 +491,9 @@ class View2D(View,QtOpenGL.QGLWidget):
         self.setData(data)
         self.zoomFromStackWidth()
     def loadImage(self,data):
-        if(data.getCXIFormat() == 2):        
+        if(data.getCXIFormat() == 2):
+            print data
+            print "Loading image"
             self.setData(data)
             self.stackWidth = 1
             self.setStackWidth(self.stackWidth)
@@ -511,9 +517,12 @@ class View2D(View,QtOpenGL.QGLWidget):
             else:
                 return len(self.indexProjector.imgs)
     def getImgHeight(self,reference,border=False):
-        imgHeight = self.data.getCXIHeight()
-        if border == True:
-            imgHeight += self.subplotSceneBorder()
+        if self.data != {} and self.data != None:
+            imgHeight = self.data.getCXIHeight()
+            if border == True:
+                imgHeight += self.subplotSceneBorder()
+        else:
+            imgHeight = 1000
         if reference == "window":
             return imgHeight*self.zoom
         elif reference == "scene":
@@ -530,6 +539,9 @@ class View2D(View,QtOpenGL.QGLWidget):
         visible = []
         if(self.has_data is False):
             return visible
+
+	if self.integrationMode != None:
+	    return [0]
 
         top_left = self.windowToViewIndex(0,0,0,checkExistance=False,clip=False)
         bottom_right = self.windowToViewIndex(self.width(),self.height(),0,checkExistance=False,clip=False)
@@ -836,6 +848,7 @@ class View2D(View,QtOpenGL.QGLWidget):
         new_zoom = float(self.width()-width*self.subplotBorder)/(self.data.getCXIWidth()*width)
         self.scaleZoom(new_zoom/self.zoom)
     def clear(self):
+	self.clearView()
         QtCore.QCoreApplication.sendPostedEvents()
         QtCore.QCoreApplication.processEvents()
         self.setData()
@@ -891,8 +904,18 @@ class View2D(View,QtOpenGL.QGLWidget):
     def saveToPNG(self):
 	img = self.visibleImg
 	imageData = self.loaderThread.imageData[img]
-        maskData = self.loaderThread.maskData[img]
-	toPNG("%s_%i.png" % (self.viewer.filename[:-4],img),numpy.log10(imageData)*numpy.log10(10*(maskData==0)),background="black")
+        #if self.loaderThread.maskData[img] != None:
+        #    maskData = self.loaderThread.maskData[img]
+        #else:
+        maskData = numpy.zeros_like(imageData)
+        if self.normClamp:
+            imageData[imageData<self.normVmin] = self.normVmin
+            imageData[imageData>self.normVmax] = self.normVmax
+        else:
+            maskData[imageData<self.normVmin] |= 1
+            maskData[imageData>self.normVmax] |= 1
+        toPNG("%s/%s_%i.png" % (self.PNGOutputPath,(self.viewer.filename.split("/")[-1])[:-4],img),numpy.log10(imageData)*numpy.log10(10*((maskData)==0)),background="black")
+        #toPNG("%s/%s_%i.png" % (self.PNGOutputPath,(self.viewer.filename.split("/")[-1])[:-4],img),(imageData),background="black")
 	
     def toggleSaveToPNGAuto(self):
 	if self.saveToPNGAuto:
@@ -906,7 +929,7 @@ def toPNG(fname, arr, **kwargs):
     from matplotlib.colors import ColorConverter as CC
     C = CC()
     
-    #if pylab.isinteractive():
+     #if pylab.isinteractive():
     #    i_was_on = True
     #    pylab.ioff()
     #else:

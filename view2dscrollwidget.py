@@ -21,7 +21,7 @@ class View2DScrollWidget(QtGui.QWidget):
     def onValueChanged(self,value):
         self.view2D.scrollTo(value)
     def update(self,foo=None):
-        if self.view2D.indexProjector.viewIndices == None or self.view2D.indexProjector.stackSize == None:
+        if self.view2D.data == None or self.view2D.data == {} or self.view2D.indexProjector.viewIndices == None or self.view2D.indexProjector.stackSize == None:
             self.scrollbar.hide()
         else:
             NViewIndices = len(self.view2D.indexProjector.viewIndices)

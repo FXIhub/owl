@@ -102,7 +102,10 @@ class Viewer(QtGui.QMainWindow):
             # Default to 256 MB
             settings.setValue("textureCacheSize", 256);  
         if(not settings.contains("updateTimer")):
-            settings.setValue("updateTimer", 10000);  
+            settings.setValue("updateTimer", 10000);
+        if(not settings.contains("PNGOutputPath")):
+            settings.setValue("PNGOutputPath", "./");
+        
     def init_menus(self):
         self.fileMenu = self.menuBar().addMenu(self.tr("&File"));
         self.openFile = QtGui.QAction("Open",self)
@@ -130,7 +133,7 @@ class Viewer(QtGui.QMainWindow):
         self.saveMenu = self.menuBar().addMenu(self.tr("&Save"));
 
         act = QtGui.QAction("To PNG",self)
-        act.setShortcut(QtGui.QKeySequence("Ctrl+S"))
+        act.setShortcut(QtGui.QKeySequence("Ctrl+P"))
         self.saveMenu.toPNG = act
         self.saveMenu.addAction(act)
 
@@ -256,6 +259,11 @@ class Viewer(QtGui.QMainWindow):
         self.goMenu.previousRow.triggered.connect(self.view.view2D.previousRow)
 	self.saveMenu.toPNG.triggered.connect(self.view.view2D.saveToPNG)
 	self.saveMenu.toPNGAuto.triggered.connect(self.view.view2D.toggleSaveToPNGAuto)
+
+	self.datasetProp.imageStackMeanButton.released.connect(lambda: self.handleNeedDatasetIntegratedImage("mean"))
+	self.datasetProp.imageStackStdButton.released.connect(lambda: self.handleNeedDatasetIntegratedImage("std"))
+	self.datasetProp.imageStackMinButton.released.connect(lambda: self.handleNeedDatasetIntegratedImage("min"))
+	self.datasetProp.imageStackMaxButton.released.connect(lambda: self.handleNeedDatasetIntegratedImage("max"))
         
     def openFileClicked(self):
         fileName = QtGui.QFileDialog.getOpenFileName(self,"Open CXI File", None, "CXI Files (*.cxi)");
@@ -304,7 +312,7 @@ class Viewer(QtGui.QMainWindow):
         settings.setValue("normVmax", self.datasetProp.currDisplayProp['normVmax'])
         QtGui.QMainWindow.closeEvent(self,event)
     def preferencesClicked(self):
-        diag = PreferencesDialog(self)
+	diag = PreferencesDialog(self)
         settings = QtCore.QSettings()
         if(diag.exec_()):
             if(diag.natural.isChecked()):
@@ -323,6 +331,9 @@ class Viewer(QtGui.QMainWindow):
             v = diag.updateTimerSpin.value()
             settings.setValue("updateTimer",v)
             self.updateTimer.setInterval(v)
+            v = diag.PNGOutputPath.text()
+            settings.setValue("PNGOutputPath",v)
+            self.view.view2D.PNGOutputPath = v
     def handleNeedDatasetImage(self,datasetName=None):
         if str(datasetName) == "":
             self.CXINavigation.CXITree.loadData1()
@@ -347,6 +358,10 @@ class Viewer(QtGui.QMainWindow):
                 self.handleNeedDatasetMask(group+"/mask")
             elif group+"/mask_shared" in self.CXINavigation.CXITree.datasets.keys():
                 self.handleNeedDatasetMask(group+"/mask_shared")
+    def handleNeedDatasetIntegratedImage(self,integrationMode):
+	self.view.view2D.integrationMode = integrationMode
+	self.view.view2D.updateStackSize(True)
+	self.view.view2D.clearTextures()
     def handleNeedDatasetMask(self,datasetName=None):
         if str(datasetName) == "":
             self.view.view2D.setMask()
@@ -536,6 +551,12 @@ class PreferencesDialog(QtGui.QDialog):
         self.updateTimerSpin.setSingleStep(1000)
         self.updateTimerSpin.setValue(int(settings.value("updateTimer")))
         grid.addWidget(self.updateTimerSpin,row,1)
+        row += 1
+
+        grid.addWidget(QtGui.QLabel("PNG output path:",self),row,0)
+        self.PNGOutputPath = QtGui.QLineEdit()
+        self.PNGOutputPath.setText(settings.value("PNGOutputPath"))
+        grid.addWidget(self.PNGOutputPath,row,1)
         row += 1
 
         self.layout().addLayout(grid)

@@ -14,6 +14,7 @@ class View(QtCore.QObject):
         self.autoLast = False
         self.stackSize = 0
         self.datasetMode = datasetMode
+	self.integrationMode = None
         self.setData()
         self.setMask()
         #self.setSortingIndices()
@@ -32,18 +33,23 @@ class View(QtCore.QObject):
         if self.data != None:
             self.has_data = True        
             if self.data.isCXIStack():
-                self.stackSize = self.data.getCXIStackSize()
-            else:                
-                self.stackSize = self.data.attrs.get("numEvents", [len(self.data)])[0]
+		self.stackSize = self.data.getCXIStackSize()
+            else:
+                if "numEvents" in self.data.attrs.keys():
+                    self.stackSize = self.data.attrs.get("numEvents")[0]
+                elif len(self.data.shape) == 3:
+                    self.stackSize = self.data.shape[2]
+                else:
+                    self.stackSize = 1
         else:
             self.stackSize = 0
             self.has_data = False
-        if emitChanged == True and self.stackSize != oldSize and (self.data == None or self.data.isCXIStack()):
-          self.stackSizeChanged.emit(self.stackSize)
+        if emitChanged == True and self.stackSize != oldSize:# and (self.data == None or self.data.isCXIStack()):
+            print "Stack size %i" % self.stackSize
+            self.stackSizeChanged.emit(self.stackSize)
     def setData(self,dataset=None):
-        print "Setting data"
         self.data = dataset        
-        self.updateStackSize()
+        self.updateStackSize(True)
         self.datasetChanged.emit(dataset,self.datasetMode)
     def getData(self,nDims=2,index=0):
         if self.data == None:
@@ -59,15 +65,29 @@ class View(QtCore.QObject):
                     data = numpy.zeros(Nz)
                     for i in range(Nz):
                         data[i] = self.data[iz[i],iy,ix]
-                    #data[:] = self.data[iz,:,:]
+		    #data[:] = self.data[iz,:,:]
                     return data
             else:
 		if "numEvents" in self.data.attrs.keys():
 		    return numpy.array(self.data).flatten()[:self.data.attrs["numEvents"]]
         elif nDims == 2:
-            if self.data.isCXIStack():
-                return self.data[index,:,:]
-            else:
+	    if self.data.isCXIStack():
+		if self.integrationMode == None:
+		    return self.data[index,:,:]
+		else:
+		    if self.indexProjector.filterMask == None:
+			d = self.data
+		    else:
+			d = self.data[self.indexProjector.filterMask,:,:]
+		    if self.integrationMode == "mean":
+			return numpy.mean(d,0)
+		    elif self.integrationMode == "std":
+			return numpy.std(d,0)
+		    elif self.integrationMode == "min":
+			return numpy.min(d,0)
+		    elif self.integrationMode == "max":
+			return numpy.max(d,0)
+	    else:
                 return self.data[:,:]
     # MASK
     def setMask(self,maskDataset=None,maskOutBits=0):
@@ -81,7 +101,10 @@ class View(QtCore.QObject):
             return None
         elif nDims == 2:
             if self.mask.isCXIStack():
-                mask = self.mask[img_sorted,:,:]
+		if self.integrationMode == None:
+		    mask = self.mask[img_sorted,:,:]
+		else:
+		    mask = numpy.zeros(shape=(self.data.shape[1],self.data.shape[2]))
             else:
                 mask = self.mask[:,:]
             # do not apply maskBits, we'll do it in shader
@@ -94,3 +117,10 @@ class View(QtCore.QObject):
             e.ignore() 
     def dropEvent(self, e):
         self.needDataset.emit(e.mimeData().text())
+
+    def clearView(self):
+	self.stackSize = 0
+	self.integrationMode = None
+        self.setData()
+        self.setMask()
+	

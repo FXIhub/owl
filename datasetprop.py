@@ -64,7 +64,7 @@ class DatasetProp(QtGui.QWidget):
         self.generalBox.vbox.addWidget(self.currentImg)
         self.generalBox.vbox.addWidget(self.currentViewIndex)
         # properties: image stack
-        self.imageStackBox = QtGui.QGroupBox("Image Stack Properties");
+        self.imageStackBox = QtGui.QGroupBox("Image Stack");
         self.imageStackBox.vbox = QtGui.QVBoxLayout()
         self.imageStackBox.setLayout(self.imageStackBox.vbox)
         # property: image stack plots width
@@ -75,6 +75,18 @@ class DatasetProp(QtGui.QWidget):
 #       self.imageStackSubplots.setMaximum(5)
         hbox.addWidget(self.imageStackSubplots)
         self.imageStackBox.vbox.addLayout(hbox)
+
+        hbox = QtGui.QVBoxLayout()
+	self.imageStackMeanButton = QtGui.QPushButton("Mean",parent=self)
+	self.imageStackStdButton = QtGui.QPushButton("Std",parent=self)
+	self.imageStackMinButton = QtGui.QPushButton("Min",parent=self)
+	self.imageStackMaxButton = QtGui.QPushButton("Max",parent=self)
+        hbox.addWidget(self.imageStackMeanButton)
+	hbox.addWidget(self.imageStackStdButton)
+	hbox.addWidget(self.imageStackMinButton)
+	hbox.addWidget(self.imageStackMaxButton)
+        self.imageStackBox.vbox.addLayout(hbox)
+	
         # properties: selected image
         self.imageBox = QtGui.QGroupBox("Selected Image");
         self.imageBox.vbox = QtGui.QVBoxLayout()
@@ -336,12 +348,12 @@ class DatasetProp(QtGui.QWidget):
         # add all widgets to main vbox
         self.vboxScroll.addWidget(self.generalBox)
         self.vboxScroll.addWidget(self.imageBox)        
-        self.vboxScroll.addWidget(self.pixelBox)        
         self.vboxScroll.addWidget(self.imageStackBox)
         self.vboxScroll.addWidget(self.pixelStackBox)
         self.vboxScroll.addWidget(self.displayBox)
         self.vboxScroll.addWidget(self.sortingBox)
         self.vboxScroll.addWidget(self.filterBox)
+        self.vboxScroll.addWidget(self.pixelBox)        
         self.vboxScroll.addStretch()
         self.setLayout(self.vbox)
         # clear all properties
@@ -401,7 +413,7 @@ class DatasetProp(QtGui.QWidget):
         self.datatype.setText("Data Type: ")
         self.datasize.setText("Data Size: ")
         self.dataform.setText("Data Form: ")
-        self.imageStackBox.hide()
+        self.imageStackBox.hide()	
     # VIEW
     def onPixelClicked(self,info):
         if self.dataset != None and info != None:
