@@ -20,6 +20,7 @@ class View2D(View,QtOpenGL.QGLWidget):
     translationChanged = QtCore.Signal(int,int)
     stackWidthChanged = QtCore.Signal(int)
     pixelClicked = QtCore.Signal(dict)
+    datasetChanged = QtCore.Signal(object)
     def __init__(self,viewer,parent=None):
         View.__init__(self,parent,"image")
         QtOpenGL.QGLWidget.__init__(self,parent)
@@ -78,8 +79,49 @@ class View2D(View,QtOpenGL.QGLWidget):
 	settings = QtCore.QSettings()
 	self.saveToPNGAuto = False
         self.PNGOutputPath = settings.value("PNGOutputPath")
-	print self.PNGOutputPath
+	#print self.PNGOutputPath
 
+    def setData(self,dataset=None):
+        self.data = dataset
+        if self.data != None:
+            self.has_data = True
+        else:
+            self.has_data = False
+        self.datasetChanged.emit(dataset)
+    def setMask(self,mask=None):
+        self.mask = mask
+    def setMaskOutBits(self,maskOutBits=0):
+        self.maskOutBits = maskOutBits
+    def getMask(self,img_sorted=0):
+        if self.mask == None:
+            return None
+        elif self.mask.isCXIStack():
+            if self.integrationMode == None:
+                return self.mask[img_sorted,:,:]
+            else:
+                return numpy.zeros(shape=(self.data.shape[1],self.data.shape[2]))
+        else:
+            return self.mask[:,:]
+    def getData(self,index=0):
+        if self.data.isCXIStack():
+            if self.integrationMode == None:
+                return self.data[index,:,:]
+            else:
+                if self.indexProjector.filterMask == None:
+                    d = self.data
+                else:
+                    d = self.data[self.indexProjector.filterMask,:,:]
+                if self.integrationMode == "mean":
+                    return numpy.mean(d,0)
+                elif self.integrationMode == "std":
+                    return numpy.std(d,0)
+                elif self.integrationMode == "min":
+                    return numpy.min(d,0)
+                elif self.integrationMode == "max":
+                    return numpy.max(d,0)
+        else:
+            return self.data[:,:]
+        
     def stopThreads(self):
         while(self.imageLoader.isRunning()):
             self.imageLoader.quit()
@@ -513,8 +555,8 @@ class View2D(View,QtOpenGL.QGLWidget):
         self.zoomFromStackWidth()
     def loadImage(self,data):
         if(data.getCXIFormat() == 2):
-            print data
-            print "Loading image"
+            #print data
+            #print "Loading image"
             self.setData(data)
             self.stackWidth = 1
             self.setStackWidth(self.stackWidth)
@@ -877,6 +919,7 @@ class View2D(View,QtOpenGL.QGLWidget):
         QtCore.QCoreApplication.processEvents()
         self.setData()
         self.setMask()
+        self.setMaskOutBits()
         #self.setSortingIndices()
         self.loaderThread.clear()
 #        self.clearLoaderThread.emit(0)
@@ -925,65 +968,30 @@ class View2D(View,QtOpenGL.QGLWidget):
             self.indexProjector.setProjector(datasetProp["sortingDataset"],datasetProp["sortingInverted"],datasetProp["filterMask"])
         self.updateGL()
 
-
     def saveToPNG(self):
-	img = self.visibleImg
-	imageData = self.loaderThread.imageData[img]
-        #if self.loaderThread.maskData[img] != None:
-        #    maskData = self.loaderThread.maskData[img]
-        #else:
-        maskData = numpy.zeros_like(imageData)
-        if self.normClamp:
-            imageData[imageData<self.normVmin] = self.normVmin
-            imageData[imageData>self.normVmax] = self.normVmax
-        else:
-            maskData[imageData<self.normVmin] |= 1
-            maskData[imageData>self.normVmax] |= 1
-        toPNG("%s/%s_%i.png" % (self.PNGOutputPath,(self.viewer.filename.split("/")[-1])[:-4],img),numpy.log10(imageData)*numpy.log10(10*((maskData)==0)),background="black")
-        #toPNG("%s/%s_%i.png" % (self.PNGOutputPath,(self.viewer.filename.split("/")[-1])[:-4],img),(imageData),background="black")
-	
+        try:
+            import Image
+        except:
+            self.logger.warning("Cannot import PIL (Python Image Library). Saving to PNG failed.")
+            return
+        self.browseToViewIndex(self.indexProjector.imgToIndex(self.visibleImg))
+        self.updateGL()
+        (x,y,z) = self.imageToWindow(self.visibleImg,'TopLeft',False)
+        y = int(round(y))
+        x = int(round(x))
+        point = self.mapTo(self,QtCore.QPoint(x,y))
+        width = int(self.getImgWidth("window"))
+        height = int(self.getImgHeight("window"))
+        buffer = glReadPixels( point.x(), point.y(), width , height , GL_RGBA , GL_UNSIGNED_BYTE )
+        image = Image.fromstring(mode="RGBA", size=(width, height), 
+                                 data=buffer)
+        filename = "%s/%s_%i.png" % (self.PNGOutputPath,(self.viewer.filename.split("/")[-1])[:-4],self.visibleImg)
+        image.save(filename)
+        self.viewer.statusBar.showMessage("Saving image %i to %s" % (self.visibleImg,filename),1000)
+
     def toggleSaveToPNGAuto(self):
 	if self.saveToPNGAuto:
 	    self.saveToPNGAuto = False
 	else:
 	    self.saveToPNGAuto = True
 	
-def toPNG(fname, arr, **kwargs):
-    from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
-    from matplotlib.figure import Figure
-    from matplotlib.colors import ColorConverter as CC
-    C = CC()
-    
-     #if pylab.isinteractive():
-    #    i_was_on = True
-    #    pylab.ioff()
-    #else:
-    #    i_was_on = False
-        
-    fig = Figure(figsize=arr.shape[::-1], dpi=1, frameon=False)
-    canvas = FigureCanvas(fig)
-
-    if 'background' in kwargs.keys():
-        if kwargs['background'] != 'transparent':
-            [r,g,b] = C.to_rgb(kwargs['background'])
-            BG = numpy.ones(shape=(arr.shape[0],arr.shape[1],3))
-            BG[:,:,0] = r
-            BG[:,:,1] = g
-            BG[:,:,2] = b
-            fig.figimage(BG)
-
-    fig.figimage(arr,
-                 xo = kwargs.get('xo',0),
-                 yo = kwargs.get('yo',0),
-                 alpha = kwargs.get('alpha',None),
-                 norm = kwargs.get('norm',None),
-                 cmap = kwargs.get('cmap',None),
-                 vmin = kwargs.get('vmin',None),
-                 vmax = kwargs.get('vmax',None),
-                 origin = kwargs.get('origin',None))
-    
-    fig.savefig(fname,
-                dpi=1,
-                format = kwargs.get('format',None))
-    #if i_was_on:
-    #    pylab.ion()

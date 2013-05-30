@@ -29,8 +29,8 @@ class ImageLoader(QtCore.QObject):
         # process and this would prevent Carl's hack with   #
         # cheetah and the loader sharing the same hdf5 lib. #
         #####################################################
-        data = self.view.getData(2,img)
-        mask = self.view.getMask(2,img)
+        data = self.view.getData(img)
+        mask = self.view.getMask(img)
         self.imageData[img] = numpy.ones((self.view.data.getCXIHeight(),self.view.data.getCXIWidth()),dtype=numpy.float32)
         self.imageData[img][:] = data[:]
         if(mask != None):

@@ -190,9 +190,13 @@ class CXINavigation(QtGui.QWidget):
         line.setFrameShape(QtGui.QFrame.HLine)
         self.vbox.addWidget(line)
 
-        self.datasetMenus["plot"] = DatasetPlotMenu(self)
-        self.datasetBoxes["plot"] = DatasetBox(self.basePath + "/icons/plot.png","plot",self.datasetMenus["plot"])
-        self.vbox.addLayout(self.datasetBoxes["plot"])
+        self.datasetMenus["plot X"] = DatasetMenu(self)
+        self.datasetBoxes["plot X"] = DatasetBox(self.basePath + "/icons/plotX.png","plot X",self.datasetMenus["plot X"])
+        self.vbox.addLayout(self.datasetBoxes["plot X"])
+
+        self.datasetMenus["plot Y"] = DatasetPlotMenu(self)
+        self.datasetBoxes["plot Y"] = DatasetBox(self.basePath + "/icons/plotY.png","plot Y",self.datasetMenus["plot Y"])
+        self.vbox.addLayout(self.datasetBoxes["plot Y"])
 
         self.CXITree = CXITree(self)
         self.vbox.addWidget(self.CXITree)

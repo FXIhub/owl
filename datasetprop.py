@@ -23,7 +23,7 @@ def sizeof_fmt(num):
 #
 class DatasetProp(QtGui.QWidget):
     displayPropChanged = QtCore.Signal(dict)
-    pixelStackChanged = QtCore.Signal(h5py.Dataset,int,int,int)
+    pixelStackChanged = QtCore.Signal(int,int,int)
     def __init__(self,parent=None):
         QtGui.QWidget.__init__(self,parent)
         self.setFocusPolicy(QtCore.Qt.ClickFocus)
@@ -283,77 +283,86 @@ class DatasetProp(QtGui.QWidget):
         self.pixelStackBox.setLayout(self.pixelStackBox.vbox)
         self.pixelStackBox.show()
 
-###
+        self.plotBox = QtGui.QGroupBox("Plot")
+        self.plotBox.vbox = QtGui.QVBoxLayout()
 
-        #self.plotBox = QtGui.QGroupBox("Plot")
-        #self.plotBox.vbox = QtGui.QVBoxLayout()
-        #hbox0 = QtGui.QHBoxLayout()
+        validatorInt = QtGui.QIntValidator()
+        validatorInt.setBottom(0)
+        validatorSci = QtGui.QDoubleValidator()
+        validatorSci.setDecimals(3)
+        validatorSci.setNotation(QtGui.QDoubleValidator.ScientificNotation)
 
-        #validatorInt = QtGui.QIntValidator()
-        #validatorInt.setBottom(0)
-        #validatorSci = QtGui.QDoubleValidator()
-        #validatorSci.setDecimals(3)
-        #validatorSci.setNotation(QtGui.QDoubleValidator.ScientificNotation)
-
-        #self.plotNBinsEdit = QtGui.QLineEdit(self)
+        self.plotNBinsEdit = QtGui.QLineEdit(self)
         #self.plotNBinsEdit.setMaximumWidth(100)
-        #self.plotNBinsEdit.setValidator(validatorInt)
+        self.plotNBinsEdit.setValidator(validatorInt)
+
+        hbox = QtGui.QHBoxLayout()
+        hbox.addWidget(QtGui.QLabel("# bins:"))
+        hbox.addWidget(self.plotNBinsEdit)
+        self.plotBox.vbox.addLayout(hbox)
 
         #self.plotXMinEdit = QtGui.QLineEdit(self)
         #self.plotXMinEdit.setMaximumWidth(100)
         #self.plotXMinEdit.setValidator(validatorSci)
 
+        #hbox = QtGui.QHBoxLayout()
+        #hbox.addWidget(QtGui.QLabel("Xmin:"))
+        #hbox.addWidget(self.plotXMinEdit)
+        #self.plotBox.vbox.addLayout(hbox)
+
         #self.plotXMaxEdit = QtGui.QLineEdit(self)
         #self.plotXMaxEdit.setMaximumWidth(100)
         #self.plotXMaxEdit.setValidator(validatorSci)
 
-        #self.plotNEdit = QtGui.QLineEdit(self)
-        #self.plotNEdit.setMaximumWidth(100)
-        #self.plotNEdit.setValidator(validatorSci)
+        #hbox = QtGui.QHBoxLayout()
+        #hbox.addWidget(QtGui.QLabel("Xmax:"))
+        #hbox.addWidget(self.plotXMaxEdit)
+        #self.plotBox.vbox.addLayout(hbox)
 
-        #vbox = QtGui.QVBoxLayout()
+        #self.plotYMinEdit = QtGui.QLineEdit(self)
+        #self.plotYMinEdit.setMaximumWidth(100)
+        #self.plotYMinEdit.setValidator(validatorSci)
 
         #hbox = QtGui.QHBoxLayout()
-        #hbox.addWidget(QtGui.QLabel("X:"))
-        #hbox.addWidget(self.plotXEdit)
-        #vbox.addLayout(hbox)
+        #hbox.addWidget(QtGui.QLabel("Ymin:"))
+        #hbox.addWidget(self.plotYMinEdit)
+        #self.plotBox.vbox.addLayout(hbox)
+
+        #self.plotYMaxEdit = QtGui.QLineEdit(self)
+        #self.plotYMaxEdit.setMaximumWidth(100)
+        #self.plotYMaxEdit.setValidator(validatorSci)
 
         #hbox = QtGui.QHBoxLayout()
-        #hbox.addWidget(QtGui.QLabel("Y:"))
-        #hbox.addWidget(self.plotYEdit)
-        #vbox.addLayout(hbox)
+        #hbox.addWidget(QtGui.QLabel("Ymax:"))
+        #hbox.addWidget(self.plotYMaxEdit)
+        #self.plotBox.vbox.addLayout(hbox)
 
-        #hbox = QtGui.QHBoxLayout()
-        #hbox.addWidget(QtGui.QLabel("N:"))
-        #hbox.addWidget(self.plotNEdit)
-        #vbox.addLayout(hbox)
+        hbox = QtGui.QHBoxLayout()
+        hbox.addWidget(QtGui.QLabel("Lines:"))
+        self.plotLinesCheckBox = QtGui.QCheckBox("",parent=self)
+        self.plotLinesCheckBox.setChecked(True)
+        hbox.addWidget(self.plotLinesCheckBox)
+        self.plotBox.vbox.addLayout(hbox)
 
-        #hbox0.addLayout(vbox)
+        hbox = QtGui.QHBoxLayout()
+        hbox.addWidget(QtGui.QLabel("Points:"))
+        self.plotPointsCheckBox = QtGui.QCheckBox("",parent=self)
+        hbox.addWidget(self.plotPointsCheckBox)
+        self.plotBox.vbox.addLayout(hbox)
 
-        #self.plotPickButton = QtGui.QPushButton("Pick",self)
-        #self.plotPick = False
-        #hbox0.addWidget(self.plotPickButton)
-        #self.plotBox.vbox.addLayout(hbox0)
-
-        #self.plotPlotButton = QtGui.QPushButton("Plot",self)
-        #self.plotBox.vbox.addWidget(self.plotPlotButton)
-        
-        #self.plotBox.setLayout(self.plotBox.vbox)
-        #self.plotBox.show()
-
-
-
-###
+        self.plotBox.setLayout(self.plotBox.vbox)
+        self.plotBox.hide()
 
         # add all widgets to main vbox
         self.vboxScroll.addWidget(self.generalBox)
         self.vboxScroll.addWidget(self.imageBox)        
-        self.vboxScroll.addWidget(self.imageStackBox)
-        self.vboxScroll.addWidget(self.pixelStackBox)
         self.vboxScroll.addWidget(self.displayBox)
+        self.vboxScroll.addWidget(self.pixelStackBox)
+        self.vboxScroll.addWidget(self.imageStackBox)
         self.vboxScroll.addWidget(self.sortingBox)
         self.vboxScroll.addWidget(self.filterBox)
         self.vboxScroll.addWidget(self.pixelBox)        
+        self.vboxScroll.addWidget(self.plotBox)        
         self.vboxScroll.addStretch()
         self.setLayout(self.vbox)
         # clear all properties
@@ -608,7 +617,7 @@ class DatasetProp(QtGui.QWidget):
             N = 0
         else:
             N = int(self.pixelStackNEdit.text())
-        self.pixelStackChanged.emit(self.dataset.name,ix,iy,N)
+        self.pixelStackChanged.emit(ix,iy,N)
     # update and emit current diplay properties
     def emitDisplayProp(self,foovalue=None):
         self.setImageStackSubplots()
@@ -628,7 +637,6 @@ class DatasetProp(QtGui.QWidget):
                 self.hide()
             else:
                 self.show()
-
 
 def paintColormapIcons(W,H):
     a = numpy.outer(numpy.ones(shape=(H,)),numpy.linspace(0.,1.,W))
