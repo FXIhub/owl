@@ -11,7 +11,7 @@ class ViewSplitter(QtGui.QSplitter):
         self.view2D = View2D(parent,self)
         self.view2DScrollWidget = View2DScrollWidget(self,self.view2D)
         self.addWidget(self.view2DScrollWidget)
-        #self.addWidget(self.view2D)
+        #self.view2D.stackSizeChanged.connect(self.view2DScrollWidget.update)
 
         self.view1D = View1D(self)
         self.view1D.hide()

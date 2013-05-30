@@ -363,6 +363,8 @@ class Viewer(QtGui.QMainWindow):
                 self.handleNeedDatasetMask(group+"/mask")
             elif group+"/mask_shared" in self.CXINavigation.CXITree.datasets.keys():
                 self.handleNeedDatasetMask(group+"/mask_shared")
+        self.view.view2DScrollWidget.update()
+        self.updateData()
     def handleNeedDatasetIntegratedImage(self,integrationMode):
 	self.view.view2D.integrationMode = integrationMode
 	self.view.view2D.updateStackSize(True)
@@ -508,7 +510,6 @@ class Viewer(QtGui.QMainWindow):
     def updateData(self):
         self.view.view2D.updateStackSize()
         self.view.view1D.updateStackSize()
-
 
 class PreferencesDialog(QtGui.QDialog):
     def __init__(self,parent):

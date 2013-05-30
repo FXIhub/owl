@@ -21,10 +21,10 @@ class View2DScrollWidget(QtGui.QWidget):
     def onValueChanged(self,value):
         self.view2D.scrollTo(value)
     def update(self,foo=None):
-        if self.view2D.data == None or self.view2D.data == {} or self.view2D.indexProjector.viewIndices == None or self.view2D.indexProjector.stackSize == None:
+        if self.view2D.data == None or self.view2D.data == {}:
             self.scrollbar.hide()
         else:
-            NViewIndices = len(self.view2D.indexProjector.viewIndices)
+            NViewIndices = self.view2D.stackSize
             imgHeight = self.view2D.getImgHeight("window",True)
             self.scrollbar.setPageStep(imgHeight)
             maximum = self.view2D.maximumTranslation()            

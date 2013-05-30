@@ -6,7 +6,7 @@ class IndexProjector(QtCore.QObject):
     projectionChanged = QtCore.Signal(object)
     def __init__(self):
         QtCore.QObject.__init__(self)
-        self.stackSize = None
+        self.stackSize = 0
         self.clear()
     def setProjector(self,sortingDataset,sortingInverted,filterMask):
         self.sortingDataset = sortingDataset
@@ -14,7 +14,7 @@ class IndexProjector(QtCore.QObject):
         self.filterMask = filterMask
         self.update()
     def update(self):
-        if self.stackSize != None:
+        if self.stackSize != 0:
             self.imgs = numpy.arange(self.stackSize,dtype="int")
             if self.sortingDataset != None:
                 sortingDataset = -numpy.array(self.sortingDataset)
@@ -64,7 +64,7 @@ class IndexProjector(QtCore.QObject):
         self.stackSize = stackSize
         self.update()
     def clear(self):
-        self.stackSize = None
+        self.stackSize = 0
         self.filterMask = None
         self.sortingDataset = None
         self.sortingInverted = False

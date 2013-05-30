@@ -186,3 +186,24 @@ class View1D(View,QtGui.QFrame):
     def onPlotNBinsEdit(self):
         self.nBins = int(self.sender().text())
         self.refreshPlot()
+
+    def getStackSize(self):
+        self.updateStackSize()
+        return self.stackSize
+    def toggleAutoLast(self):
+        self.autoLast = not self.autoLast
+    # DATA
+    def updateStackSize(self, emitChanged=True):
+        oldSize = self.stackSize
+        if self.dataY != None:
+            if self.dataY.isCXIStack():
+		self.stackSize = self.data.getCXIStackSize()
+            else:
+                if "numEvents" in self.data.attrs.keys():
+                    self.stackSize = self.dataY.attrs.get("numEvents")[0]
+                else:
+                    self.stackSize = 1
+                    for n in self.dataY.shape:
+                        self.stackSize *= n 
+        else:
+            self.stackSize = 0
