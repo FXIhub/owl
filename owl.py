@@ -269,13 +269,13 @@ class Viewer(QtGui.QMainWindow):
         fileName = QtGui.QFileDialog.getOpenFileName(self,"Open CXI File", None, "CXI Files (*.cxi)");
         if(fileName[0]):
             self.openCXIFile(fileName[0])
-    def setStyle(self,fn="default.stylesheet"):
+    def setStyle(self,fn="stylesheets/default.stylesheet"):
         styleFile=os.path.join(os.path.split(__file__)[0],fn)
         with open(styleFile,"r") as fh:
             self.setStyleSheet(fh.read())
     def setCXIStyle(self):
         if self.CXIStyleAction.isChecked():
-            self.setStyle("dark.stylesheet")
+            self.setStyle("stylesheets/dark.stylesheet")
         else:
             self.setStyle()
             #self.setStyle("")
