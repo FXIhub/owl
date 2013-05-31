@@ -147,21 +147,23 @@ class View1D(View,QtGui.QFrame):
                 if dataX.shape == self.indexProjector.imgs.shape:
                     dataX = dataX[self.indexProjector.imgs]
         if dataY == None:
-            return
-        if self.p == None:
-            self.initPlot()
-        # line show/hide does not seem to have any effect
-        if self.plotMode == "plot":
-            self.p.setData(dataX,dataY)
-            self.infLine.show()
-        elif self.plotMode == "histogram":
-            (hist,edges) = numpy.histogram(dataY,bins=self.nBins)
-            edges = (edges[:-1]+edges[1:])/2.0
-            self.p.setData(edges,hist)        
-            self.infLine.hide()
-        elif self.plotMode == "average":
-            self.p.setData(self.movingAverage(dataY,1000))
-            self.infLine.hide()
+            self.p.setData([0])
+            self.setPlotMode(self.plotMode)
+        else:
+            if self.p == None:
+                self.initPlot()
+            # line show/hide does not seem to have any effect
+            if self.plotMode == "plot":
+                self.p.setData(dataX,dataY)
+                self.infLine.show()
+            elif self.plotMode == "histogram":
+                (hist,edges) = numpy.histogram(dataY,bins=self.nBins)
+                edges = (edges[:-1]+edges[1:])/2.0
+                self.p.setData(edges,hist)        
+                self.infLine.hide()
+            elif self.plotMode == "average":
+                self.p.setData(self.movingAverage(dataY,1000))
+                self.infLine.hide()
         self.plot.enableAutoRange('xy')
     def emitViewIndexSelected(self,foovalue=None):
         index = int(self.infLine.getXPos())

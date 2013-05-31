@@ -437,9 +437,12 @@ class Viewer(QtGui.QMainWindow):
         self.handleNeedDatasetPlot(datasetName,"Y")
     def handleNeedDatasetPlot(self,datasetName,axis="Y"):
         if str(datasetName) == "":
-        #    self.view1D.hide()
-        #    self.viewActions["View 1D"].setChecked(False)
             self.view.view1D.setData(None,axis)
+            self.view.view1D.refreshPlot()
+            if axis == "Y":
+                self.view.view1D.hide()
+                self.viewActions["View 1D"].setChecked(False)
+                self.datasetProp.plotBox.hide()
         else:
             dataset = self.CXINavigation.CXITree.datasets[datasetName]
             plotMode = self.CXINavigation.datasetMenus["plot Y"].getPlotMode()
