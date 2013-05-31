@@ -100,6 +100,27 @@ class DatasetProp(QtGui.QWidget):
         # properties: selected image
         self.imageBox = QtGui.QGroupBox("Selected Image");
         self.imageBox.vbox = QtGui.QVBoxLayout()
+
+        hbox = QtGui.QHBoxLayout()
+        hbox.addWidget(QtGui.QLabel("Image:"))
+        widget = QtGui.QLabel("None",parent=self)
+        hbox.addWidget(widget)
+        self.imageImg = widget
+        self.imageBox.vbox.addLayout(hbox)
+
+        hbox = QtGui.QHBoxLayout()
+        hbox.addWidget(QtGui.QLabel("View index:"))
+        widget = QtGui.QLabel("None",parent=self)
+        hbox.addWidget(widget)
+        self.imageViewIndex = widget
+        self.imageBox.vbox.addLayout(hbox)
+
+        hbox = QtGui.QHBoxLayout()
+        hbox.addWidget(QtGui.QLabel("Minimum value:"))
+        widget = QtGui.QLabel("None",parent=self)
+        hbox.addWidget(widget)
+        self.imageMin = widget
+        self.imageBox.vbox.addLayout(hbox)
         
         hbox = QtGui.QHBoxLayout()
         hbox.addWidget(QtGui.QLabel("Minimum value:"))
@@ -141,6 +162,20 @@ class DatasetProp(QtGui.QWidget):
 
         self.pixelBox = QtGui.QGroupBox("Selected Pixel");
         self.pixelBox.vbox = QtGui.QVBoxLayout()
+
+        hbox = QtGui.QHBoxLayout()
+        hbox.addWidget(QtGui.QLabel("X:"))
+        widget = QtGui.QLabel("None",parent=self)
+        hbox.addWidget(widget)
+        self.pixelIx = widget
+        self.pixelBox.vbox.addLayout(hbox)
+
+        hbox = QtGui.QHBoxLayout()
+        hbox.addWidget(QtGui.QLabel("Y:"))
+        widget = QtGui.QLabel("None",parent=self)
+        hbox.addWidget(widget)
+        self.pixelIy = widget
+        self.pixelBox.vbox.addLayout(hbox)
 
         hbox = QtGui.QHBoxLayout()
         hbox.addWidget(QtGui.QLabel("Image value:"))
@@ -365,13 +400,13 @@ class DatasetProp(QtGui.QWidget):
 
         # add all widgets to main vbox
         self.vboxScroll.addWidget(self.generalBox)
-        self.vboxScroll.addWidget(self.imageBox)        
+        self.vboxScroll.addWidget(self.imageBox) 
+        self.vboxScroll.addWidget(self.pixelBox)               
         self.vboxScroll.addWidget(self.displayBox)
         self.vboxScroll.addWidget(self.pixelStackBox)
         self.vboxScroll.addWidget(self.imageStackBox)
         self.vboxScroll.addWidget(self.sortingBox)
         self.vboxScroll.addWidget(self.filterBox)
-        self.vboxScroll.addWidget(self.pixelBox)        
         self.vboxScroll.addWidget(self.plotBox)        
         self.vboxScroll.addStretch()
         self.setLayout(self.vbox)
@@ -424,8 +459,8 @@ class DatasetProp(QtGui.QWidget):
         else:
             self.clearDataset()
     def refreshDatasetCurrent(self,img,NImg,viewIndex,NViewIndex):
-        self.currentImg.setText("Visible Image: %i (%i)" % (img,NImg))
-        self.currentViewIndex.setText("Visible Index: %i (%i)" % (viewIndex,NViewIndex))
+        self.currentImg.setText("Central Image: %i (%i)" % (img,NImg))
+        self.currentViewIndex.setText("Central Index: %i (%i)" % (viewIndex,NViewIndex))
     def clearDataset(self):
         self.dataset = None
         self.dimensionality.setText("Dimensions: ")
@@ -436,14 +471,16 @@ class DatasetProp(QtGui.QWidget):
     # VIEW
     def onPixelClicked(self,info):
         if self.dataset != None and info != None:
-            self.imageBox.setTitle("Selected Image (image: %i, index: %i)" % (int(info["viewIndex"]),int(info["img"])))
+            self.imageViewIndex.setText(str(int(info["viewIndex"])))
+            self.imageImg.setText(str(int(info["img"])))
             self.imageMin.setText(str(int(info["imageMin"])))
             self.imageMax.setText(str(int(info["imageMax"])))
             self.imageSum.setText(str(int(info["imageSum"])))
             self.imageMean.setText("%.3e" % float(info["imageMean"]))
             self.imageStd.setText("%.3e" % float(info["imageStd"]))
-            self.pixelBox.setTitle("Selected Pixel (x: %i, y: %i)" % (int(info["ix"]),int(info["iy"])))
-            self.pixelImageValue.setText(str(int(info["imageValue"])))
+            self.pixelIx.setText(str(int(info["ix"])))
+            self.pixelIy.setText(str(int(info["iy"])))
+            self.pixelImageValue.setText("%.3f" % (info["imageValue"]))
             if info["maskValue"] == None:
                 self.pixelMaskValue.setText("None")
             else:

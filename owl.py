@@ -257,7 +257,7 @@ class Viewer(QtGui.QMainWindow):
         self.datasetProp.displayPropChanged.connect(self.handleDisplayPropChanged)
         self.datasetProp.pixelStackChanged.connect(self.handlePixelStackChanged)
         self.view.view2D.pixelClicked.connect(self.datasetProp.onPixelClicked)
-        self.view.view2D.visibleImgChanged.connect(self.datasetProp.refreshDatasetCurrent)
+        self.view.view2D.centralImgChanged.connect(self.datasetProp.refreshDatasetCurrent)
         self.view.view1D.viewIndexSelected.connect(self.handleViewIndexSelected)   
         self.goMenu.nextRow.triggered.connect(self.view.view2D.nextRow)
         self.goMenu.previousRow.triggered.connect(self.view.view2D.previousRow)

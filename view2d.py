@@ -16,7 +16,7 @@ from cache import GLCache
 class View2D(View,QtOpenGL.QGLWidget):
     needsImage = QtCore.Signal(int)
     #imageSelected = QtCore.Signal(int)
-    visibleImgChanged = QtCore.Signal(int,int,int,int)
+    centralImgChanged = QtCore.Signal(int,int,int,int)
     translationChanged = QtCore.Signal(int,int)
     stackWidthChanged = QtCore.Signal(int)
     pixelClicked = QtCore.Signal(dict)
@@ -30,7 +30,7 @@ class View2D(View,QtOpenGL.QGLWidget):
         self.logger.setLevel(logging.WARNING)
 
         self.viewer = viewer
-        self.visibleImg = 0
+        self.centralImg = 0
         # translation in unit of window pixels
         self.translation = [0,0]
         self.zoom = 4.0
@@ -547,9 +547,9 @@ class View2D(View,QtOpenGL.QGLWidget):
                 if len(visible) > 0:
                     # Set and emit current view index
                     newVal = self.windowToImage(self.getImgWidth("window",True)/2,self.getImgHeight("window",True)/2,0,False,False)
-                    if self.visibleImg != newVal:
-                        self.visibleImg = self.windowToImage(self.getImgWidth("window",True)/2,self.getImgHeight("window",True)/2,0,False,False)
-                        self.visibleImgChanged.emit(self.visibleImg,self.getNImages(),self.indexProjector.imgToIndex(self.visibleImg),self.getNImagesVisible())
+                    if self.centralImg != newVal:
+                        self.centralImg = self.windowToImage(self.getImgWidth("window",True)/2,self.getImgHeight("window",True)/2,0,False,False)
+                        self.centralImgChanged.emit(self.centralImg,self.getNImages(),self.indexProjector.imgToIndex(self.centralImg),self.getNImagesVisible())
 		    if self.saveToPNGAuto:
 			self.saveToPNG()
         if startTimer:
@@ -916,7 +916,7 @@ class View2D(View,QtOpenGL.QGLWidget):
     def scaleZoom(self,ratio):
         self.zoom *= ratio
         self.translation[0] *= ratio
-        viewIndex = self.indexProjector.imgToIndex(self.visibleImg)
+        viewIndex = self.indexProjector.imgToIndex(self.centralImg)
         self.browseToViewIndex(viewIndex)
     # Calculate the appropriate zoom level such that the windows will exactly fill the viewport widthwise
     def zoomFromStackWidth(self):
@@ -988,9 +988,9 @@ class View2D(View,QtOpenGL.QGLWidget):
         except:
             self.logger.warning("Cannot import PIL (Python Image Library). Saving to PNG failed.")
             return
-        self.browseToViewIndex(self.indexProjector.imgToIndex(self.visibleImg))
+        self.browseToViewIndex(self.indexProjector.imgToIndex(self.centralImg))
         self.updateGL()
-        (x,y,z) = self.imageToWindow(self.visibleImg,'TopLeft',False)
+        (x,y,z) = self.imageToWindow(self.centralImg,'TopLeft',False)
         y = int(round(y))
         x = int(round(x))
         point = self.mapTo(self,QtCore.QPoint(x,y))
@@ -999,9 +999,9 @@ class View2D(View,QtOpenGL.QGLWidget):
         buffer = glReadPixels( point.x(), point.y(), width , height , GL_RGBA , GL_UNSIGNED_BYTE )
         image = Image.fromstring(mode="RGBA", size=(width, height), 
                                  data=buffer)
-        filename = "%s/%s_%i.png" % (self.PNGOutputPath,(self.viewer.filename.split("/")[-1])[:-4],self.visibleImg)
+        filename = "%s/%s_%i.png" % (self.PNGOutputPath,(self.viewer.filename.split("/")[-1])[:-4],self.centralImg)
         image.save(filename)
-        self.viewer.statusBar.showMessage("Saving image %i to %s" % (self.visibleImg,filename),1000)
+        self.viewer.statusBar.showMessage("Saving image %i to %s" % (self.centralImg,filename),1000)
 
     def toggleSaveToPNGAuto(self):
 	if self.saveToPNGAuto:
