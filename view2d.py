@@ -37,6 +37,7 @@ class View2D(View,QtOpenGL.QGLWidget):
         #self.setFocusPolicy(QtCore.Qt.ClickFocus)
         self.data = {}
         self.texturesLoading = {}
+        self.imageStackN = None
         
         self.imageTextures = GLCache(0)
         self.maskTextures = GLCache(0)
@@ -111,6 +112,16 @@ class View2D(View,QtOpenGL.QGLWidget):
                     d = self.data
                 else:
                     d = self.data[self.indexProjector.filterMask,:,:]
+                if self.imageStackN != None:
+                    if self.imageStackN < d.shape[0]:
+                        iz = numpy.random.randint(0,d.shape[0],self.imageStackN)
+                        iz.sort()
+                        temp = numpy.zeros(shape=(self.imageStackN,d.shape[1],d.shape[2]))
+                        # for some reason the following line causes hdf5 errors if the dataset is getting very large
+                        #d[:] = d[iz,:,:]
+                        for i in range(self.imageStackN):
+                            temp[i,:,:] = d[iz[i],:,:]
+                        d = temp
                 if self.integrationMode == "mean":
                     return numpy.mean(d,0)
                 elif self.integrationMode == "std":
@@ -122,6 +133,9 @@ class View2D(View,QtOpenGL.QGLWidget):
         else:
             return self.data[:,:]
         
+    def onImageStackNEdit(self):
+        self.imageStackN = int(self.sender().text())
+
     def stopThreads(self):
         while(self.imageLoader.isRunning()):
             self.imageLoader.quit()

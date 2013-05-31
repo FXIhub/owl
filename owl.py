@@ -267,6 +267,7 @@ class Viewer(QtGui.QMainWindow):
         self.datasetProp.plotLinesCheckBox.toggled.connect(self.view.view1D.onTogglePlotLines)
         self.datasetProp.plotPointsCheckBox.toggled.connect(self.view.view1D.onTogglePlotPoints)
         self.datasetProp.plotNBinsEdit.editingFinished.connect(self.view.view1D.onPlotNBinsEdit)
+        self.datasetProp.imageStackNEdit.textChanged.connect(self.view.view2D.onImageStackNEdit)
 
     def openFileClicked(self):
         fileName = QtGui.QFileDialog.getOpenFileName(self,"Open CXI File", None, "CXI Files (*.cxi)");
