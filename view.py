@@ -4,7 +4,6 @@ from OpenGL.GLU import *
 from PySide import QtGui, QtCore, QtOpenGL
 import numpy
 import math
-from threading import Lock
 
 class ImageLoader(QtCore.QObject):
     imageLoaded = QtCore.Signal(int)
@@ -13,10 +12,8 @@ class ImageLoader(QtCore.QObject):
         self.view = view
         self.imageData = {}
         self.loaded = {}
-        self.loadedLock = Lock()
-    @QtCore.Slot(int)
+    @QtCore.Slot(int,int)
     def loadImage(self,img):
-        with self.loadedLock:
             if(img in self.loaded):
                 return
             self.loaded[img] = True
