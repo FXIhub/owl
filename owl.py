@@ -138,13 +138,6 @@ class Viewer(QtGui.QMainWindow):
         self.saveMenu.toPNG = act
         self.saveMenu.addAction(act)
 
-        act = QtGui.QAction("To PNG Auto",self)
-        #act.setShortcut(QtGui.QKeySequence("Ctrl+S"))
-	act.setCheckable(True)
-        act.setChecked(False)
-        self.saveMenu.toPNGAuto = act
-        self.saveMenu.addAction(act)
-
         self.viewMenu = self.menuBar().addMenu(self.tr("&View"));
 
         self.CXIStyleAction = QtGui.QAction("CXI Style",self)
@@ -262,7 +255,6 @@ class Viewer(QtGui.QMainWindow):
         self.goMenu.nextRow.triggered.connect(self.view.view2D.nextRow)
         self.goMenu.previousRow.triggered.connect(self.view.view2D.previousRow)
 	self.saveMenu.toPNG.triggered.connect(self.view.view2D.saveToPNG)
-	self.saveMenu.toPNGAuto.triggered.connect(self.view.view2D.toggleSaveToPNGAuto)
 
 	self.datasetProp.imageStackMeanButton.released.connect(lambda: self.handleNeedDatasetIntegratedImage("mean"))
 	self.datasetProp.imageStackStdButton.released.connect(lambda: self.handleNeedDatasetIntegratedImage("std"))

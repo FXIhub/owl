@@ -147,16 +147,17 @@ class View1D(View,QtGui.QFrame):
             dataX = self.getData("X")
             if dataX == None and dataY != None:
                 dataX = numpy.arange(len(self.getData("Y")))
-                manTicksFlag = True
+                #manTicksFlag = True
+            #else:
+                #manTicksFlag = False
             else:
-                manTicksFlag = False
+                if dataX != None and self.indexProjector.imgs != None:
+                    if dataX.shape == self.indexProjector.imgs.shape:
+                        dataX = dataX[self.indexProjector.imgs]
             # that is not particularly nice
             if dataY != None and self.indexProjector.imgs != None:
                 if dataY.shape == self.indexProjector.imgs.shape:
                     dataY = dataY[self.indexProjector.imgs]
-            if dataX != None and self.indexProjector.imgs != None:
-                if dataX.shape == self.indexProjector.imgs.shape:
-                    dataX = dataX[self.indexProjector.imgs]
         if dataY == None:
             self.p.setData([0])
             self.setPlotMode(self.plotMode)
@@ -220,9 +221,9 @@ class View1D(View,QtGui.QFrame):
         oldSize = self.stackSize
         if self.dataY != None:
             if self.dataY.isCXIStack():
-		self.stackSize = self.data.getCXIStackSize()
+		self.stackSize = self.dataY.getCXIStackSize()
             else:
-                if "numEvents" in self.data.attrs.keys():
+                if "numEvents" in self.dataY.attrs.keys():
                     self.stackSize = self.dataY.attrs.get("numEvents")[0]
                 else:
                     self.stackSize = 1

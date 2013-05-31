@@ -78,7 +78,6 @@ class View2D(View,QtOpenGL.QGLWidget):
         self.stackSizeChanged.connect(self.browseToLastIfAuto)
 
 	settings = QtCore.QSettings()
-	self.saveToPNGAuto = False
         self.PNGOutputPath = settings.value("PNGOutputPath")
 	#print self.PNGOutputPath
 
@@ -550,8 +549,6 @@ class View2D(View,QtOpenGL.QGLWidget):
                     if self.centralImg != newVal:
                         self.centralImg = self.windowToImage(self.getImgWidth("window",True)/2,self.getImgHeight("window",True)/2,0,False,False)
                         self.centralImgChanged.emit(self.centralImg,self.getNImages(),self.indexProjector.imgToIndex(self.centralImg),self.getNImagesVisible())
-		    if self.saveToPNGAuto:
-			self.saveToPNG()
         if startTimer:
             # If we are slow-drawing, please wait more before drawing again...
             time4 = time.time()
@@ -1001,14 +998,7 @@ class View2D(View,QtOpenGL.QGLWidget):
                                  data=buffer)
         filename = "%s/%s_%i.png" % (self.PNGOutputPath,(self.viewer.filename.split("/")[-1])[:-4],self.centralImg)
         image.save(filename)
-        self.viewer.statusBar.showMessage("Saving image %i to %s" % (self.centralImg,filename),1000)
-
-    def toggleSaveToPNGAuto(self):
-	if self.saveToPNGAuto:
-	    self.saveToPNGAuto = False
-	else:
-	    self.saveToPNGAuto = True
-	
+        self.viewer.statusBar.showMessage("Saving image %i to %s" % (self.centralImg,filename),1000)	
 
     def getStackSize(self):
         self.updateStackSize()

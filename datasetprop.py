@@ -490,7 +490,7 @@ class DatasetProp(QtGui.QWidget):
             (hist,edges) = numpy.histogram(self.dataset[info["img"]],bins=100)
             self.intensityHistogram.clear()
             edges = (edges[:-1]+edges[1:])/2.0
-            item = self.intensityHistogram.plot(edges,hist,fillLevel=0,fillBrush=QtGui.QColor(255, 255, 255, 128),antialias=True)
+            item = self.intensityHistogram.plot(edges,numpy.log10(hist+1),fillLevel=0,fillBrush=QtGui.QColor(255, 255, 255, 128),antialias=True)
             self.intensityHistogram.getPlotItem().getViewBox().setMouseEnabled(x=False,y=False)
             region = pyqtgraph.LinearRegionItem(values=[self.displayMin.value(),self.displayMax.value()],brush="#ffffff15")
             region.sigRegionChangeFinished.connect(self.onHistogramClicked)
