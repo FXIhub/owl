@@ -101,7 +101,7 @@ class GLCache(Cache):
             self.itemSize = width*height*bytes_per_pixel
             size = self.sizeInBytes/self.itemSize
             self.setMaxSize(size)            
-            self.logger.warning("Setting GLCache size to %d" % size)
+            self.logger.debug("Setting GLCache size to %d" % size)
         Cache.__setitem__(self,key,texture)
     def trim(self):
         with self.lock:
