@@ -108,6 +108,10 @@ class Viewer(QtGui.QMainWindow):
         self.openFile = QtGui.QAction("Open",self)
         self.fileMenu.addAction(self.openFile)
         self.openFile.triggered.connect(self.openFileClicked)
+        self.quitAction = QtGui.QAction("Quit",self)
+        self.fileMenu.addAction(self.quitAction)
+        self.quitAction.triggered.connect(QtGui.QApplication.instance().quit)
+
         self.preferences = QtGui.QAction("Preferences",self)
         self.fileMenu.addAction(self.preferences)
         self.preferences.triggered.connect(self.preferencesClicked)
