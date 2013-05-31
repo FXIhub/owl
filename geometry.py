@@ -10,7 +10,7 @@ class Geometry:
                 for j in range(0,3):
                     geom[i,j] = o[i*3+j]
             geom[2,0:3] = numpy.cross(geom[0,0:3],geom[1,0:3])
-            print geom
+            #print geom
         except KeyError:
             pass
         try:
@@ -57,10 +57,10 @@ class Geometry:
                         corners['y'][0] = c[1]
                     if(corners['y'][1] < c[1]):
                         corners['y'][1] = c[1]
-                    print "corner ",c
-        print corners
+                    #print "corner ",c
+        #print corners
     def assemble_detectors(self,fid):
-        print fid
+        #print fid
         self.detectors = self.find_detectors(fid)
         self.geometries = []
         for d in self.detectors:

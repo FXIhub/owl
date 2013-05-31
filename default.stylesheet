@@ -1,0 +1,28 @@
+QTreeView
+{
+    background: #333333
+}
+
+QTreeView
+{
+    color: white
+}
+
+DatasetButton
+{
+    background: #7f7f7f;
+    padding: 5px;
+}
+
+/*
+ViewSplitter
+{
+   background-color: black;
+}
+
+ViewSplitter::handle
+{
+   background-color: #222222;
+}
+*/
+
