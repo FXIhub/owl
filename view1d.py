@@ -34,10 +34,8 @@ class View1D(View,QtGui.QFrame):
         self.symbolSize = 1
         self.symbol = None
         self.plot = pyqtgraph.PlotWidget()
-        infLine = pyqtgraph.InfiniteLine(0,90,None,True)
-        self.plot.addItem(infLine)
-        infLine.sigPositionChangeFinished.connect(self.emitViewIndexSelected)    
-        self.infLine = infLine
+        self.infLine = None
+        self.addInfLine()
         space = 60
         self.p = self.plot.plot([0])#,symbol=1,symbolSize=1,symbolBrush=(255,255,255,255),symbolPen=None,pen=None)
         self.p.setPointMode(True)
@@ -48,6 +46,16 @@ class View1D(View,QtGui.QFrame):
         self.plot.getAxis("right").setWidth(space)
         self.setStyle()
         #self.p.update()
+    def addInfLine(self):
+        if self.infLine == None:
+            infLine = pyqtgraph.InfiniteLine(0,90,None,True)
+            self.plot.addItem(infLine)
+            infLine.sigPositionChangeFinished.connect(self.emitViewIndexSelected)    
+            self.infLine = infLine
+    def removeInfLine(self):
+        if self.infLine != None:
+            self.plot.removeItem(self.infLine)
+            self.infLine = None
     def setStyle(self,**kwargs):
         self.lineWidth = kwargs.get("lineWidth",self.lineWidth)
         self.lineColor = kwargs.get("lineColor",self.lineColor)
@@ -139,6 +147,9 @@ class View1D(View,QtGui.QFrame):
             dataX = self.getData("X")
             if dataX == None and dataY != None:
                 dataX = numpy.arange(len(self.getData("Y")))
+                manTicksFlag = True
+            else:
+                manTicksFlag = False
             # that is not particularly nice
             if dataY != None and self.indexProjector.imgs != None:
                 if dataY.shape == self.indexProjector.imgs.shape:
@@ -153,17 +164,27 @@ class View1D(View,QtGui.QFrame):
             if self.p == None:
                 self.initPlot()
             # line show/hide does not seem to have any effect
-            if self.plotMode == "plot":
-                self.p.setData(dataX,dataY)
-                self.infLine.show()
+            if self.plotMode == "plot" or self.plotMode == "average":
+                if self.plotMode == "plot":
+                    self.p.setData(dataX,dataY)
+                elif self.plotMode == "average":
+                    self.p.setData(self.movingAverage(dataY,1000))
+                self.addInfLine()
+                #if manTicksFlag:
+                #    def tickSpacing(minVal,maxVal,size):
+                #        step = 10**(len(str(maxVal-minVal))-1)
+                #        minTick = minVal - minVal%step
+                #        maxTick = maxVal + (step-maxVal%step)
+                #        return [(step,range(minTick,maxTick,step),(0,[]),(0,[])]
+                #    self.plot.getAxis("bottom").tickSpacing = tick
+                #else:
+                #    self.plot.getAxis("bottom").setTicks(None)
             elif self.plotMode == "histogram":
                 (hist,edges) = numpy.histogram(dataY,bins=self.nBins)
                 edges = (edges[:-1]+edges[1:])/2.0
                 self.p.setData(edges,hist)        
-                self.infLine.hide()
-            elif self.plotMode == "average":
-                self.p.setData(self.movingAverage(dataY,1000))
-                self.infLine.hide()
+                self.removeInfLine()
+                
         self.plot.enableAutoRange('xy')
     def emitViewIndexSelected(self,foovalue=None):
         index = int(self.infLine.getXPos())
