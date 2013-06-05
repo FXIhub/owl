@@ -15,22 +15,17 @@ def sizeof_fmt(num):
     return "%3.1f %s" % (num, 'TB')
     
 
-# Consistent function nomenclature:
-# - currDisplayProp['propertyBla'] => class variables defining current property
-# - setProperty                    => stores property specified in widgets to class variables propertyBla,propertyBlabla,...
-#(- refreshProperty                => refreshes widgets that have dependencies on dataset )
-# - clearProperty                  => sets property to default (+ refreshes property)
-#
-class DatasetProp(QtGui.QWidget):
-    displayPropChanged = QtCore.Signal(dict)
-    pixelStackChanged = QtCore.Signal(int,int,int)
+class DataProp(QtGui.QWidget):
+    view2DPropChanged = QtCore.Signal(dict)
+    view1DPropChanged = QtCore.Signal(dict)
     def __init__(self,parent=None):
         QtGui.QWidget.__init__(self,parent)
         self.setFocusPolicy(QtCore.Qt.ClickFocus)
 
         self.viewer = parent
         # this dict holds all current settings
-        self.currDisplayProp = {}
+        self.view2DProp = {}
+        self.view1DProp = {}
         self.vbox = QtGui.QVBoxLayout()
         # scrolling
         self.vboxScroll = QtGui.QVBoxLayout()
@@ -45,7 +40,7 @@ class DatasetProp(QtGui.QWidget):
         #self.scrollArea.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAsNeeded)
         self.vbox.addWidget(self.scrollArea)
         # GENERAL PROPERTIES
-        # properties: dataset
+        # properties: data
         self.generalBox = QtGui.QGroupBox("General Properties");
         #self.generalBox.setCheckable(True)
         #self.generalBox.isChecked(True)
@@ -264,8 +259,8 @@ class DatasetProp(QtGui.QWidget):
         # sorting
         self.sortingBox = QtGui.QGroupBox("Sorting")
         self.sortingBox.vbox = QtGui.QVBoxLayout()
-        self.sortingDatasetLabel = QtGui.QLabel("",parent=self)
-        self.sortingBox.vbox.addWidget(self.sortingDatasetLabel)
+        self.sortingDataLabel = QtGui.QLabel("",parent=self)
+        self.sortingBox.vbox.addWidget(self.sortingDataLabel)
         hbox = QtGui.QHBoxLayout()
         hbox.addWidget(QtGui.QLabel("Invert"))
         self.invertSortingCheckBox = QtGui.QCheckBox("",parent=self)
@@ -346,42 +341,6 @@ class DatasetProp(QtGui.QWidget):
         hbox.addWidget(self.plotNBinsEdit)
         self.plotBox.vbox.addLayout(hbox)
 
-        #self.plotXMinEdit = QtGui.QLineEdit(self)
-        #self.plotXMinEdit.setMaximumWidth(100)
-        #self.plotXMinEdit.setValidator(validatorSci)
-
-        #hbox = QtGui.QHBoxLayout()
-        #hbox.addWidget(QtGui.QLabel("Xmin:"))
-        #hbox.addWidget(self.plotXMinEdit)
-        #self.plotBox.vbox.addLayout(hbox)
-
-        #self.plotXMaxEdit = QtGui.QLineEdit(self)
-        #self.plotXMaxEdit.setMaximumWidth(100)
-        #self.plotXMaxEdit.setValidator(validatorSci)
-
-        #hbox = QtGui.QHBoxLayout()
-        #hbox.addWidget(QtGui.QLabel("Xmax:"))
-        #hbox.addWidget(self.plotXMaxEdit)
-        #self.plotBox.vbox.addLayout(hbox)
-
-        #self.plotYMinEdit = QtGui.QLineEdit(self)
-        #self.plotYMinEdit.setMaximumWidth(100)
-        #self.plotYMinEdit.setValidator(validatorSci)
-
-        #hbox = QtGui.QHBoxLayout()
-        #hbox.addWidget(QtGui.QLabel("Ymin:"))
-        #hbox.addWidget(self.plotYMinEdit)
-        #self.plotBox.vbox.addLayout(hbox)
-
-        #self.plotYMaxEdit = QtGui.QLineEdit(self)
-        #self.plotYMaxEdit.setMaximumWidth(100)
-        #self.plotYMaxEdit.setValidator(validatorSci)
-
-        #hbox = QtGui.QHBoxLayout()
-        #hbox.addWidget(QtGui.QLabel("Ymax:"))
-        #hbox.addWidget(self.plotYMaxEdit)
-        #self.plotBox.vbox.addLayout(hbox)
-
         hbox = QtGui.QHBoxLayout()
         hbox.addWidget(QtGui.QLabel("Lines:"))
         self.plotLinesCheckBox = QtGui.QCheckBox("",parent=self)
@@ -413,56 +372,58 @@ class DatasetProp(QtGui.QWidget):
         # clear all properties
         self.clear()
         # connect signals
-        self.imageStackSubplots.editingFinished.connect(self.emitDisplayProp)    
+        self.imageStackSubplots.editingFinished.connect(self.emitView2DProp)    
         self.displayMax.editingFinished.connect(self.checkLimits)
         self.displayMin.editingFinished.connect(self.checkLimits)
-        self.displayClamp.stateChanged.connect(self.emitDisplayProp)
-        self.displayLin.toggled.connect(self.emitDisplayProp)        
-        self.displayLog.toggled.connect(self.emitDisplayProp)
-        self.displayPow.toggled.connect(self.emitDisplayProp)
-        self.displayGamma.editingFinished.connect(self.emitDisplayProp)
-        self.invertSortingCheckBox.toggled.connect(self.emitDisplayProp)
-        self.viewer.colormapActionGroup.triggered.connect(self.emitDisplayProp)
+        self.displayClamp.stateChanged.connect(self.emitView2DProp)
+        self.displayLin.toggled.connect(self.emitView2DProp)        
+        self.displayLog.toggled.connect(self.emitView2DProp)
+        self.displayPow.toggled.connect(self.emitView2DProp)
+        self.displayGamma.editingFinished.connect(self.emitView2DProp)
+        self.invertSortingCheckBox.toggled.connect(self.emitView2DProp)
+        self.invertSortingCheckBox.toggled.connect(self.emitView1DProp)
+        self.viewer.colormapActionGroup.triggered.connect(self.emitView2DProp)
         self.pixelStackPickButton.released.connect(self.onPixelStackPickButton)
-        self.pixelStackPlotButton.released.connect(self.onPixelStackPlotButton)
+        self.pixelStackPlotButton.released.connect(self.emitView1DProp)
+        self.plotLinesCheckBox.toggled.connect(self.emitView1DProp)
+        self.plotPointsCheckBox.toggled.connect(self.emitView1DProp)
+        self.plotNBinsEdit.editingFinished.connect(self.emitView1DProp)
+
     def clear(self):
-        self.clearDisplayProp()
-        self.clearDataset()
-    def clearDisplayProp(self):
+        self.clearView2DProp()
+        self.clearData()
+    def clearView2DProp(self):
         self.clearImageStackSubplots()
         self.clearNorm()
         self.clearColormap()
-    # DATASET
-    def setDataset(self,dataset=None,format=2):
-        self.dataset = dataset
-        if dataset != None:
-            self.dataset = dataset
+    # DATA
+    def setData(self,data=None):
+        if data != None:
+            self.data = data
             string = "Dimensions: "
-            shape = list(dataset.shape)
-            if dataset.getCXIStackSize():
-                shape[0] = dataset.getCXIStackSize()
+            shape = list(data.shape())
             for d in shape:
                 string += str(d)+"x"
             string = string[:-1]
             self.dimensionality.setText(string)
-            self.datatype.setText("Data Type: %s" % (dataset.dtype.name))
-            self.datasize.setText("Data Size: %s" % sizeof_fmt(dataset.dtype.itemsize*reduce(mul,dataset.shape)))
-            if dataset.isCXIStack():
-                form = "%iD Data Stack" % dataset.getCXIFormat()
+            self.datatype.setText("Data Type: %s" % (data.dtypeName))
+            self.datasize.setText("Data Size: %s" % sizeof_fmt(data.dtypeItemsize*reduce(mul,data.shape())))
+            if data.isStack:
+                form = "%iD Data Stack" % data.format
             else:
-                form = "%iD Data" % dataset.getCXIFormat()
+                form = "%iD Data" % data.format
             self.dataform.setText("Data form: %s" % form)
-            if dataset.isCXIStack():
+            if data.isStack:
                 self.imageStackBox.show()
             else:
                 self.imageStackBox.hide()
         else:
-            self.clearDataset()
-    def refreshDatasetCurrent(self,img,NImg,viewIndex,NViewIndex):
+            self.clearData()
+    def refreshDataCurrent(self,img,NImg,viewIndex,NViewIndex):
         self.currentImg.setText("Central Image: %i (%i)" % (img,NImg))
         self.currentViewIndex.setText("Central Index: %i (%i)" % (viewIndex,NViewIndex))
-    def clearDataset(self):
-        self.dataset = None
+    def clearData(self):
+        self.data = None
         self.dimensionality.setText("Dimensions: ")
         self.datatype.setText("Data Type: ")
         self.datasize.setText("Data Size: ")
@@ -470,7 +431,7 @@ class DatasetProp(QtGui.QWidget):
         self.imageStackBox.hide()	
     # VIEW
     def onPixelClicked(self,info):
-        if self.dataset != None and info != None:
+        if self.data != None and info != None:
             self.imageViewIndex.setText(str(int(info["viewIndex"])))
             self.imageImg.setText(str(int(info["img"])))
             self.imageMin.setText(str(int(info["imageMin"])))
@@ -487,7 +448,7 @@ class DatasetProp(QtGui.QWidget):
                 self.pixelMaskValue.setText(str(int(info["maskValue"])))
             self.imageBox.show()
             self.pixelBox.show()
-            (hist,edges) = numpy.histogram(self.dataset[info["img"]],bins=100)
+            (hist,edges) = numpy.histogram(self.data.data(img=info["img"]),bins=100)
             self.intensityHistogram.clear()
             edges = (edges[:-1]+edges[1:])/2.0
             item = self.intensityHistogram.plot(edges,numpy.log10(hist+1),fillLevel=0,fillBrush=QtGui.QColor(255, 255, 255, 128),antialias=True)
@@ -501,7 +462,7 @@ class DatasetProp(QtGui.QWidget):
                 self.pixelStackPick = False
                 self.pixelStackXEdit.setText(str(int(info["ix"])))
                 self.pixelStackYEdit.setText(str(int(info["iy"])))
-                self.pixelStackNEdit.setText(str(len(self.dataset)))
+                self.pixelStackNEdit.setText(str(self.data.shape()[0]))
         else:
             self.imageBox.hide()
             self.pixelBox.hide()
@@ -510,10 +471,10 @@ class DatasetProp(QtGui.QWidget):
         self.displayMin.setValue(min)
         self.displayMax.setValue(max)
         self.checkLimits()
-        self.emitDisplayProp()
+        self.emitView2DProp()
     # NORM
     def setNorm(self):
-        P = self.currDisplayProp
+        P = self.view2DProp
         P["normVmin"] = self.displayMin.value()
         P["normVmax"] = self.displayMax.value()
         P["normClamp"] = self.displayClamp.isChecked()
@@ -561,7 +522,7 @@ class DatasetProp(QtGui.QWidget):
         self.setNorm()
     # COLORMAP
     def setColormap(self,foovalue=None):
-        P = self.currDisplayProp
+        P = self.view2DProp
         a = self.viewer.colormapActionGroup.checkedAction()
         self.displayColormap.setText(a.text())        
         self.displayColormap.setIcon(a.icon())        
@@ -572,40 +533,40 @@ class DatasetProp(QtGui.QWidget):
         self.setColormap()
     # STACK
     def setImageStackSubplots(self,foovalue=None):
-        P = self.currDisplayProp
+        P = self.view2DProp
         P["imageStackSubplotsValue"] = self.imageStackSubplots.value()
     def clearImageStackSubplots(self):
         self.imageStackSubplots.setValue(1)
         self.setImageStackSubplots()
     # SORTING
     def setSorting(self,foo=None):
-        P = self.currDisplayProp
+        P = self.view2DProp
         P["sortingInverted"] = self.invertSortingCheckBox.isChecked()
-        P["sortingDataset"] = self.sortingDataset
+        P["sortingDataItem"] = self.sortingData
     def clearSorting(self):
-        self.sortingDataset = None
+        self.sortingData = None
         self.sortingInverted = False
-        self.sortingDatasetLabel.setText("")
+        self.sortingDataLabel.setText("")
         self.sortingBox.hide()
-    def refreshSorting(self,dataset):
-        if dataset != None:
-            self.sortingDataset = dataset
+    def refreshSorting(self,data):
+        if data != None:
+            self.sortingData = data
             self.sortingBox.show()
-            self.sortingDatasetLabel.setText(dataset.name)
+            self.sortingDataLabel.setText(data.fullName)
         else:
             self.clearSorting()
     # FILTERS
-    def addFilter(self,dataset):
+    def addFilter(self,data):
         if self.inactiveFilters == []:
-            filterWidget = FilterWidget(self,dataset)
-            filterWidget.limitsChanged.connect(self.emitDisplayProp)
+            filterWidget = FilterWidget(self,data)
+            filterWidget.limitsChanged.connect(self.emitView2DProp)
             self.filterBox.vbox.addWidget(filterWidget)
             self.activeFilters.append(filterWidget)
         else:
             self.activeFilters.append(self.inactiveFilters.pop(0))
             filterWidget = self.activeFilters[-1]
             filterWidget.show()
-            filterWidget.refreshDataset(dataset)
+            filterWidget.refreshData(data)
         self.setFilters()
         self.filterBox.show()
     def removeFilter(self,index):
@@ -620,15 +581,15 @@ class DatasetProp(QtGui.QWidget):
         if self.activeFilters == []:
             self.filterBox.hide()
     def setFilters(self,foo=None):
-        P = self.currDisplayProp
+        P = self.view2DProp
         P["filterMask"] = None
         if self.activeFilters != []:
             for f in self.activeFilters:
                 if P["filterMask"] == None:
-                    P["filterMask"] = numpy.ones(len(f.dataset),dtype="bool")
+                    P["filterMask"] = numpy.ones(len(f.data.shape()[0]),dtype="bool")
                 vmin = float(f.vminLineEdit.text())
                 vmax= float(f.vmaxLineEdit.text())
-                data = numpy.array(f.dataset,dtype="float")
+                data = numpy.array(f.data.data(),dtype="float")
                 P["filterMask"] *= (data >= vmin) * (data <= vmax)
             Ntot = len(data)
             Nsel = P["filterMask"].sum()
@@ -638,11 +599,11 @@ class DatasetProp(QtGui.QWidget):
             Nsel = 0
             p = 100.
         self.filterBox.setTitle("Filters (yield: %.2f%% - %i/%i)" % (p,Nsel,Ntot))
-    def refreshFilter(self,dataset,index):
-        self.activeFilters[index].refreshDataset(dataset)
+    def refreshFilter(self,data,index):
+        self.activeFilters[index].refreshData(data)
     # pixel stack histogram
     #def setPixelStack(self):
-    #    P = self.currDisplayProp
+    #    P = self.view2DProp
     #    x = self.pixelStackXEdit.text()
     #    y = self.pixelStackYEdit.text()
     #    if x == "" or y == "":
@@ -651,32 +612,53 @@ class DatasetProp(QtGui.QWidget):
     #    else:
     #        P["pixelStackX"] = int(x)
     #        P["pixekStackY"] = int(y)
+    def setImageStackN(self):
+        P = self.view2DProp
+        if self.imageStackNEdit.text() == "":
+            P["N"] = None
+        else:
+            P["N"] = int(self.imageStackNEdit.text())
     def clearPixelStack(self):
         self.pixelStackXEdit.setText("")
         self.pixelStackYEdit.setText("")
         self.pixelStackNEdit.setText("")
     def onPixelStackPickButton(self):
         self.pixelStackPick = True
-    def onPixelStackPlotButton(self):
-        ix = int(self.pixelStackXEdit.text())
-        iy = int(self.pixelStackYEdit.text())
-        if self.pixelStackNEdit.text() == "" or int(self.pixelStackNEdit.text()) == len(self.dataset):
-            N = 0
+    def setPixelStack(self):
+        P = self.view1DProp
+        if self.pixelStackXEdit.text() == "":
+            P["ix"] = None
         else:
-            N = int(self.pixelStackNEdit.text())
-        self.pixelStackChanged.emit(ix,iy,N)
-    # update and emit current diplay properties
-    def emitDisplayProp(self,foovalue=None):
+            P["ix"] = int(self.pixelStackXEdit.text())
+        if self.pixelStackYEdit.text() == "":
+            P["iy"] = None
+        else:
+            P["iy"] = int(self.pixelStackYEdit.text())
+        if self.pixelStackNEdit.text() == "":
+            P["N"] = None
+        else:
+            P["N"] = int(self.pixelStackNEdit.text())
+    def setPlotStyle(self):
+        P = self.view1DProp
+        P["lines"] = self.plotLinesCheckBox.isChecked()
+        P["points"] = self.plotPointsCheckBox.isChecked()
+    # update and emit current diplay properties        
+    def emitView1DProp(self):
+        self.setPixelStack()
+        self.setPlotStyle()
+        self.view1DPropChanged.emit(self.view1DProp)
+    def emitView2DProp(self):
         self.setImageStackSubplots()
         self.setNorm()
         self.setColormap()
         self.setSorting()
         self.setFilters()
-        self.displayPropChanged.emit(self.currDisplayProp)
+        self.setImageStackN()
+        self.view2DPropChanged.emit(self.view2DProp)
     def checkLimits(self):
         self.displayMax.setMinimum(self.displayMin.value())
         self.displayMin.setMaximum(self.displayMax.value())
-        self.emitDisplayProp()
+        self.emitView2DProp()
     # still needed?
     def keyPressEvent(self,event):
         if event.key() == QtCore.Qt.Key_H:
@@ -708,13 +690,14 @@ def paintColormapIcons(W,H):
 
 class FilterWidget(QtGui.QWidget):
     limitsChanged = QtCore.Signal(float,float)
-    def __init__(self,parent,dataset):
+    def __init__(self,parent,dataItem):
         QtGui.QWidget.__init__(self,parent)
         vbox = QtGui.QVBoxLayout()
-        nameLabel = QtGui.QLabel(dataset.name)
+        nameLabel = QtGui.QLabel(dataItem.fullName)
         yieldLabel = QtGui.QLabel("")
-        vmin = numpy.min(dataset)
-        vmax = numpy.max(dataset)
+        data = dataItem.data()
+        vmin = numpy.min(data)
+        vmax = numpy.max(data)
         histogram = pyqtgraph.PlotWidget(self)
         histogram.hideAxis('left')
         histogram.hideAxis('bottom')
@@ -746,7 +729,6 @@ class FilterWidget(QtGui.QWidget):
         hbox.addWidget(vmaxLineEdit)
         vbox.addLayout(hbox)
         self.setLayout(vbox)
-        self.dataset = dataset
         self.histogram = histogram
         self.histogram.region = region
         self.histogram.itemPlot = None
@@ -755,18 +737,19 @@ class FilterWidget(QtGui.QWidget):
         self.vminLineEdit = vminLineEdit
         self.vmaxLineEdit = vmaxLineEdit
         self.vbox = vbox
-        self.refreshDataset(dataset)
+        self.refreshData(dataItem)
         vminLineEdit.editingFinished.connect(self.emitLimitsChanged)
         vmaxLineEdit.editingFinished.connect(self.emitLimitsChanged)
-    def refreshDataset(self,dataset):
-        self.nameLabel.setText(dataset.name)
-        Ntot = len(dataset)
-        vmin = numpy.min(dataset)
-        vmax = numpy.max(dataset)
+    def refreshData(self,dataItem):
+        self.nameLabel.setText(dataItem.fullName)
+        self.dataItem = dataItem
+        self.data = dataItem.data()
+        Ntot = self.data.shape[0]
+        vmin = numpy.min(self.data)
+        vmax = numpy.max(self.data)
         yieldLabelString = "Yield: %.2f%% - %i/%i" % (100.,Ntot,Ntot)
         self.yieldLabel.setText(yieldLabelString)
-        self.dataset = dataset
-        (hist,edges) = numpy.histogram(dataset,bins=100)
+        (hist,edges) = numpy.histogram(data,bins=100)
         edges = (edges[:-1]+edges[1:])/2.0
         if self.histogram.itemPlot != None:
             self.histogram.removeItem(self.histogram.itemPlot)
@@ -782,11 +765,10 @@ class FilterWidget(QtGui.QWidget):
         self.vmaxLineEdit.setText("%.3e" % (vmax*1.001))
         self.emitLimitsChanged()
     def emitLimitsChanged(self,foo=None):
-        data = numpy.array(self.dataset,dtype="float") 
-        Ntot = len(data)
+        Ntot = len(self.data)
         vmin = float(self.vminLineEdit.text())
         vmax = float(self.vmaxLineEdit.text())
-        Nsel = ( (data<=vmax)*(data>=vmin) ).sum()
+        Nsel = ( (self.data<=vmax)*(self.data>=vmin) ).sum()
         label = "Yield: %.2f%% - %i/%i" % (100*Nsel/(1.*Ntot),Nsel,Ntot)
         self.yieldLabel.setText(label)
         self.limitsChanged.emit(vmin,vmax)

@@ -2,7 +2,7 @@ from PySide import QtGui, QtCore, QtOpenGL
 from matplotlib import colors
 from matplotlib import cm
 from view import View
-from imageloader import ImageLoader
+from dataloader import ImageLoader
 from OpenGL.GL import *
 from OpenGL.GLU import *
 import OpenGL.GL.ARB.texture_float
@@ -14,13 +14,13 @@ import time
 from cache import GLCache
         
 class View2D(View,QtOpenGL.QGLWidget):
-    needsImage = QtCore.Signal(int)
+    needDataImage = QtCore.Signal(int)
     #imageSelected = QtCore.Signal(int)
     centralImgChanged = QtCore.Signal(int,int,int,int)
     translationChanged = QtCore.Signal(int,int)
     stackWidthChanged = QtCore.Signal(int)
     pixelClicked = QtCore.Signal(dict)
-    datasetChanged = QtCore.Signal(object)
+    dataItemChanged = QtCore.Signal(object,object)
     def __init__(self,viewer,parent=None):
         View.__init__(self,parent,"image")
         QtOpenGL.QGLWidget.__init__(self,parent)
@@ -54,7 +54,7 @@ class View2D(View,QtOpenGL.QGLWidget):
         self.remainSet = []
 
         self.loaderThread = ImageLoader(None,self)
-        self.needsImage.connect(self.loaderThread.loadImage)
+        self.needDataImage.connect(self.loaderThread.loadImage)
         self.loaderThread.imageLoaded.connect(self.generateTexture)
 #        self.clearLoaderThread.connect(self.loaderThread.clear)
 
@@ -81,65 +81,34 @@ class View2D(View,QtOpenGL.QGLWidget):
         self.PNGOutputPath = settings.value("PNGOutputPath")
 	#print self.PNGOutputPath
 
-    def setData(self,dataset=None):
-        self.data = dataset
+    def setData(self,dataItem=None):
+        self.data = dataItem
         if self.data != None:
             self.has_data = True
         else:
             self.has_data = False
-        self.datasetChanged.emit(dataset)
-    def setMask(self,mask=None):
-        self.mask = mask
+        self.dataItemChanged.emit(self.data,self.mask)
+    def setMask(self,dataItem=None):
+        self.mask = dataItem
+        self.dataItemChanged.emit(self.data,self.mask)
     def setMaskOutBits(self,maskOutBits=0):
         self.maskOutBits = maskOutBits
-    def getMask(self,img_sorted=0):
+    def getMask(self,img=0):
         if self.mask == None:
             return None
-        elif self.mask.isCXIStack():
+        elif self.mask.isStack:
             if self.integrationMode == None:
-                return self.mask[img_sorted,:,:]
+                return self.mask.data(img=img)
             else:
-                return numpy.zeros(shape=(self.data.shape[1],self.data.shape[2]))
+                return numpy.zeros(shape=(self.data.shape()[-2],self.data.shape()[-1]))
         else:
-            return self.mask[:,:]
-    def getData(self,index=0):
-        if self.data.isCXIStack():
-            if self.integrationMode == None:
-                return self.data[index,:,:]
-            else:
-                if self.indexProjector.filterMask == None:
-                    d = self.data
-                else:
-                    d = self.data[self.indexProjector.filterMask,:,:]
-                if self.imageStackN != None:
-                    if self.imageStackN < d.shape[0]:
-                        iz = numpy.random.randint(0,d.shape[0],self.imageStackN)
-                        iz.sort()
-                        temp = numpy.zeros(shape=(self.imageStackN,d.shape[1],d.shape[2]))
-                        # for some reason the following line causes hdf5 errors if the dataset is getting very large
-                        #d[:] = d[iz,:,:]
-                        for i in range(self.imageStackN):
-                            temp[i,:,:] = d[iz[i],:,:]
-                        d = temp
-                if self.integrationMode == "mean":
-                    return numpy.mean(d,0)
-                elif self.integrationMode == "std":
-                    return numpy.std(d,0)
-                elif self.integrationMode == "min":
-                    return numpy.min(d,0)
-                elif self.integrationMode == "max":
-                    return numpy.max(d,0)
-        else:
-            return self.data[:,:]
-        
-    def onImageStackNEdit(self):
-        self.imageStackN = int(self.sender().text())
-
+            return self.mask.data()
+    def getData(self,img=None):
+        return self.data.data(img=img,integrationMode=self.integrationMode,filterMask=self.indexProjector.filterMask,N=self.imageStackN)
     def stopThreads(self):
         while(self.imageLoader.isRunning()):
             self.imageLoader.quit()
             QtCore.QThread.sleep(1)
-
     def initializeGL(self):
         glClearColor(0.0, 0.0, 0.0, 1.0)
         glClearDepth(1.0)
@@ -525,7 +494,7 @@ class View2D(View,QtOpenGL.QGLWidget):
         glTranslatef(-(self.width()/self.zoom)/2.,(self.height()/self.zoom)/2.,0)
         startTimer = False
         if(self.has_data):
-            if(self.data.getCXIFormat() == 2):
+            if(self.data.format == 2):
                 img_width = self.getImgWidth("scene",False)
                 img_height = self.getImgHeight("scene",False)
                 visible = self.visibleImages()
@@ -558,32 +527,17 @@ class View2D(View,QtOpenGL.QGLWidget):
 #        print '%s function took %0.3f ms' % ("paintGL", (time4-time3)*1000.0)
 #        self.time1 = time.time()
     
-
-    def addToStack(self,data):
-        pass
     def loadStack(self,data):
         self.setData(data)
         self.zoomFromStackWidth()
-    def loadImage(self,data):
-        if(data.getCXIFormat() == 2):
-            #print data
-            #print "Loading image"
-            self.setData(data)
-            self.stackWidth = 1
-            self.setStackWidth(self.stackWidth)
-            self.clearTextures()
-            self.updateGL()
-        else:
-            print "3D images not supported."
-            sys.exit(-1)
     # will have to be changed when filter is implemented
     def getNImages(self):
-        if self.data.isCXIStack():
-            return self.data.shape[0]
+        if self.data.isStack:
+            return self.data.shape()[0]
         else:
             return 1
     def getNImagesVisible(self):
-        if not self.data.isCXIStack():
+        if not self.data.isStack:
             return 1
         else:
             if self.indexProjector.imgs == None:
@@ -592,7 +546,7 @@ class View2D(View,QtOpenGL.QGLWidget):
                 return len(self.indexProjector.imgs)
     def getImgHeight(self,reference,border=False):
         if self.data != {} and self.data != None:
-            imgHeight = self.data.getCXIHeight()
+            imgHeight = self.data.height()
             if border == True:
                 imgHeight += self.subplotSceneBorder()
         else:
@@ -602,7 +556,7 @@ class View2D(View,QtOpenGL.QGLWidget):
         elif reference == "scene":
             return imgHeight 
     def getImgWidth(self,reference,border=False):
-        imgWidth = self.data.getCXIWidth()
+        imgWidth = self.data.width()
         if border == True:
             imgWidth += self.subplotSceneBorder()
         if reference == "window":
@@ -671,7 +625,7 @@ class View2D(View,QtOpenGL.QGLWidget):
     def updateTextures(self,images):
         for img in images:
             if(img not in set.intersection(set(self.imageTextures.keys()),set(self.loaderThread.loadedImages()))):
-                self.needsImage.emit(img)
+                self.needDataImage.emit(img)
             else:
                 # Let the cache know we're using these images
                 self.loaderThread.imageData.touch(img)
@@ -773,6 +727,8 @@ class View2D(View,QtOpenGL.QGLWidget):
         if img in self.loaderThread.imageData.keys():
             (ix,iy) = self.windowToImageCoordinates(x,y,0)
             info = self.getPixelInfo(img,ix,iy)
+            if info == None:
+                return
             self.selectedImage = info["img"]
             self.pixelClicked.emit(info)
             self.updateGL()
@@ -780,6 +736,8 @@ class View2D(View,QtOpenGL.QGLWidget):
         info = {}
         info["ix"] = ix
         info["iy"] = iy
+        if ix >= self.loaderThread.imageData[img].shape[1] or iy >= self.loaderThread.imageData[img].shape[0] or ix < 0 or iy < 0:
+            return None
         info["img"] = img
         info["viewIndex"] = self.indexProjector.imgToIndex(img)
         info["imageValue"] = self.loaderThread.imageData[img][iy,ix]
@@ -805,10 +763,6 @@ class View2D(View,QtOpenGL.QGLWidget):
         if(ss != self.lastHoveredViewIndex):
             self.lastHoveredViewIndex = ss
             self.updateGL()
-    def checkSelectedSubplot(self):
-        if(self.selectedImage not in self.data.keys()):
-            self.selectedImage = None
-            self.parent.datasetProp.recalculateSelectedSlice()
     def hoveredViewIndex(self):
         pos = self.mapFromGlobal(QtGui.QCursor.pos())
         viewIndex = self.windowToViewIndex(pos.x(),pos.y(),0)
@@ -882,12 +836,12 @@ class View2D(View,QtOpenGL.QGLWidget):
     # Returns the view index (index after sorting and filtering) of the image that is at a particular window location
     def windowToViewIndex(self,x,y,z,checkExistance=True, clip=True):
         if(self.has_data is True):
-            shape = (self.data.getCXIHeight(),self.data.getCXIWidth())
+            shape = (self.data.height(),self.data.width())
             modelview = glGetDoublev(GL_MODELVIEW_MATRIX)
             projection = glGetDoublev(GL_PROJECTION_MATRIX)
             viewport = glGetIntegerv(GL_VIEWPORT);
             (x,y,z) =  gluUnProject(x, viewport[3]-y,z , model=modelview, proj=projection, view=viewport)
-            (x,y) = (int(numpy.floor(x/(self.data.getCXIWidth()+self.subplotSceneBorder()))),int(numpy.floor(-y/(self.data.getCXIHeight()+self.subplotSceneBorder()))))
+            (x,y) = (int(numpy.floor(x/(self.data.width()+self.subplotSceneBorder()))),int(numpy.floor(-y/(self.data.height()+self.subplotSceneBorder()))))
             if(clip and (x < 0 or x >= self.stackWidth or y < 0)):
                 return None            
             if(checkExistance and x + y*self.stackWidth >= self.getNImages()):
@@ -922,7 +876,7 @@ class View2D(View,QtOpenGL.QGLWidget):
         if(self.has_data is not True):
             return 1
         # Calculate the zoom necessary for the given stack width to fill the current viewport width
-        new_zoom = float(self.width()-width*self.subplotBorder)/(self.data.getCXIWidth()*width)
+        new_zoom = float(self.width()-width*self.subplotBorder)/(self.data.width()*width)
         self.scaleZoom(new_zoom/self.zoom)
     def clear(self):
 	self.clearView()
@@ -955,28 +909,29 @@ class View2D(View,QtOpenGL.QGLWidget):
         return 
     def subplotSceneBorder(self):
         return self.subplotBorder/self.zoom
-    def refreshDisplayProp(self,datasetProp):
-        if datasetProp != None:
-            #self.loaderThread.setNorm(datasetProp["normScaling"],datasetProp["normVmin"],datasetProp["normVmax"],datasetProp["normClip"],datasetProp["normGamma"])
-            #self.loaderThread.setColormap(datasetProp["colormapText"])
-            self.normScaling = datasetProp["normScaling"]
+    def refreshDisplayProp(self,prop):
+        if prop != None:
+            #self.loaderThread.setNorm(prop["normScaling"],prop["normVmin"],prop["normVmax"],prop["normClip"],prop["normGamma"])
+            #self.loaderThread.setColormap(prop["colormapText"])
+            self.normScaling = prop["normScaling"]
             if(self.normScaling == 'lin'):
                 self.normScalingValue = 0
             elif(self.normScaling == 'log'):
                 self.normScalingValue = 1
             elif(self.normScaling == 'pow'):                
                 self.normScalingValue = 2
-            self.normVmin = datasetProp["normVmin"]
-            self.normVmax = datasetProp["normVmax"]
-            self.normGamma = datasetProp["normGamma"]
-            if(datasetProp["normClamp"] == True):
+            self.normVmin = prop["normVmin"]
+            self.normVmax = prop["normVmax"]
+            self.normGamma = prop["normGamma"]
+            if(prop["normClamp"] == True):
                 self.normClamp = 1
             else:
                 self.normClamp = 0
-            if not hasattr(self, 'colormapText') or self.colormapText != datasetProp["colormapText"]:
-                self.colormapText = datasetProp["colormapText"]
-            self.setStackWidth(datasetProp["imageStackSubplotsValue"])
-            self.indexProjector.setProjector(datasetProp["sortingDataset"],datasetProp["sortingInverted"],datasetProp["filterMask"])
+            if not hasattr(self, 'colormapText') or self.colormapText != prop["colormapText"]:
+                self.colormapText = prop["colormapText"]
+            self.setStackWidth(prop["imageStackSubplotsValue"])
+            self.indexProjector.setProjector(prop["sortingDataItem"],prop["sortingInverted"],prop["filterMask"])
+            self.imageStackN = prop["N"]
         self.updateGL()
 
     def saveToPNG(self):
@@ -1014,18 +969,13 @@ class View2D(View,QtOpenGL.QGLWidget):
         oldSize = self.stackSize
         if self.data != None:
             self.has_data = True        
-            if self.data.isCXIStack():
-		self.stackSize = self.data.getCXIStackSize()
+            if self.data.isStack:
+		self.stackSize = self.data.shape()[0]
             else:
-                if "numEvents" in self.data.attrs.keys():
-                    self.stackSize = self.data.attrs.get("numEvents")[0]
-                elif len(self.data.shape) == 3:
-                    self.stackSize = self.data.shape[2]
-                else:
-                    self.stackSize = 1
+                self.stackSize = 1
         else:
             self.stackSize = 0
             self.has_data = False
-        if emitChanged == True and self.stackSize != oldSize:# and (self.data == None or self.data.isCXIStack()):
+        if emitChanged == True and self.stackSize != oldSize:# and (self.data == None or self.data.isStack):
             #print "Stack size %i" % self.stackSize
             self.stackSizeChanged.emit(self.stackSize)

@@ -8,27 +8,27 @@ class IndexProjector(QtCore.QObject):
         QtCore.QObject.__init__(self)
         self.stackSize = 0
         self.clear()
-    def setProjector(self,sortingDataset,sortingInverted,filterMask):
-        self.sortingDataset = sortingDataset
+    def setProjector(self,sortingDataItem,sortingInverted,filterMask):
+        self.sortingDataItem = sortingDataItem
         self.sortingInverted = sortingInverted
         self.filterMask = filterMask
         self.update()
     def update(self):
         if self.stackSize != 0:
             self.imgs = numpy.arange(self.stackSize,dtype="int")
-            if self.sortingDataset != None:
-                sortingDataset = -numpy.array(self.sortingDataset)
+            if self.sortingDataItem != None:
+                sortingDataItem = -numpy.array(self.sortingDataItem.data())
             else:
-                sortingDataset = numpy.arange(self.stackSize,dtype="int")
+                sortingDataItem = numpy.arange(self.stackSize,dtype="int")
             if self.filterMask != None:
-                sortingDatasetFiltered = sortingDataset[self.filterMask]
+                sortingDataItemFiltered = sortingDataItem[self.filterMask]
                 self.imgs = self.imgs[self.filterMask]
             else:
-                sortingDatasetFiltered = sortingDataset
+                sortingDataItemFiltered = sortingDataItem
             if self.sortingInverted:
-                self.imgs = self.imgs[numpy.argsort(sortingDatasetFiltered)[-1::-1]]
+                self.imgs = self.imgs[numpy.argsort(sortingDataItemFiltered)[-1::-1]]
             else:
-                self.imgs = self.imgs[numpy.argsort(sortingDatasetFiltered)]
+                self.imgs = self.imgs[numpy.argsort(sortingDataItemFiltered)]
             self.viewIndices = numpy.zeros(self.stackSize,dtype="int")
             self.viewIndices[self.imgs] = numpy.arange(len(self.imgs),dtype="int")
         else:
@@ -66,7 +66,7 @@ class IndexProjector(QtCore.QObject):
     def clear(self):
         self.stackSize = 0
         self.filterMask = None
-        self.sortingDataset = None
+        self.sortingDataItem = None
         self.sortingInverted = False
         self.viewIndices = None
         self.imgs = None

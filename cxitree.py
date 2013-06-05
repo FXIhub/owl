@@ -4,69 +4,21 @@ import h5py
 from operator import mul
 import numpy
 import sys,os
+from dataloader import *
 
-# Add new functions to h5py.Dataset, names for functions are supposed to be unique in order to avoid conflicts
-def isCXIStack(dataset):
-    items = dataset.attrs.items()
-    if len(items) > 0:
-        cacheCXIStack = ("axes" == items[0][0])
-        shape = dataset.shape
-        if len(shape) >= 3 and dataset.shape[2] == 1:
-            cacheCXIStack = False
-    else:
-        cacheCXIStack = False
-    return cacheCXIStack      
-h5py.Dataset.isCXIStack = isCXIStack 
-def getCXIStackSize(dataset):
-    if dataset.isCXIStack():
-        return dataset.attrs.get("numEvents", [dataset.shape[0]])[0]
-    else:
-        None
-h5py.Dataset.getCXIStackSize = getCXIStackSize 
-def getCXIFormat(dataset):
-    cacheCXIformat = len(dataset.shape)
-    if dataset.isCXIStack() and cacheCXIformat == 3:
-        cacheCXIformat = 2
-    return cacheCXIformat
-
-h5py.Dataset.getCXIFormat = getCXIFormat
-def getCXIImageShape(dataset):
-    if dataset.getCXIFormat() == 2:
-        return (dataset.shape[-2],dataset.shape[-1])
-    else:
-        return None
-h5py.Dataset.getCXIImageShape = getCXIImageShape
-def isCXIText(dataset):
-    return (str(dataset.dtype.name).find("string") != -1)
-h5py.Dataset.isCXIText = isCXIText
-def getCXIMasks(dataset):
-    masks = {}
-    suppMaskTypes = ["mask_shared","mask"]
-    for maskType in suppMaskTypes:
-        if maskType in dataset.parent.keys():
-            masks[maskType] = dataset.parent[maskType]
-    return masks
-h5py.Dataset.getCXIMasks = getCXIMasks
-def getCXIWidth(dataset):
-    return dataset.shape[-1]
-h5py.Dataset.getCXIWidth = getCXIWidth
-def getCXIHeight(dataset):
-    return dataset.shape[-2]
-h5py.Dataset.getCXIHeight = getCXIHeight
-
-class DatasetButton(QtGui.QPushButton):
-    needDataset = QtCore.Signal(str)    
-    def __init__(self,datasetBox,imageFile,datasetMode,menu=None):
+class DataButton(QtGui.QPushButton):
+    needData = QtCore.Signal(str)    
+    def __init__(self,dataBox,imageFile,dataMode,menu=None):
         QtGui.QPushButton.__init__(self)
-        self.datasetBox = datasetBox
-        self.datasetMode = datasetMode
+        self.dataBox = dataBox
+        self.dataMode = dataMode
         self.setName()
         self.setIcon(QtGui.QIcon(imageFile))
         S = 30
         Htot = S + 15
         Wtot = 400
         self.setIconSize(QtCore.QSize(S,S))
-        self.setToolTip("drag dataset here")
+        self.setToolTip("drag data here")
         self.setAcceptDrops(True)
         if menu != None:
             self.setMenu(menu)
@@ -77,20 +29,20 @@ class DatasetButton(QtGui.QPushButton):
             e.ignore() 
     def dropEvent(self, e):
         t = e.mimeData().text()
-        self.needDataset.emit(t)
+        self.needData.emit(t)
     def setName(self,name=None):
         if name == None:
             self.setStyleSheet("text-align: left; font-style: italic")
-            self.setText("drag %s dataset here" % self.datasetMode)
+            self.setText("drag %s data here" % self.dataMode)
         else:
             self.setStyleSheet("text-align: left; font-style: roman") 
             self.setText(name)
 
-class DatasetBox(QtGui.QHBoxLayout):
-    def __init__(self,imageFile,datasetMode,menu):
+class DataBox(QtGui.QHBoxLayout):
+    def __init__(self,imageFile,dataMode,menu):
         QtGui.QHBoxLayout.__init__(self)
         self.menu = menu
-        self.button = DatasetButton(self,imageFile,datasetMode,menu)
+        self.button = DataButton(self,imageFile,dataMode,menu)
         self.addWidget(self.button)
         self.vbox = QtGui.QVBoxLayout()
         self.addLayout(self.vbox)
@@ -98,16 +50,16 @@ class DatasetBox(QtGui.QHBoxLayout):
             self.menu.clearAction.triggered.connect(self.clear)
     def clear(self):
         self.button.setName()
-        self.button.needDataset.emit(None)
+        self.button.needData.emit(None)
 
-class DatasetMenu(QtGui.QMenu):
+class DataMenu(QtGui.QMenu):
     def __init__(self,parent=None):
         QtGui.QMenu.__init__(self,parent)
         self.clearAction = self.addAction("Clear")
 
-class DatasetMaskMenu(DatasetMenu):
+class DataMaskMenu(DataMenu):
     def __init__(self,parent=None):
-        DatasetMenu.__init__(self,parent)
+        DataMenu.__init__(self,parent)
         self.addSeparator()
         self.PIXELMASK_BITS = {'perfect' : 0,# PIXEL_IS_PERFECT
                                'invalid' : 1,# PIXEL_IS_INVALID
@@ -135,9 +87,9 @@ class DatasetMaskMenu(DatasetMenu):
         return maskOutBits
         
 
-class DatasetPlotMenu(DatasetMenu):
+class DataPlotMenu(DataMenu):
     def __init__(self,parent=None):
-        DatasetMenu.__init__(self,parent)
+        DataMenu.__init__(self,parent)
         self.addSeparator()
         actionGroup = QtGui.QActionGroup(self)
         actionGroup.setExclusive(True)
@@ -161,64 +113,64 @@ class CXINavigation(QtGui.QWidget):
         self.vbox = QtGui.QVBoxLayout()
         self.setLayout(self.vbox)
 
-        self.datasetMenus = {}
-        self.datasetBoxes = {}
+        self.dataMenus = {}
+        self.dataBoxes = {}
 
-        self.datasetMenus["image"] = DatasetMenu(self)
+        self.dataMenus["image"] = DataMenu(self)
         self.basePath = os.path.dirname(os.path.realpath(__file__))
-        self.datasetBoxes["image"] = DatasetBox(self.basePath + "/icons/image.png","image",self.datasetMenus["image"])
-        self.vbox.addLayout(self.datasetBoxes["image"])
+        self.dataBoxes["image"] = DataBox(self.basePath + "/icons/image.png","image",self.dataMenus["image"])
+        self.vbox.addLayout(self.dataBoxes["image"])
 
-        self.datasetMenus["mask"] = DatasetMaskMenu(self)
-        self.datasetBoxes["mask"] = DatasetBox(self.basePath + "/icons/mask_simple.png","mask",self.datasetMenus["mask"])
-        self.vbox.addLayout(self.datasetBoxes["mask"])
+        self.dataMenus["mask"] = DataMaskMenu(self)
+        self.dataBoxes["mask"] = DataBox(self.basePath + "/icons/mask_simple.png","mask",self.dataMenus["mask"])
+        self.vbox.addLayout(self.dataBoxes["mask"])
 
-        self.datasetMenus["sort"] = DatasetMenu(self)
-        self.datasetBoxes["sort"] = DatasetBox(self.basePath + "/icons/sort.png","sort",self.datasetMenus["sort"])
-        self.vbox.addLayout(self.datasetBoxes["sort"])
+        self.dataMenus["sort"] = DataMenu(self)
+        self.dataBoxes["sort"] = DataBox(self.basePath + "/icons/sort.png","sort",self.dataMenus["sort"])
+        self.vbox.addLayout(self.dataBoxes["sort"])
 
-        self.datasetBoxes["filter0"] = DatasetBox(self.basePath + "/icons/filter.png","filter",None)
-        self.vbox.addLayout(self.datasetBoxes["filter0"])
+        self.dataBoxes["filter0"] = DataBox(self.basePath + "/icons/filter.png","filter",None)
+        self.vbox.addLayout(self.dataBoxes["filter0"])
 
         self.vboxFilters = QtGui.QVBoxLayout()
         #self.vboxFilters.setDirection(QtGui.QBoxLayout.BottomToTop)
         self.vbox.addLayout(self.vboxFilters)
-        self.datasetMenus["filters"] = []
-        self.datasetBoxes["filters"] = []
+        self.dataMenus["filters"] = []
+        self.dataBoxes["filters"] = []
 
         line = QtGui.QFrame()
         line.setFrameShape(QtGui.QFrame.HLine)
         self.vbox.addWidget(line)
 
-        self.datasetMenus["plot X"] = DatasetMenu(self)
-        self.datasetBoxes["plot X"] = DatasetBox(self.basePath + "/icons/plotX.png","plot X",self.datasetMenus["plot X"])
-        self.vbox.addLayout(self.datasetBoxes["plot X"])
+        self.dataMenus["plot X"] = DataMenu(self)
+        self.dataBoxes["plot X"] = DataBox(self.basePath + "/icons/plotX.png","plot X",self.dataMenus["plot X"])
+        self.vbox.addLayout(self.dataBoxes["plot X"])
 
-        self.datasetMenus["plot Y"] = DatasetPlotMenu(self)
-        self.datasetBoxes["plot Y"] = DatasetBox(self.basePath + "/icons/plotY.png","plot Y",self.datasetMenus["plot Y"])
-        self.vbox.addLayout(self.datasetBoxes["plot Y"])
+        self.dataMenus["plot Y"] = DataPlotMenu(self)
+        self.dataBoxes["plot Y"] = DataBox(self.basePath + "/icons/plotY.png","plot Y",self.dataMenus["plot Y"])
+        self.vbox.addLayout(self.dataBoxes["plot Y"])
 
         self.CXITree = CXITree(self)
         self.vbox.addWidget(self.CXITree)
 
     def addFilterBox(self):
-        menu = DatasetMenu(self)
-        self.datasetMenus["filters"].append(menu)
-        box = DatasetBox(self.basePath + "/icons/filter.png","filter",menu)
-        self.datasetBoxes["filters"].append(box)
+        menu = DataMenu(self)
+        self.dataMenus["filters"].append(menu)
+        box = DataBox(self.basePath + "/icons/filter.png","filter",menu)
+        self.dataBoxes["filters"].append(box)
         self.vboxFilters.addLayout(box)
         return box
 
     def removeFilterBox(self,filterBox):
-        i = self.datasetBoxes["filters"].index(filterBox)
-        self.datasetBoxes["filters"][i].removeWidget(self.datasetBoxes["filters"][i].button)
-        self.datasetBoxes["filters"][i].button.setParent(None)
-        self.datasetBoxes["filters"].pop(i)
-        self.datasetMenus["filters"].pop(i)
+        i = self.dataBoxes["filters"].index(filterBox)
+        self.dataBoxes["filters"][i].removeWidget(self.dataBoxes["filters"][i].button)
+        self.dataBoxes["filters"][i].button.setParent(None)
+        self.dataBoxes["filters"].pop(i)
+        self.dataMenus["filters"].pop(i)
         
 
 class CXITree(QtGui.QTreeWidget):
-    datasetClicked = QtCore.Signal(str)    
+    dataClicked = QtCore.Signal(str)    
     def __init__(self,parent=None):        
         QtGui.QTreeWidget.__init__(self,parent)
         self.parent = parent
@@ -233,84 +185,86 @@ class CXITree(QtGui.QTreeWidget):
         self.manageSizes()
     def manageSizes(self):
         self.resizeColumnToContents(0)
-    def buildTree(self,filename):
+    def buildTree(self,fileLoader):
+        self.fileLoader = fileLoader
         self.clear();
-        self.datasets = {}
         self.setColumnCount(1)
-        self.f = h5py.File(filename, "r")
         self.root = QtGui.QTreeWidgetItem(["/"])
         self.addTopLevelItem(self.root)
-        self.item = QtGui.QTreeWidgetItem([QtCore.QFileInfo(filename).fileName()])
-        self.item.setToolTip(0,filename)
         self.root.setExpanded(True)
+        self.item = QtGui.QTreeWidgetItem([fileLoader.filename])
+        self.item.setToolTip(0,fileLoader.fullFilename)
         self.root.addChild(self.item)
-        self.buildBranch(self.f,self.item)
+        self.buildBranch(fileLoader,self.item)
         self.loadData1()
-    def buildBranch(self,group,item):
+    def buildBranch(self,group,branch):
         self.columnPath = 1
-        for g in group.keys():
-            lst = [g]
-            if(isinstance(group[g],h5py.Group)):
-                child = QtGui.QTreeWidgetItem(lst)
-                self.buildBranch(group[g],child)
-                item.addChild(child)
+        keys = group.children.keys()
+        keys.sort()
+        for k in keys:
+            child = group.children[k]
+            lst = [k]
+            if(isinstance(child,GroupItem)):
+                item = QtGui.QTreeWidgetItem(lst)
+                self.buildBranch(child,item)
             else:
-                if(not group[g].shape):# or reduce(mul,group[g].shape) < 10):
-                    lst.append(str(group[g][()]))
-                    lst.append("")
-                    child = QtGui.QTreeWidgetItem(lst)
+                #if(not group[child].shape):# or reduce(mul,group[g].shape) < 10):
+                #    lst.append(str(group[g][()]))
+                #    lst.append("")
+                #    child = QtGui.QTreeWidgetItem(lst)
+                #else:
+                lst.append(child.fullName)
+                item = QtGui.QTreeWidgetItem(lst)
+                ds_dtype = child.dtypeName
+                ds_shape = child.shape()
+                # make tooltip
+                string = "<i>"+ds_dtype+"</i> ("
+                for d in ds_shape:
+                    string += str(d)+","
+                string = string[:-1]
+                string += ")"
+                item.setToolTip(self.columnPath-1,string)
+                numDims = child.format
+                S = 50
+                # 0D blue
+                if numDims == 0:
+                    R = 255-S
+                    G = 255-S
+                    B = 255
+                    prop = "1D"
+                # 1D red
+                elif numDims == 1:
+                    R = 255
+                    G = 255-S
+                    B = 255-S
+                    prop = "3D"
+                # 2D green
+                elif numDims == 2:
+                    R = 255-S
+                    G = 255
+                    B = 255-S 
+                    prop = "2D"
+                # default grey
                 else:
-                    dataset = self.datasets[group[g].name] = group[g]
-                    ds_dtype = dataset.dtype.name
-                    ds_shape = dataset.shape
-                    string = "<i>"+ds_dtype+"</i> ("
-                    for d in ds_shape:
-                        string += str(d)+","
-                    string = string[:-1]
-                    string += ")"
-                    lst.append(group[g].name)
-                    child = QtGui.QTreeWidgetItem(lst)
-                    child.setToolTip(self.columnPath-1,string)
-                    numDims = dataset.getCXIFormat()
-                    S = 50
-                    # 1D blue
-                    if numDims == 1:
-                        R = 255-S
-                        G = 255-S
-                        B = 255
-                        prop = "1D"
-                    # 2D gree
-                    elif numDims == 2:
-                        R = 255-S
-                        G = 255
-                        B = 255-S 
-                        prop = "2D"
-                    # 3D red
-                    elif numDims == 3:
-                        R = 255
-                        G = 255-S
-                        B = 255-S
-                        prop = "3D"
-                    # default grey
-                    else:
-                        R = 255-S
-                        G = 255-S
-                        B = 255-S
-                        prop = "default"
-                    # datsets which are not stacks lighter
-                    if not dataset.isCXIStack():
-                        fade = S
-                        R -= fade
-                        G -= fade
-                        B -= fade
-                        prop += "Stack"
-                    child.setForeground(0,QtGui.QBrush(QtGui.QColor(R,G,B)))
-                    # make bold if it is a dataset called 'data'
-                    if g.rsplit("/",1)[-1] == 'data':
-                        font = QtGui.QFont()
-                        font.setBold(True)
-                        child.setFont(0,font)
-                item.addChild(child)
+                    R = 255-S
+                    G = 255-S
+                    B = 255-S
+                    prop = "default"
+                # datsets which are not stacks lighter
+                isStack = child.isStack
+                if not isStack:
+                    fade = S
+                    R -= fade
+                    G -= fade
+                    B -= fade
+                    prop += "Stack"
+                item.setForeground(0,QtGui.QBrush(QtGui.QColor(R,G,B)))
+                # make bold if it is a data called 'data'
+                if child.name == 'data':
+                    font = QtGui.QFont()
+                    font.setBold(True)
+                    item.setFont(0,font)
+            branch.addChild(item)
     def loadData1(self):
         root = self.item
         root.setExpanded(True)
@@ -339,6 +293,6 @@ class CXITree(QtGui.QTreeWidget):
         drag.setMimeData(mime)
         drag.start(QtCore.Qt.MoveAction)
     def handleClick(self,item,column):
-        if(item.text(self.columnPath) in self.datasets.keys()):
-            self.datasetClicked.emit(item.text(self.columnPath))
+        if(item.text(self.columnPath) in self.fileLoader.dataItems.keys()):
+            self.dataClicked.emit(item.text(self.columnPath))
 

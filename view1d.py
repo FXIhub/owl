@@ -5,8 +5,8 @@ from view import View
 
 class View1D(View,QtGui.QFrame):
     viewIndexSelected = QtCore.Signal(int)
-    datasetXChanged = QtCore.Signal(object)
-    datasetYChanged = QtCore.Signal(object)
+    dataItemXChanged = QtCore.Signal(object)
+    dataItemYChanged = QtCore.Signal(object)
     def __init__(self,parent=None):
         View.__init__(self,parent,"plot")
         QtGui.QFrame.__init__(self,parent)
@@ -18,12 +18,10 @@ class View1D(View,QtGui.QFrame):
         self.setLayout(self.hbox)
         self.setAcceptDrops(True)
         self.plotMode = "plot"
-        self.dataY = None
-        self.dataX = None
-        self.ix = None
-        self.iy = None
-        self.N = None
-        self.applyIndexProjector = True
+        self.dataItemY = None
+        self.dataItemX = None
+        self.setPixelStack()
+        self.setMovingAverage()
         self.nBins = 200
         self.stackSizeChanged.connect(self.refreshPlot)
     def initPlot(self,widgetType="plot"):
@@ -46,6 +44,39 @@ class View1D(View,QtGui.QFrame):
         self.plot.getAxis("right").setWidth(space)
         self.setStyle()
         #self.p.update()
+    def setDataItemX(self,dataItem):
+        self.dataItemX = dataItem
+        if hasattr(dataItem,"fullName"): 
+            self.dataItemXLabel = dataItem.fullName
+        else:
+            self.dataItemXLabel = ""
+        self.dataItemXChanged.emit(dataItem)
+    def setDataItemY(self,dataItem):
+        self.dataItemY = dataItem
+        if hasattr(dataItem,"fullName"):
+            self.dataItemYLabel = dataItem.fullName
+        else:
+            self.dataItemYLabel = ""
+        if dataItem.isStack:
+            self.stackSize = self.dataItemY.shape(True)[0]
+        else:
+            self.stackSize = 0
+        self.setPixelStack()
+        self.setMovingAverage()
+        self.dataItemYChanged.emit(dataItem)
+    def setPixelStack(self,ix=None,iy=None,N=None):
+        self.ix = ix
+        self.iy = iy
+        self.N = N
+    def setMovingAverage(self,windowSize=None):
+        self.windowSize = windowSize
+    def toggleAutoLast(self):
+        self.autoLast = not self.autoLast
+    # DATA
+    def updateShape(self):
+        if self.dataItemY != None:
+            if self.dataItemY.shape() != self.dataItemY.shape(True):
+                self.refreshPlot()
     def addInfLine(self):
         if self.infLine == None:
             infLine = pyqtgraph.InfiniteLine(0,90,None,True)
@@ -73,161 +104,72 @@ class View1D(View,QtGui.QFrame):
         if self.symbol != None:
             self.p.setSymbolBrush(self.symbolColor)
             self.p.setSymbolSize(self.symbolSize)
-        else:
-            self.p.setSymbolBrush((0,0,0))
-            self.p.setSymbolSize(0)
-    def setData(self,data,axis):
-        if axis == "X":
-            self.dataX = data
-            if hasattr(data,"name"): 
-                self.dataXLabel = data.name
-            else:
-                self.dataXLabel = ""
-            self.datasetXChanged.emit(data)
-        elif axis == "Y":
-            self.dataY = data
-            if hasattr(data,"name"):
-                self.dataYLabel = data.name
-            else:
-                self.dataYLabel = ""
-            self.setStack()
-            self.datasetYChanged.emit(data)
-    def setStack(self,ix=None,iy=None,N=None):
-        self.ix = ix
-        self.iy = iy
-        self.N = N
-    def getData(self,axis):
-        if axis=="X":
-            data = self.dataX
-        elif axis == "Y":
-            data = self.dataY
-            if self.ix != None and self.iy != None and data != None:
-                numEvents = data.get("numEvents",data.shape[0])
-                if self.N != None and self.N <= numEvents:
-                    N = self.N
-                    iz = numpy.random.randint(0,numEvents,N)
-                    iz.sort()
-                    data = numpy.zeros(N)
-                    # for some reason the following line causes hdf5 errors if the dataset is getting very large
-                    #data[:] = self.data[iz,:,:]
-                    for i in range(N):
-                        data[i] = data[iz[i],iy,ix]
-                else:
-                    data = data[:numEvents,iy,ix]
-        if data != None:
-            data = numpy.array(data).flatten()
-        return data
     def setPlotMode(self,plotMode):
         self.plotMode = plotMode
         if plotMode == "plot" or plotMode == "average":
-            if self.dataX != None:
-                xlabel = self.dataX.name
+            if self.dataItemX != None:
+                xlabel = self.dataItemX.fullName
             else:
                 xlabel = "index"
-            if self.dataY != None:
-                ylabel = self.dataY.name
+            if self.dataItemY != None:
+                ylabel = self.dataItemY.fullName
             else:
                 ylabel = ""
         elif plotMode == "histogram":
             ylabel = "#"
-            if self.dataY != None:
-                xlabel = self.dataY.name
+            if self.dataItemY != None:
+                xlabel = self.dataItemY.fullName
             else:
                 xlabel = ""
         self.plot.setLabel("bottom",xlabel)
         self.plot.setLabel("left",ylabel)
     def refreshPlot(self):
-        if self.ix != None and self.iy != None and self.N != None:
-            dataY = self.getData("Y",ix=self.ix,iy=self.iy,N=self.N)
-            dataX = self.getData("X")
-            if dataX == None and dataY != None:
-                dataX = numpy.arange(len(self.getData("Y")))
+        if self.dataItemY == None:
+            dataY = None
         else:
-            dataY = self.getData("Y")
-            dataX = self.getData("X")
-            if dataX == None and dataY != None:
-                dataX = numpy.arange(len(self.getData("Y")))
-                #manTicksFlag = True
-            #else:
-                #manTicksFlag = False
-            else:
-                if dataX != None and self.indexProjector.imgs != None:
-                    if dataX.shape == self.indexProjector.imgs.shape:
-                        dataX = dataX[self.indexProjector.imgs]
-            # that is not particularly nice
-            if dataY != None and self.indexProjector.imgs != None:
-                if dataY.shape == self.indexProjector.imgs.shape:
-                    dataY = dataY[self.indexProjector.imgs]
+            dataY = self.dataItemY.data(ix=self.ix,iy=self.iy,N=self.N,windowSize=self.windowSize)
         if dataY == None:
             self.p.setData([0])
             self.setPlotMode(self.plotMode)
-        else:
-            if self.p == None:
-                self.initPlot()
-            # line show/hide does not seem to have any effect
-            if self.plotMode == "plot" or self.plotMode == "average":
+            return
+        if self.p == None:
+            self.initPlot()
+        self.removeInfLine()
+        # line show/hide does not seem to have any effect
+        if self.plotMode == "plot" or self.plotMode == "average":
+            if self.dataItemX == None:
+                dataX = numpy.arange(dataY.shape[0])
                 if self.plotMode == "plot":
-                    self.p.setData(dataX,dataY)
-                elif self.plotMode == "average":
-                    self.p.setData(self.movingAverage(dataY,1000))
-                self.addInfLine()
-                #if manTicksFlag:
-                #    def tickSpacing(minVal,maxVal,size):
-                #        step = 10**(len(str(maxVal-minVal))-1)
-                #        minTick = minVal - minVal%step
-                #        maxTick = maxVal + (step-maxVal%step)
-                #        return [(step,range(minTick,maxTick,step),(0,[]),(0,[])]
-                #    self.plot.getAxis("bottom").tickSpacing = tick
-                #else:
-                #    self.plot.getAxis("bottom").setTicks(None)
-            elif self.plotMode == "histogram":
-                (hist,edges) = numpy.histogram(dataY,bins=self.nBins)
-                edges = (edges[:-1]+edges[1:])/2.0
-                self.p.setData(edges,hist)        
-                self.removeInfLine()
-                
+                    self.addInfLine()
+            else:
+                dataX = self.dataItemX.data()
+            if self.indexProjector.imgs != None and dataY.shape[0] == self.indexProjector.imgs.shape[0]:
+                dataY = dataY[self.indexProjector.imgs]
+            self.p.setData(dataX,dataY)
+        elif self.plotMode == "histogram":
+            if self.nBins == None:
+                N = 200
+            else:
+                N = self.nBins
+            (hist,edges) = numpy.histogram(dataY,bins=N)
+            edges = (edges[:-1]+edges[1:])/2.0
+            self.p.setData(edges,hist)        
         self.plot.enableAutoRange('xy')
+    def refreshDisplayProp(self,props):
+        if props["points"] == True:
+            symbol = "o"
+        else:
+            symbol = None
+        if props["lines"]:
+            line = True
+        else:
+            line = None
+        self.setStyle(symbol=symbol,line=line)
+        self.nBins = props["N"]
+        self.refreshPlot()
     def emitViewIndexSelected(self,foovalue=None):
         index = int(self.infLine.getXPos())
         self.viewIndexSelected.emit(index)
-    def refreshDisplayProp(self,datasetProp):
-        self.refreshPlot()
-    def movingAverage(self,data, window_size):
-        window= numpy.ones(int(window_size))/float(window_size)
-        return numpy.convolve(data, window, 'same')
-    def onTogglePlotLines(self):
-        if self.line == True:
-            self.line = None
-        else:
-            self.line = True
-        self.setStyle(line=self.line)
-    def onTogglePlotPoints(self):
-        if self.symbol == "o":
-            self.symbol = None
-        else:
-            self.symbol = "o"
-        self.setStyle(symbol=self.symbol)
     def onPlotNBinsEdit(self):
         self.nBins = int(self.sender().text())
         self.refreshPlot()
-
-    def getStackSize(self):
-        self.updateStackSize()
-        return self.stackSize
-    def toggleAutoLast(self):
-        self.autoLast = not self.autoLast
-    # DATA
-    def updateStackSize(self, emitChanged=True):
-        oldSize = self.stackSize
-        if self.dataY != None:
-            if self.dataY.isCXIStack():
-		self.stackSize = self.dataY.getCXIStackSize()
-            else:
-                if "numEvents" in self.dataY.attrs.keys():
-                    self.stackSize = self.dataY.attrs.get("numEvents")[0]
-                else:
-                    self.stackSize = 1
-                    for n in self.dataY.shape:
-                        self.stackSize *= n 
-        else:
-            self.stackSize = 0

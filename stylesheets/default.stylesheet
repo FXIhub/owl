@@ -8,7 +8,7 @@ QTreeView
     color: white
 }
 
-DatasetButton
+DataButton
 {
     background: #7f7f7f;
     padding: 5px;
