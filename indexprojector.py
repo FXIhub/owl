@@ -17,7 +17,10 @@ class IndexProjector(QtCore.QObject):
         if self.stackSize != 0:
             self.imgs = numpy.arange(self.stackSize,dtype="int")
             if self.sortingDataItem != None:
-                sortingDataItem = -numpy.array(self.sortingDataItem.data())
+                if self.sortingDataItem.shape()[0] == self.stackSize:
+                    sortingDataItem = -numpy.array(self.sortingDataItem.data())
+                else:
+                    sortingDataItem = numpy.arange(self.stackSize,dtype="int")
             else:
                 sortingDataItem = numpy.arange(self.stackSize,dtype="int")
             if self.filterMask != None:
