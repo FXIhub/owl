@@ -341,12 +341,8 @@ class Viewer(QtGui.QMainWindow):
         if dataItem.format == 2:        
             self.CXINavigation.dataBoxes["image"].button.setName(dataName)
             self.view.view2D.clear()
-            if dataItem.isStack:
-                self.view.view2D.loadStack(dataItem)
-                self.statusBar.showMessage("Loaded image stack: %s" % dataItem.fullName,1000)
-            else:
-                self.view.view2D.loadImage(dataItem)
-                self.statusBar.showMessage("Loaded image: %s" % dataItem.fullName,1000)
+            self.view.view2D.loadStack(dataItem)
+            self.statusBar.showMessage("Loaded %s" % dataItem.fullName,1000)
         else:
             QtGui.QMessageBox.warning(self,self.tr("CXI Viewer"),self.tr("Cannot sort with a data that has more than one dimension. The selected data has %d dimensions." %(len(dataItem.shape()))))
         self.dataProp.setData(dataItem)
