@@ -334,7 +334,7 @@ class Viewer(QtGui.QMainWindow):
             settings.setValue("PNGOutputPath",v)
             self.view.view2D.PNGOutputPath = v
     def handleNeedDataImage(self,dataName=None):
-        if str(dataName) == "":
+        if dataName == "" or dataName == None:
             self.CXINavigation.CXITree.loadData1()
             return
         dataItem = self.CXINavigation.CXITree.fileLoader.dataItems[dataName]
@@ -347,7 +347,9 @@ class Viewer(QtGui.QMainWindow):
             QtGui.QMessageBox.warning(self,self.tr("CXI Viewer"),self.tr("Cannot sort with a data that has more than one dimension. The selected data has %d dimensions." %(len(dataItem.shape()))))
         self.dataProp.setData(dataItem)
         group = dataName.rsplit("/",1)[0]
-        if self.CXINavigation.dataBoxes["mask"].button.text().rsplit("/",1)[0] != group:
+        if "mask" in dataName:
+            self.handleNeedDataMask()
+        elif self.CXINavigation.dataBoxes["mask"].button.text().rsplit("/",1)[0] != group:
             if group+"/mask" in self.CXINavigation.CXITree.fileLoader.dataItems.keys():
                 self.handleNeedDataMask(group+"/mask")
             elif group+"/mask_shared" in self.CXINavigation.CXITree.fileLoader.dataItems.keys():
@@ -359,7 +361,7 @@ class Viewer(QtGui.QMainWindow):
 	self.view.view2D.updateStackSize(True)
 	self.view.view2D.clearTextures()
     def handleNeedDataMask(self,dataName=None):
-        if str(dataName) == "":
+        if dataName == "" or dataName == None:
             self.view.view2D.setMask()
             self.view.view2D.clearTextures()
             self.view.view2D.updateGL()
@@ -395,7 +397,7 @@ class Viewer(QtGui.QMainWindow):
                 targetBox.button.needData.connect(self.handleNeedDataFilter)
         else:
             i = self.CXINavigation.dataBoxes["filters"].index(senderBox)
-            if str(dataName) == "":
+            if dataName == "" or dataName == None:
                 self.dataProp.removeFilter(i)
                 self.CXINavigation.removeFilterBox(senderBox)
                 self.dataProp.displayPropChanged.emit(self.dataProp.view2DProp)
@@ -407,7 +409,7 @@ class Viewer(QtGui.QMainWindow):
                 targetBox.button.setName(dataName)
                 self.statusBar.showMessage("Loaded filter data: %s" % dataName,1000)
     def handleNeedDataSorting(self,dataName):
-        if str(dataName) == "":
+        if dataName == "" or dataName == None:
             self.CXINavigation.dataBoxes["sort"].button.setName()
             self.dataProp.clearSorting()
             self.dataProp.setSorting()
@@ -425,7 +427,7 @@ class Viewer(QtGui.QMainWindow):
             else:
                 self.statusBar.showMessage("Data has inadequate shape for sorting stack: %s" % dataName,1000)
     def handleNeedDataX1D(self,dataName):
-        if str(dataName) == "":
+        if dataName == "" or dataName == None:
             self.view.view1D.setDataItemX(None)
             self.view.view1D.refreshPlot()
             self.statusBar.showMessage("Reset X data for plot." % dataName,1000)
@@ -436,7 +438,7 @@ class Viewer(QtGui.QMainWindow):
             #self.CXINavigation.dataBoxes["plot X"].button.setName(dataName)
             self.statusBar.showMessage("Loaded X data for plot: %s" % dataName,1000)
     def handleNeedDataY1D(self,dataName):
-        if str(dataName) == "":
+        if dataName == "" or dataName == None:
             self.view.view1D.setDataItemY(None)
             self.view.view1D.refreshPlot()
             self.view.view1D.hide()
