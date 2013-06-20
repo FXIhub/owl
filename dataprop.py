@@ -586,10 +586,10 @@ class DataProp(QtGui.QWidget):
         if self.activeFilters != []:
             for f in self.activeFilters:
                 if P["filterMask"] == None:
-                    P["filterMask"] = numpy.ones(len(f.data.shape()[0]),dtype="bool")
+                    P["filterMask"] = numpy.ones(f.data.shape[0],dtype="bool")
                 vmin = float(f.vminLineEdit.text())
                 vmax= float(f.vmaxLineEdit.text())
-                data = numpy.array(f.data.data(),dtype="float")
+                data = numpy.array(f.data,dtype="float")
                 P["filterMask"] *= (data >= vmin) * (data <= vmax)
             Ntot = len(data)
             Nsel = P["filterMask"].sum()
@@ -749,7 +749,7 @@ class FilterWidget(QtGui.QWidget):
         vmax = numpy.max(self.data)
         yieldLabelString = "Yield: %.2f%% - %i/%i" % (100.,Ntot,Ntot)
         self.yieldLabel.setText(yieldLabelString)
-        (hist,edges) = numpy.histogram(data,bins=100)
+        (hist,edges) = numpy.histogram(self.data,bins=100)
         edges = (edges[:-1]+edges[1:])/2.0
         if self.histogram.itemPlot != None:
             self.histogram.removeItem(self.histogram.itemPlot)

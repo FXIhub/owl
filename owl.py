@@ -386,13 +386,14 @@ class Viewer(QtGui.QMainWindow):
         #self.view.view2D.clearTextures()
         self.view.view2D.updateGL()
     def handleNeedDataFilter(self,dataName):
+        print "handle"
         senderBox = self.sender().dataBox
         if self.CXINavigation.dataBoxes["filter0"] == senderBox:
             dataItem = self.CXINavigation.CXITree.fileLoader.dataItems[dataName]
-            if dataItem.format == 1:
+            if dataItem.format == 0:
                 targetBox = self.CXINavigation.addFilterBox()
                 self.dataProp.addFilter(dataItem)
-                self.dataProp.displayPropChanged.emit(self.dataProp.view2DProp)
+                self.dataProp.view2DPropChanged.emit(self.dataProp.view2DProp)
                 targetBox.button.setName(dataName)
                 targetBox.button.needData.connect(self.handleNeedDataFilter)
         else:
@@ -400,12 +401,12 @@ class Viewer(QtGui.QMainWindow):
             if dataName == "" or dataName == None:
                 self.dataProp.removeFilter(i)
                 self.CXINavigation.removeFilterBox(senderBox)
-                self.dataProp.displayPropChanged.emit(self.dataProp.view2DProp)
+                self.dataProp.view2DPropChanged.emit(self.dataProp.view2DProp)
             else:
                 targetBox = senderBox
                 dataItem = self.CXINavigation.CXITree.fileLoader.dataItems[dataName]
                 self.dataProp.refreshFilter(dataItem,i)
-                self.dataProp.displayPropChanged.emit(self.dataProp.view2DProp)
+                self.dataProp.view2DPropChanged.emit(self.dataProp.view2DProp)
                 targetBox.button.setName(dataName)
                 self.statusBar.showMessage("Loaded filter data: %s" % dataName,1000)
     def handleNeedDataSorting(self,dataName):
@@ -413,7 +414,7 @@ class Viewer(QtGui.QMainWindow):
             self.CXINavigation.dataBoxes["sort"].button.setName()
             self.dataProp.clearSorting()
             self.dataProp.setSorting()
-            self.dataProp.displayPropChanged.emit(self.dataProp.view2DProp)
+            self.dataProp.view2DPropChanged.emit(self.dataProp.view2DProp)
             self.statusBar.showMessage("Reset sorting.",1000)
         else:
             dataItem = self.CXINavigation.CXITree.fileLoader.dataItems[dataName]
@@ -614,7 +615,6 @@ def exceptionHandler(type, value, traceback):
 
     
 logging.basicConfig()
-
 QtCore.QCoreApplication.setOrganizationName("CXIDB");
 QtCore.QCoreApplication.setOrganizationDomain("cxidb.org");
 QtCore.QCoreApplication.setApplicationName("CXI Viewer");
