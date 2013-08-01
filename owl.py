@@ -386,7 +386,6 @@ class Viewer(QtGui.QMainWindow):
         #self.view.view2D.clearTextures()
         self.view.view2D.updateGL()
     def handleNeedDataFilter(self,dataName):
-        print "handle"
         senderBox = self.sender().dataBox
         if self.CXINavigation.dataBoxes["filter0"] == senderBox:
             dataItem = self.CXINavigation.CXITree.fileLoader.dataItems[dataName]

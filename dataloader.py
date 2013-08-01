@@ -55,7 +55,7 @@ class DataItem:
         self._shape = None
         # check whether or not it is a stack
         if len(self.H5Dataset.attrs.items()) > 0:
-            self.isStack = ("axes" == self.H5Dataset.attrs.items()[0][0])
+            self.isStack = ("axes" in self.H5Dataset.attrs.items()[0])
         else:
             self.isStack = False
         # check whether or not it is text
