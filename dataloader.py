@@ -1,5 +1,5 @@
 from PySide import QtCore
-import numpy
+import numpy,cmath
 import logging
 from cache import ArrayCache
 import h5py
@@ -60,8 +60,13 @@ class DataItem:
             self.isStack = False
         # check whether or not it is text
         self.isText = (str(self.H5Dataset.dtype.name).find("string") != -1)
+        # shape?
         self.format = len(self.shape())
+        # complex?
+        self.isComplex = (str(self.H5Dataset.dtype.name).lower().find("complex") != -1)
+        # image stack?
         if self.isStack: self.format -= 1
+        
     def shape(self,forceRefresh=False):
         if self._shape == None or forceRefresh:
             self._shape = self.H5Dataset.shape
@@ -76,13 +81,15 @@ class DataItem:
     def height(self,forceRefresh=False):
         return self.shape(forceRefresh)[-2]
     def data(self,**kwargs):
+        complex_mode = kwargs.get("complex_mode",None)
+        if self.isComplex == False and complex_mode != None:
+            return None
         if self.isStack and self.format == 2:
             img = kwargs.get("img",None)
             filterMask = kwargs.get("filterMask",None)
             N = kwargs.get("N",None)
             integrationMode = kwargs.get("integrationMode",None)
             pickMode = kwargs.get("pickMode","random")
-
             if img != None:
                 d = numpy.array(self.H5Dataset[img])
             elif N != None:
@@ -124,6 +131,16 @@ class DataItem:
         if windowSize != None:
             window= numpy.ones(int(windowSize))/float(windowSize)
             d = numpy.convolve(d, window, 'same')
+        if self.isComplex:
+            if complex_mode == "phase":
+                d = cmath.phase(d)
+            elif complex_mode == "real":
+                d = d.real
+            elif complex_mode == "imag":
+                d = d.imag
+            else:
+                # default
+                d = abs(d)
         return d
 
 class ImageLoader(QtCore.QObject):
@@ -153,10 +170,17 @@ class ImageLoader(QtCore.QObject):
         # cheetah and the loader sharing the same hdf5 lib. #
         #####################################################
         data = self.view.getData(img)
+        phase = self.view.getPhase(img)
         mask = self.view.getMask(img)
+        print mask
         self.imageData[img] = numpy.ones((self.view.data.height(),self.view.data.width()),dtype=numpy.float32)
         self.imageData[img][:] = data[:]
-        if(mask != None):
+        if phase != None:
+            self.phaseData[img] = numpy.ones((self.view.data.height(),self.view.data.width()),dtype=numpy.float32)
+            self.phaseData[img][:] = phase[:]
+        else:
+            self.phaseData[img] = None
+        if mask != None:
             self.maskData[img] = numpy.ones((self.view.data.height(),self.view.data.width()),dtype=numpy.float32)
             self.maskData[img] = mask[:]
         else:
@@ -174,6 +198,7 @@ class ImageLoader(QtCore.QObject):
     def clear(self):
         # Unlimited cache
         self.imageData = ArrayCache(1024*1024*int(QtCore.QSettings().value("imageCacheSize")))
+        self.phaseData = ArrayCache(1024*1024*int(QtCore.QSettings().value("phaseCacheSize")))
         self.maskData = ArrayCache(1024*1024*int(QtCore.QSettings().value("maskCacheSize")))
     def loadedImages(self):
         return self.imageData.keys()

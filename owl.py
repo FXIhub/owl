@@ -94,6 +94,9 @@ class Viewer(QtGui.QMainWindow):
         if(not settings.contains("imageCacheSize")):
             # Default to 1 GB
             settings.setValue("imageCacheSize", 1024);  
+        if(not settings.contains("phaseCacheSize")):
+            # Default to 1 GB
+            settings.setValue("phaseCacheSize", 1024);  
         if(not settings.contains("maskCacheSize")):
             # Default to 1 GB
             settings.setValue("maskCacheSize", 1024);  
@@ -321,6 +324,9 @@ class Viewer(QtGui.QMainWindow):
             v = diag.imageCacheSpin.value()
             settings.setValue("imageCacheSize",v)
             self.view.view2D.loaderThread.imageData.setSizeInBytes(v*1024*1024)
+            v = diag.imageCacheSpin.value()
+            settings.setValue("phaseCacheSize",v)
+            self.view.view2D.loaderThread.phaseData.setSizeInBytes(v*1024*1024)
             v = diag.maskCacheSpin.value()
             settings.setValue("maskCacheSize",v)
             self.view.view2D.loaderThread.maskData.setSizeInBytes(v*1024*1024)
@@ -616,7 +622,7 @@ def exceptionHandler(type, value, traceback):
 logging.basicConfig()
 QtCore.QCoreApplication.setOrganizationName("CXIDB");
 QtCore.QCoreApplication.setOrganizationDomain("cxidb.org");
-QtCore.QCoreApplication.setApplicationName("CXI Viewer");
+QtCore.QCoreApplication.setApplicationName("owl");
 if hasattr(sys, 'argv'):
     app = QtGui.QApplication(sys.argv)
 else:

@@ -105,6 +105,8 @@ class View2D(View,QtOpenGL.QGLWidget):
             return self.mask.data()
     def getData(self,img=None):
         return self.data.data(img=img,integrationMode=self.integrationMode,filterMask=self.indexProjector.filterMask,N=self.imageStackN)
+    def getPhase(self,img=None):
+        return self.data.data(img=img,integrationMode=self.integrationMode,filterMask=self.indexProjector.filterMask,N=self.imageStackN,complex_mode="phase")
     def stopThreads(self):
         while(self.imageLoader.isRunning()):
             self.imageLoader.quit()
