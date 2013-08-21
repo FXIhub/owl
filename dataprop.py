@@ -109,13 +109,6 @@ class DataProp(QtGui.QWidget):
         hbox.addWidget(widget)
         self.imageViewIndex = widget
         self.imageBox.vbox.addLayout(hbox)
-
-        hbox = QtGui.QHBoxLayout()
-        hbox.addWidget(QtGui.QLabel("Minimum value:"))
-        widget = QtGui.QLabel("None",parent=self)
-        hbox.addWidget(widget)
-        self.imageMin = widget
-        self.imageBox.vbox.addLayout(hbox)
         
         hbox = QtGui.QHBoxLayout()
         hbox.addWidget(QtGui.QLabel("Minimum value:"))

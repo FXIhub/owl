@@ -133,7 +133,7 @@ class DataItem:
             d = numpy.convolve(d, window, 'same')
         if self.isComplex:
             if complex_mode == "phase":
-                d = cmath.phase(d)
+                d = numpy.angle(d)
             elif complex_mode == "real":
                 d = d.real
             elif complex_mode == "imag":
