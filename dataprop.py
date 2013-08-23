@@ -447,9 +447,9 @@ class DataProp(QtGui.QWidget):
         if self.data != None and info != None:
             self.imageViewIndex.setText(str(int(info["viewIndex"])))
             self.imageImg.setText(str(int(info["img"])))
-            self.imageMin.setText(str(int(info["imageMin"])))
-            self.imageMax.setText(str(int(info["imageMax"])))
-            self.imageSum.setText(str(int(info["imageSum"])))
+            self.imageMin.setText("%.3e" % float(info["imageMin"]))
+            self.imageMax.setText("%.3e" % float(info["imageMax"]))
+            self.imageSum.setText("%.3e" % float(info["imageSum"]))
             self.imageMean.setText("%.3e" % float(info["imageMean"]))
             self.imageStd.setText("%.3e" % float(info["imageStd"]))
             self.pixelIx.setText(str(int(info["ix"])))
