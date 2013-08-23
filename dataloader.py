@@ -172,7 +172,6 @@ class ImageLoader(QtCore.QObject):
         data = self.view.getData(img)
         phase = self.view.getPhase(img)
         mask = self.view.getMask(img)
-        print mask
         self.imageData[img] = numpy.ones((self.view.data.height(),self.view.data.width()),dtype=numpy.float32)
         self.imageData[img][:] = data[:]
         if phase != None:
