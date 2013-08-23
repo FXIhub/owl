@@ -215,15 +215,32 @@ class DataProp(QtGui.QWidget):
         self.displayMin.setSingleStep(1.)
         hbox.addWidget(self.displayMin)
         self.displayBox.vbox.addLayout(hbox)
+        
+        vbox = QtGui.QVBoxLayout()
 
-
+        # autorange
+        hbox = QtGui.QHBoxLayout()
+        label = QtGui.QLabel("Autorange")
+        label.setToolTip("If enabled scale is dynamically adjusted to min/max range of every image")
+        hbox.addWidget(label)
+        hbox.addStretch()
+        self.displayAutorange = QtGui.QCheckBox("",parent=self)
+        hbox.addWidget(self.displayAutorange)
+        vbox.addLayout(hbox)
+        
         # normClamp
         hbox = QtGui.QHBoxLayout()
         label = QtGui.QLabel("Clamp")
         label.setToolTip("If enabled set values outside the min/max range to min/max")
         hbox.addWidget(label)
+        hbox.addStretch()
         self.displayClamp = QtGui.QCheckBox("",parent=self)
         hbox.addWidget(self.displayClamp)
+        vbox.addLayout(hbox)
+
+        # colormap
+        hbox = QtGui.QHBoxLayout()
+        hbox.addLayout(vbox)
         hbox.addStretch()
         self.displayColormap = QtGui.QPushButton("Colormap",parent=self)
         self.displayColormap.setFixedSize(QtCore.QSize(100,30))
@@ -231,6 +248,7 @@ class DataProp(QtGui.QWidget):
         hbox.addWidget(self.displayColormap)
 
         self.displayBox.vbox.addLayout(hbox)
+
         # normText
         vbox = QtGui.QVBoxLayout()
         vbox.addWidget(QtGui.QLabel("Scaling:"))
@@ -369,6 +387,8 @@ class DataProp(QtGui.QWidget):
         self.displayMax.editingFinished.connect(self.checkLimits)
         self.displayMin.editingFinished.connect(self.checkLimits)
         self.displayClamp.stateChanged.connect(self.emitView2DProp)
+        self.displayAutorange.stateChanged.connect(self.emitView2DProp)
+        self.displayAutorange.stateChanged.connect(self.setModMinMax)
         self.displayLin.toggled.connect(self.emitView2DProp)        
         self.displayLog.toggled.connect(self.emitView2DProp)
         self.displayPow.toggled.connect(self.emitView2DProp)
@@ -446,11 +466,10 @@ class DataProp(QtGui.QWidget):
             edges = (edges[:-1]+edges[1:])/2.0
             item = self.intensityHistogram.plot(edges,numpy.log10(hist+1),fillLevel=0,fillBrush=QtGui.QColor(255, 255, 255, 128),antialias=True)
             self.intensityHistogram.getPlotItem().getViewBox().setMouseEnabled(x=False,y=False)
-            region = pyqtgraph.LinearRegionItem(values=[self.displayMin.value(),self.displayMax.value()],brush="#ffffff15")
-            region.sigRegionChangeFinished.connect(self.onHistogramClicked)
-            self.intensityHistogram.addItem(region)
+            self.intensityHistogramRegion = pyqtgraph.LinearRegionItem(values=[self.displayMin.value(),self.displayMax.value()],brush="#ffffff15")
+            self.intensityHistogramRegion.sigRegionChangeFinished.connect(self.onHistogramClicked)
+            self.intensityHistogram.addItem(self.intensityHistogramRegion)
             self.intensityHistogram.autoRange()
-            self.intensityHistogramRegion = region
             if self.pixelStackPick:
                 self.pixelStackPick = False
                 self.pixelStackXEdit.setText(str(int(info["ix"])))
@@ -470,6 +489,7 @@ class DataProp(QtGui.QWidget):
         P = self.view2DProp
         P["normVmin"] = self.displayMin.value()
         P["normVmax"] = self.displayMax.value()
+        P["autorange"] = self.displayAutorange.isChecked()
         P["normClamp"] = self.displayClamp.isChecked()
         if self.displayLin.isChecked():
             P["normScaling"] = "lin"
@@ -489,6 +509,11 @@ class DataProp(QtGui.QWidget):
             normVmin = float(settings.value('normVmin'))
         else:
             normVmin = 10.
+        if(settings.contains("normVmin")):
+            autorange = bool(settings.value('autorange'))
+        else:
+            autorange = False
+        self.displayAutorange.setChecked(autorange)
         self.displayMin.setValue(normVmin)
         self.displayMax.setValue(normVmax)
         if(settings.contains("normClamp")):
@@ -635,6 +660,11 @@ class DataProp(QtGui.QWidget):
         P = self.view1DProp
         P["lines"] = self.plotLinesCheckBox.isChecked()
         P["points"] = self.plotPointsCheckBox.isChecked()
+    def setModMinMax(self):
+        c =  self.displayAutorange.isChecked() == False
+        self.displayMin.setEnabled(c)
+        self.displayMax.setEnabled(c)
+        
     # update and emit current diplay properties        
     def emitView1DProp(self):
         self.setPixelStack()

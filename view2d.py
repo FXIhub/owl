@@ -440,8 +440,12 @@ class View2D(View,QtOpenGL.QGLWidget):
             # If not mask is available load the default mask
             glBindTexture (GL_TEXTURE_2D, self.defaultMaskTexture);
 
-        glUniform1f(self.vminLoc,self.normVmin)
-        glUniform1f(self.vmaxLoc,self.normVmax)
+        if self.autorange:
+            glUniform1f(self.vminLoc,self.loaderThread.imageData[img].min())
+            glUniform1f(self.vmaxLoc,self.loaderThread.imageData[img].max())
+        else:
+            glUniform1f(self.vminLoc,self.normVmin)
+            glUniform1f(self.vmaxLoc,self.normVmax)
         glUniform1f(self.gammaLoc,self.normGamma)
         glUniform1i(self.normLoc,self.normScalingValue)
         glUniform1i(self.clampLoc,self.normClamp)
@@ -924,6 +928,7 @@ class View2D(View,QtOpenGL.QGLWidget):
                 self.normScalingValue = 2
             self.normVmin = prop["normVmin"]
             self.normVmax = prop["normVmax"]
+            self.autorange = prop["autorange"]
             self.normGamma = prop["normGamma"]
             if(prop["normClamp"] == True):
                 self.normClamp = 1
