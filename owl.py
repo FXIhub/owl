@@ -265,6 +265,7 @@ class Viewer(QtGui.QMainWindow):
 	self.dataProp.imageStackMinButton.released.connect(lambda: self.handleNeedDataIntegratedImage("min"))
 	self.dataProp.imageStackMaxButton.released.connect(lambda: self.handleNeedDataIntegratedImage("max"))
 
+
     def openFileClicked(self):
         fileName = QtGui.QFileDialog.getOpenFileName(self,"Open CXI File", None, "CXI Files (*.cxi)");
         if(fileName[0]):

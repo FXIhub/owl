@@ -50,13 +50,26 @@ class DataProp(QtGui.QWidget):
         self.datatype = QtGui.QLabel("Data Type:", parent=self)
         self.datasize = QtGui.QLabel("Data Size:", parent=self)
         self.dataform = QtGui.QLabel("Data Form:", parent=self)
-        self.currentViewIndex = QtGui.QLabel("Visible View Index:", parent=self)
-        self.currentImg = QtGui.QLabel("Visible Image:", parent=self)
+
+        self.currentViewIndex = QtGui.QLabel("Central Index:", parent=self)
+
+        self.currentImg = QtGui.QLineEdit(self)
+        self.currentImg.setMaximumWidth(100)
+        self.currentImg.validator = QtGui.QIntValidator()
+        self.currentImg.validator.setBottom(0)
+        self.currentImg.edited = False 
+        self.currentImg.setValidator(self.currentImg.validator)
+        self.currentImg.hbox = QtGui.QHBoxLayout()
+        self.currentImg.label = QtGui.QLabel("Central Image:", parent=self)
+        self.currentImg.hbox.addWidget(self.currentImg.label)
+        self.currentImg.hbox.addStretch()
+        self.currentImg.hbox.addWidget(self.currentImg)
+
         self.generalBox.vbox.addWidget(self.dimensionality)
         self.generalBox.vbox.addWidget(self.datatype)
         self.generalBox.vbox.addWidget(self.datasize)
         self.generalBox.vbox.addWidget(self.dataform)
-        self.generalBox.vbox.addWidget(self.currentImg)
+        self.generalBox.vbox.addLayout(self.currentImg.hbox)
         self.generalBox.vbox.addWidget(self.currentViewIndex)
         # properties: image stack
         self.imageStackBox = QtGui.QGroupBox("Image Stack");
@@ -101,6 +114,7 @@ class DataProp(QtGui.QWidget):
         widget = QtGui.QLabel("None",parent=self)
         hbox.addWidget(widget)
         self.imageImg = widget
+
         self.imageBox.vbox.addLayout(hbox)
 
         hbox = QtGui.QHBoxLayout()
@@ -401,6 +415,7 @@ class DataProp(QtGui.QWidget):
         self.plotLinesCheckBox.toggled.connect(self.emitView1DProp)
         self.plotPointsCheckBox.toggled.connect(self.emitView1DProp)
         self.plotNBinsEdit.editingFinished.connect(self.emitView1DProp)
+        self.currentImg.editingFinished.connect(self.onCurrentImg)
 
     def clear(self):
         self.clearView2DProp()
@@ -409,6 +424,9 @@ class DataProp(QtGui.QWidget):
         self.clearImageStackSubplots()
         self.clearNorm()
         self.clearColormap()
+    def onCurrentImg(self):
+        self.currentImg.edited = True
+        self.emitView2DProp()
     # DATA
     def setData(self,data=None):
         if data != None:
@@ -433,7 +451,8 @@ class DataProp(QtGui.QWidget):
         else:
             self.clearData()
     def refreshDataCurrent(self,img,NImg,viewIndex,NViewIndex):
-        self.currentImg.setText("Central Image: %i (%i)" % (img,NImg))
+        self.currentImg.setText("%i" % (img))
+        self.currentImg.validator.setRange(0,NImg)
         self.currentViewIndex.setText("Central Index: %i (%i)" % (viewIndex,NViewIndex))
     def clearData(self):
         self.data = None
@@ -664,7 +683,19 @@ class DataProp(QtGui.QWidget):
         c =  self.displayAutorange.isChecked() == False
         self.displayMin.setEnabled(c)
         self.displayMax.setEnabled(c)
-        
+    def setCurrentImg(self):
+        P = self.view2DProp
+        i = self.currentImg.text()
+        if self.currentImg.edited == False:
+            P["img"] = None
+        else:
+            try:
+                i = int(i)
+                P["img"] = i
+
+            except:
+                P["img"] = None                
+        self.currentImg.edited = False
     # update and emit current diplay properties        
     def emitView1DProp(self):
         self.setPixelStack()
@@ -677,6 +708,7 @@ class DataProp(QtGui.QWidget):
         self.setSorting()
         self.setFilters()
         self.setImageStackN()
+        self.setCurrentImg()
         self.view2DPropChanged.emit(self.view2DProp)
     def checkLimits(self):
         self.displayMax.setMinimum(self.displayMin.value())
@@ -795,4 +827,5 @@ class FilterWidget(QtGui.QWidget):
         label = "Yield: %.2f%% - %i/%i" % (100*Nsel/(1.*Ntot),Nsel,Ntot)
         self.yieldLabel.setText(label)
         self.limitsChanged.emit(vmin,vmax)
+        
     

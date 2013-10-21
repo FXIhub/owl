@@ -644,6 +644,11 @@ class View2D(View,QtOpenGL.QGLWidget):
     def scrollTo(self,translationY,wrap=False):
         translation = (0,translationY)
         self.translateTo(translation,wrap)
+    def scrollToImage(self,imgIndex):
+        if imgIndex == None:
+            return None
+        (x,y,z) = self.imageToWindow(imgIndex,'Center',True)
+        self.translateTo((x,y))
     def translateBy(self,translationBy,wrap=False):
         self.translateTo([self.translation[0]+translationBy[0],self.translation[1]+translationBy[1]],wrap)
     def translateTo(self,translation,wrap=False):
@@ -821,7 +826,7 @@ class View2D(View,QtOpenGL.QGLWidget):
         modelview = glGetDoublev(GL_MODELVIEW_MATRIX)
         projection = glGetDoublev(GL_PROJECTION_MATRIX)
         viewport = glGetIntegerv(GL_VIEWPORT);
-        (x,y,z) =  gluProject(x, y,z , model=modelview, proj=projection, view=viewport)
+        (x,y,z) =  gluProject(x,y,z , model=modelview, proj=projection, view=viewport)
         return (x,viewport[3]-y,z)
     # Returns the x,y,z position of a particular window position
     def windowToScene(self,x,y,z):
@@ -869,6 +874,7 @@ class View2D(View,QtOpenGL.QGLWidget):
         else:
             viewIndex = self.indexProjector.imgToIndex(img)
             return self.viewIndexToCell(viewIndex)
+    # Returns the window location of the index of a particular image
 
     def scaleZoom(self,ratio):
         self.zoom *= ratio
@@ -939,6 +945,8 @@ class View2D(View,QtOpenGL.QGLWidget):
             self.setStackWidth(prop["imageStackSubplotsValue"])
             self.indexProjector.setProjector(prop["sortingDataItem"],prop["sortingInverted"],prop["filterMask"])
             self.imageStackN = prop["N"]
+            if prop["img"] != None:
+                self.scrollToImage(prop["img"])
         self.updateGL()
 
     def saveToPNG(self):
