@@ -139,7 +139,7 @@ class DataItem:
             elif complex_mode == "imag":
                 d = d.imag
             else:
-                # default
+                # default is the absolute value
                 d = abs(d)
         return d
 
