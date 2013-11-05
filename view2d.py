@@ -163,7 +163,7 @@ class View2D(View,QtOpenGL.QGLWidget):
             uniform float vmin;
             uniform float vmax;
             uniform float gamma;
-            uniform int clamp;
+            uniform int do_clamp;
             uniform sampler2D mask;
             uniform float maskedBits;
             void main()
@@ -197,7 +197,7 @@ class View2D(View,QtOpenGL.QGLWidget):
                 // Check for clamping 
                 uv[1] = 0.0;
                 if(uv[0] < 0.0){
-                  if(clamp == 1){
+                  if(do_clamp == 1){
                     uv[0] = 0.0;
                     gl_FragColor = texture2D(cmap,uv);
                     return;
@@ -208,7 +208,7 @@ class View2D(View,QtOpenGL.QGLWidget):
                   }
                 }
                 if(uv[0] > scale){
-                  if(clamp == 1){
+                  if(do_clamp == 1){
                     uv[0] = 1.0;
                     gl_FragColor = texture2D(cmap,uv);
                     return;
@@ -240,7 +240,7 @@ class View2D(View,QtOpenGL.QGLWidget):
         self.vmaxLoc = glGetUniformLocation(self.shader, "vmax")
         self.gammaLoc = glGetUniformLocation(self.shader, "gamma")
         self.normLoc = glGetUniformLocation(self.shader, "norm")
-        self.clampLoc = glGetUniformLocation(self.shader, "clamp")
+        self.clampLoc = glGetUniformLocation(self.shader, "do_clamp")
         self.maskedBitsLoc = glGetUniformLocation(self.shader, "maskedBits")
 
     def initColormapTextures(self):
