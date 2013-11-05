@@ -827,7 +827,7 @@ class View2D(View,QtOpenGL.QGLWidget):
         projection = glGetDoublev(GL_PROJECTION_MATRIX)
         viewport = glGetIntegerv(GL_VIEWPORT);
         (x,y,z) =  gluProject(x,y,z , model=modelview, proj=projection, view=viewport)
-        return (x,viewport[3]-y,z)
+        return (x,y,z)
     # Returns the x,y,z position of a particular window position
     def windowToScene(self,x,y,z):
         modelview = glGetDoublev(GL_MODELVIEW_MATRIX)
@@ -958,15 +958,14 @@ class View2D(View,QtOpenGL.QGLWidget):
         self.browseToViewIndex(self.indexProjector.imgToIndex(self.centralImg))
         self.updateGL()
         (x,y,z) = self.imageToWindow(self.centralImg,'TopLeft',False)
-        y = int(round(y)+3*self.subplotBorder-self.minimumTranslation())
+        y = int(round(y))
         x = int(round(x))
-        #point = self.mapTo(self,QtCore.QPoint(x,y))
         width = int(self.getImgWidth("window"))
         height = int(self.getImgHeight("window"))
-        buffer = glReadPixels( x, y, width , height , GL_RGBA , GL_UNSIGNED_BYTE )
+        buffer = glReadPixels( x, y-height, width , height , GL_RGBA , GL_UNSIGNED_BYTE )
         image = Image.fromstring(mode="RGBA", size=(width, height), 
                                  data=buffer)
-        filename = "%s/%s_%i.png" % (self.PNGOutputPath,(self.viewer.filename.split("/")[-1])[:-4],self.centralImg)
+        filename = "%s/%s_%s_%i.png" % (self.PNGOutputPath,(self.viewer.filename.split("/")[-1])[:-4],self.data.name,self.centralImg)
         image.save(filename)
         self.viewer.statusBar.showMessage("Saving image %i to %s" % (self.centralImg,filename),1000)	
 
