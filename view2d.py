@@ -702,7 +702,6 @@ class View2D(View,QtOpenGL.QGLWidget):
             self.slideshowTimer.stop()
         else:
             self.slideshowTimer.start()
-
     def nextSlideRow(self):
         self.nextRow(wrap=True)
     def nextRow(self,wrap=False):
@@ -717,7 +716,7 @@ class View2D(View,QtOpenGL.QGLWidget):
         img_height =  self.getImgHeight("window",True)
         self.translateTo([0,img_height*int(numpy.floor(index/self.stackWidth))])
     def browseToLastIfAuto(self,size):
-        self.indexProjector.handleStackSizeChanged
+        self.indexProjector.handleStackSizeChanged(size)
         if self.autoLast:
             self.browseToViewIndex(size-1)
     def mouseReleaseEvent(self, event):
@@ -984,9 +983,10 @@ class View2D(View,QtOpenGL.QGLWidget):
         if self.data != None:
             self.has_data = True        
             if self.data.isStack:
-		self.stackSize = self.data.shape()[0]
+		self.stackSize = self.data.shape(True)[0]
             else:
                 self.stackSize = 1
+            #print "Stack size: %i" % self.stackSize
         else:
             self.stackSize = 0
             self.has_data = False

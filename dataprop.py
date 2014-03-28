@@ -428,15 +428,20 @@ class DataProp(QtGui.QWidget):
         self.currentImg.edited = True
         self.emitView2DProp()
     # DATA
-    def setData(self,data=None):
+    def setDimensionality(self,data=None):
         if data != None:
-            self.data = data
             string = "Dimensions: "
             shape = list(data.shape())
             for d in shape:
                 string += str(d)+"x"
             string = string[:-1]
             self.dimensionality.setText(string)
+    def refreshDimensionality(self):
+        self.setDimensionality(self.data)
+    def setData(self,data=None):
+        self.setDimensionality(data)
+        if data != None:
+            self.data = data
             self.datatype.setText("Data Type: %s" % (data.dtypeName))
             self.datasize.setText("Data Size: %s" % sizeof_fmt(data.dtypeItemsize*reduce(mul,data.shape())))
             if data.isStack:

@@ -69,7 +69,7 @@ class DataItem:
         self.isComplex = (str(self.H5Dataset.dtype.name).lower().find("complex") != -1)
         # image stack?
         if self.isStack: self.format -= 1
-    def shape(self,forceRefresh=False):
+    def shape(self,forceRefresh=True):
         if self._shape == None or forceRefresh:
             self._shape = self.H5Dataset.shape
             if self.isStack:
@@ -97,7 +97,6 @@ class DataItem:
             integrationMode = kwargs.get("integrationMode",None)
             pickMode = kwargs.get("pickMode","random")
             if img != None:
-                print self.H5Dataset
                 d = numpy.array(self.H5Dataset[img])
             elif N != None:
                 if filterMask != None:

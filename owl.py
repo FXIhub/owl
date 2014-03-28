@@ -240,6 +240,7 @@ class Viewer(QtGui.QMainWindow):
         self.view.view1D.dataItemYChanged.connect(self.handleDataY1DChanged)
         #self.view.view2D.needDataImage.connect(self.handleNeedDataImage)
         self.view.view2D.dataItemChanged.connect(self.handleData2DChanged)
+        self.view.view2D.stackSizeChanged.connect(self.handleStackSizeChanged)
         self.CXINavigation.dataBoxes["image"].button.needData.connect(self.handleNeedDataImage)
         self.CXINavigation.dataBoxes["mask"].button.needData.connect(self.handleNeedDataMask)
         self.CXINavigation.dataMenus["mask"].triggered.connect(self.handleMaskOutBitsChanged)
@@ -510,6 +511,8 @@ class Viewer(QtGui.QMainWindow):
                 if hasattr(dataItems[k],"fullName"):
                     n = dataItems[k].fullName
             self.CXINavigation.dataBoxes[k].button.setName(n)
+    def handleStackSizeChanged(self):
+        self.dataProp.refreshDimensionality()
     def handleMask2DChanged(self,dataItem):
         n = None
         if dataItem != None:
