@@ -57,13 +57,13 @@ class DataProp(QtGui.QWidget):
         self.currentImg.setMaximumWidth(100)
         self.currentImg.validator = QtGui.QIntValidator()
         self.currentImg.validator.setBottom(0)
-        self.currentImg.edited = False 
         self.currentImg.setValidator(self.currentImg.validator)
         self.currentImg.hbox = QtGui.QHBoxLayout()
         self.currentImg.label = QtGui.QLabel("Central Image:", parent=self)
         self.currentImg.hbox.addWidget(self.currentImg.label)
         self.currentImg.hbox.addStretch()
         self.currentImg.hbox.addWidget(self.currentImg)
+        self.currentImg.edited = False 
 
         self.generalBox.vbox.addWidget(self.dimensionality)
         self.generalBox.vbox.addWidget(self.datatype)
@@ -697,9 +697,8 @@ class DataProp(QtGui.QWidget):
             try:
                 i = int(i)
                 P["img"] = i
-
             except:
-                P["img"] = None                
+                P["img"] = None
         self.currentImg.edited = False
     # update and emit current diplay properties        
     def emitView1DProp(self):

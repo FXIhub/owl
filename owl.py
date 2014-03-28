@@ -73,6 +73,8 @@ class Viewer(QtGui.QMainWindow):
         self.updateTimer.setInterval(int(settings.value("updateTimer")))
         self.updateTimer.timeout.connect(self.updateData)
 
+        self.view.view1D.setWindowSize(float(settings.value("movingAverageSize")))
+
         self.initConnections()
         self.dataProp.emitView1DProp()
         self.dataProp.emitView2DProp()
@@ -103,6 +105,8 @@ class Viewer(QtGui.QMainWindow):
             settings.setValue("textureCacheSize", 256);  
         if(not settings.contains("updateTimer")):
             settings.setValue("updateTimer", 10000);
+        if(not settings.contains("movingAverageSize")):
+            settings.setValue("movingAverageSize", 10.);
         if(not settings.contains("PNGOutputPath")):
             settings.setValue("PNGOutputPath", "./");
     def init_menus(self):
@@ -336,6 +340,8 @@ class Viewer(QtGui.QMainWindow):
             v = diag.updateTimerSpin.value()
             settings.setValue("updateTimer",v)
             self.updateTimer.setInterval(v)
+            v = diag.movingAverageSizeSpin.value()
+            settings.setValue("movingAverageSize",v)
             v = diag.PNGOutputPath.text()
             settings.setValue("PNGOutputPath",v)
             self.view.view2D.PNGOutputPath = v
@@ -470,7 +476,7 @@ class Viewer(QtGui.QMainWindow):
     def handlePlotModeTriggered(self,foovalue=None):
         self.view.view1D.setPlotMode(self.CXINavigation.dataMenus["plot Y"].getPlotMode())
         self.view.view1D.refreshPlot()
-        if self.view.view1D.dataY != None:
+        if self.view.view1D.dataItemY != None:
             self.viewActions["View 1D"].setChecked(True)
             self.view.view1D.show()
             self.dataProp.plotBox.show()
@@ -528,7 +534,7 @@ class Viewer(QtGui.QMainWindow):
             self.updateTimer.start()
     def updateData(self):
         self.view.view2D.updateStackSize()
-        self.view.view1D.refreshPlot()
+        self.view.view1D.updateShape()
 
 class PreferencesDialog(QtGui.QDialog):
     def __init__(self,parent):
@@ -598,6 +604,14 @@ class PreferencesDialog(QtGui.QDialog):
         self.updateTimerSpin.setSingleStep(1000)
         self.updateTimerSpin.setValue(int(settings.value("updateTimer")))
         grid.addWidget(self.updateTimerSpin,row,1)
+        row += 1
+
+        grid.addWidget(QtGui.QLabel("Moving average window size:",self),row,0)
+        self.movingAverageSizeSpin = QtGui.QSpinBox()
+        self.movingAverageSizeSpin.setMaximum(86400000)
+        self.movingAverageSizeSpin.setSingleStep(1)
+        self.movingAverageSizeSpin.setValue(float(settings.value("movingAverageSize")))
+        grid.addWidget(self.movingAverageSizeSpin,row,1)
         row += 1
 
         grid.addWidget(QtGui.QLabel("PNG output path:",self),row,0)

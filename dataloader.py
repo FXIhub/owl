@@ -69,14 +69,14 @@ class DataItem:
         self.isComplex = (str(self.H5Dataset.dtype.name).lower().find("complex") != -1)
         # image stack?
         if self.isStack: self.format -= 1
-    def shape(self,forceRefresh=True):
+    def shape(self,forceRefresh=False):
         if self._shape == None or forceRefresh:
+            try:
+                self.H5Dataset.refresh()
+            except:
+                self.logger.debug("Failed to refresh dataset. Probably the h5py version that is installed does not support SWMR.")
             self._shape = self.H5Dataset.shape
             if self.isStack:
-                try:
-                    self.H5Dataset.refresh()
-                except:
-                    self.logger.debug("Failed to refresh dataset. Probably the h5py version that is installed does not support SWMR.")
                 self._shape = list(self._shape)
                 self._shape.pop(0)
                 self._shape.insert(0,self.H5Dataset.attrs.get("numEvents", (self.H5Dataset.shape))[0])
@@ -114,6 +114,15 @@ class DataItem:
                     for i in range(self.imageStackN):
                         temp[i,:,:] = d[iz[i]]
                     d = temp
+            else:
+                s = numpy.array(list(self.shape(True)))
+                k = 1
+                for si in s: k *= si                
+                if k > 100000000:
+                    self.logger.warning("You do not really want to load a dataset of the length of %i into memory." % k)
+                    d = numpy.zeros(1)
+                else:
+                    d = numpy.array(self.H5Dataset).flatten()
 
             if integrationMode != None:
                 if integrationMode == "mean":
@@ -137,6 +146,8 @@ class DataItem:
         if windowSize != None:
             window= numpy.ones(int(windowSize))/float(windowSize)
             d = numpy.convolve(d, window, 'same')
+            d[-windowSize/2:] *= (float(windowSize)/(windowSize-numpy.arange(windowSize/2)))[:]
+            d[:windowSize/2] *= (float(windowSize)/(windowSize-numpy.arange(windowSize/2,0,-1)))[:]
         if self.isComplex:
             if complex_mode == "phase":
                 d = numpy.angle(d)

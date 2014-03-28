@@ -21,7 +21,7 @@ class View1D(View,QtGui.QFrame):
         self.dataItemY = None
         self.dataItemX = None
         self.setPixelStack()
-        self.setMovingAverage()
+        self.setWindowSize()
         self.nBins = 200
         self.stackSizeChanged.connect(self.refreshPlot)
     def initPlot(self,widgetType="plot"):
@@ -62,14 +62,21 @@ class View1D(View,QtGui.QFrame):
         else:
             self.stackSize = 0
         self.setPixelStack()
-        self.setMovingAverage()
         self.dataItemYChanged.emit(dataItem)
     def setPixelStack(self,ix=None,iy=None,N=None):
         self.ix = ix
         self.iy = iy
         self.N = N
-    def setMovingAverage(self,windowSize=None):
-        self.windowSize = windowSize
+    def setWindowSize(self,windowSize=None):
+        if windowSize == None:
+            self._windowSize = 100
+        else:
+            self._windowSize = windowSize
+    def windowSize(self):
+        if self.plotMode == "average":
+            return self._windowSize
+        else:
+            return None
     def toggleAutoLast(self):
         self.autoLast = not self.autoLast
     # DATA
@@ -127,7 +134,7 @@ class View1D(View,QtGui.QFrame):
         if self.dataItemY == None:
             dataY = None
         else:
-            dataY = self.dataItemY.data(ix=self.ix,iy=self.iy,N=self.N,windowSize=self.windowSize)
+            dataY = self.dataItemY.data(ix=self.ix,iy=self.iy,N=self.N,windowSize=self.windowSize())
         if dataY == None:
             self.p.setData([0])
             self.setPlotMode(self.plotMode)

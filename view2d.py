@@ -648,7 +648,7 @@ class View2D(View,QtOpenGL.QGLWidget):
         if imgIndex == None:
             return None
         (x,y,z) = self.imageToWindow(imgIndex,'Center',True)
-        self.translateTo((x,y))
+        self.translateTo((x,-y))
     def translateBy(self,translationBy,wrap=False):
         self.translateTo([self.translation[0]+translationBy[0],self.translation[1]+translationBy[1]],wrap)
     def translateTo(self,translation,wrap=False):
