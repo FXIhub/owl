@@ -3,6 +3,7 @@ import numpy,cmath
 import logging
 from cache import ArrayCache
 import h5py
+import settingsOwl
 
 class FileLoader:
     def __init__(self,fullFilename):
@@ -55,6 +56,7 @@ class DataItem:
         self.dtypeItemsize = self.H5Dataset.dtype.itemsize
         self._shape = None
         self.logger = logging.getLogger("DataItem")
+        self.logger.setLevel(settingsOwl.loglev["DataItem"])
         # check whether or not it is a stack
         #if len(self.H5Dataset.attrs.items()) > 0:
         #self.isStack = ("axes" in self.H5Dataset.attrs.items()[0])
@@ -168,7 +170,7 @@ class ImageLoader(QtCore.QObject):
         self.clear()
         self.logger = logging.getLogger("ImageLoader")
         # If you want to see debug messages change level here
-        self.logger.setLevel(logging.WARNING)
+        self.logger.setLevel(settingsOwl.loglev["ImageLoader"])
 
     @QtCore.Slot(int)
     def loadImage(self,img):

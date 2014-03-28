@@ -1,6 +1,6 @@
 from PySide import QtCore
-import numpy
-
+import numpy,logging
+import settingsOwl
 
 class IndexProjector(QtCore.QObject):
     projectionChanged = QtCore.Signal(object)
@@ -8,6 +8,9 @@ class IndexProjector(QtCore.QObject):
         QtCore.QObject.__init__(self)
         self.stackSize = 0
         self.clear()
+        self.logger = logging.getLogger("IndexProjector")
+        # If you want to see debug messages change level here
+        self.logger.setLevel(settingsOwl.loglev["IndexProjector"])
     def setProjector(self,sortingDataItem,sortingInverted,filterMask):
         self.sortingDataItem = sortingDataItem
         self.sortingInverted = sortingInverted
@@ -20,6 +23,7 @@ class IndexProjector(QtCore.QObject):
                 if self.sortingDataItem.shape()[0] == self.stackSize:
                     sortingDataItem = -numpy.array(self.sortingDataItem.data())
                 else:
+                    self.logger.debug("The data for sorting does not match the size of the stack.")
                     sortingDataItem = numpy.arange(self.stackSize,dtype="int")
             else:
                 sortingDataItem = numpy.arange(self.stackSize,dtype="int")
@@ -38,6 +42,15 @@ class IndexProjector(QtCore.QObject):
             self.viewIndices = None
             self.imgs = None
         self.projectionChanged.emit(self)
+    def updateStackSize(self):
+        if self.sortingDataItem != None:
+            s = self.sortingDataItem.shape(True)[0]
+            if s != self.stackSize:
+                self.stackSize = s
+                self.update()
+        else:
+            self.stackSize = 0
+            self.update()
     def getNViewIndices(self):
         if self.imgs != None:
             return len(self.imgs)

@@ -11,6 +11,7 @@ from PySide import QtGui, QtCore, QtOpenGL
 
 import numpy
 import math
+import settingsOwl
 from geometry import *
 from dataprop import *
 from dataloader import *
@@ -33,12 +34,17 @@ View only tagged ones
 Tagging with numbers
 Different tags different colors
 Multiple tags per image
+More precise browse to img. At the moment we end up somewhere close to the image of intrest but not exactly to it.
 """
 
         
 class Viewer(QtGui.QMainWindow):
     def __init__(self):
         QtGui.QMainWindow.__init__(self)
+
+        self.logger = logging.getLogger("Viewer")
+        # If you want to see debug messages change level here
+        self.logger.setLevel(settingsOwl.loglev["Viewer"])
 
         self.statusBar = self.statusBar()
         self.statusBar.showMessage("Initializing...")
@@ -407,6 +413,8 @@ class Viewer(QtGui.QMainWindow):
                 self.dataProp.view2DPropChanged.emit(self.dataProp.view2DProp)
                 targetBox.button.setName(dataName)
                 targetBox.button.needData.connect(self.handleNeedDataFilter)
+            else:
+                self.statusBar.showMessage("Data item has incorrect format for becoming a filter.")
         else:
             i = self.CXINavigation.dataBoxes["filters"].index(senderBox)
             if dataName == "" or dataName == None:
@@ -533,6 +541,7 @@ class Viewer(QtGui.QMainWindow):
         else:
             self.updateTimer.start()
     def updateData(self):
+        self.view.view2D.indexProjector.updateStackSize()
         self.view.view2D.updateStackSize()
         self.view.view1D.updateShape()
 
