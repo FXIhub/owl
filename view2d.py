@@ -35,7 +35,7 @@ class View2D(View,QtOpenGL.QGLWidget):
         self.translation = [0,0]
         self.zoom = 4.0
         #self.setFocusPolicy(QtCore.Qt.ClickFocus)
-        self.data = {}
+        self.data = None
         self.texturesLoading = {}
         self.imageStackN = None
         
@@ -551,7 +551,7 @@ class View2D(View,QtOpenGL.QGLWidget):
             else:
                 return len(self.indexProjector.imgs)
     def getImgHeight(self,reference,border=False):
-        if self.data != {} and self.data != None:
+        if self.data != None:
             imgHeight = self.data.height()
             if border == True:
                 imgHeight += self.subplotSceneBorder()
