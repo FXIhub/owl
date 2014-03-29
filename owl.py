@@ -348,6 +348,7 @@ class Viewer(QtGui.QMainWindow):
             self.updateTimer.setInterval(v)
             v = diag.movingAverageSizeSpin.value()
             settings.setValue("movingAverageSize",v)
+            self.view.view1D.setWindowSize(v)
             v = diag.PNGOutputPath.text()
             settings.setValue("PNGOutputPath",v)
             self.view.view2D.PNGOutputPath = v

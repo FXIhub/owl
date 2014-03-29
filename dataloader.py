@@ -58,11 +58,11 @@ class DataItem:
         self.logger = logging.getLogger("DataItem")
         self.logger.setLevel(settingsOwl.loglev["DataItem"])
         # check whether or not it is a stack
-        #if len(self.H5Dataset.attrs.items()) > 0:
-        #self.isStack = ("axes" in self.H5Dataset.attrs.items()[0])
-        self.isStack = (len(list(self.H5Dataset.shape)) == 3)
-        #else:
-        #    self.isStack = False
+        if len(self.H5Dataset.attrs.items()) > 0:
+            self.isStack = ("axes" in self.H5Dataset.attrs.items()[0])
+        #self.isStack = (len(list(self.H5Dataset.shape)) == 3)
+        else:
+            self.isStack = False
         # check whether or not it is text
         self.isText = (str(self.H5Dataset.dtype.name).find("string") != -1)
         # shape?
@@ -89,6 +89,10 @@ class DataItem:
     def height(self,forceRefresh=False):
         return self.shape(forceRefresh)[-2]
     def data(self,**kwargs):
+        try:
+            self.H5Dataset.refresh()
+        except:
+            self.logger.debug("Failed to refresh dataset. Probably the h5py version that is installed does not support SWMR.")
         complex_mode = kwargs.get("complex_mode",None)
         if self.isComplex == False and complex_mode != None:
             return None
@@ -135,6 +139,10 @@ class DataItem:
                     d = numpy.min(d,0)
                 elif integrationMode == "max":
                     d = numpy.max(d,0)
+        elif self.isStack and self.format == 1:
+            d = numpy.array(self.H5Dataset)[:self.shape(True)[0],:]
+        elif self.isStack and self.format == 0:
+            d = numpy.array(self.H5Dataset)[:self.shape(True)[0]]
         else:
             d = numpy.array(self.H5Dataset)
         ix = kwargs.get("ix",None)
