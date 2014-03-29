@@ -154,10 +154,15 @@ class DataItem:
                 d = d[iy,ix]
         windowSize = kwargs.get("windowSize",None)
         if windowSize != None:
-            window= numpy.ones(int(windowSize))/float(windowSize)
-            d = numpy.convolve(d, window, 'same')
-            d[-windowSize/2:] *= (float(windowSize)/(windowSize-numpy.arange(windowSize/2)))[:]
-            d[:windowSize/2] *= (float(windowSize)/(windowSize-numpy.arange(windowSize/2,0,-1)))[:]
+            # Running average by convolution with an exponentially decaying weight kernel in respect to time.
+            # d12: decay half-time
+            # The total window size is two times d12, defining the absolute length of the memory.
+            d12 = int(windowSize/2.)
+            x = numpy.arange(2*d12-1,-1,-1)
+            tmp = numpy.exp(x**2/d12**2*numpy.log(2))
+            w = tmp/tmp.sum()
+            N = len(d)
+            d = numpy.convolve(d, w, 'full')[:N]
         if self.isComplex:
             if complex_mode == "phase":
                 d = numpy.angle(d)
