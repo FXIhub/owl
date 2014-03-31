@@ -58,11 +58,11 @@ class DataItem:
         self.logger = logging.getLogger("DataItem")
         self.logger.setLevel(settingsOwl.loglev["DataItem"])
         # check whether or not it is a stack
-        #if len(self.H5Dataset.attrs.items()) > 0:
-        #self.isStack = ("axes" in self.H5Dataset.attrs.items()[0])
-        self.isStack = (len(list(self.H5Dataset.shape)) == 3)
-        #else:
-        #    self.isStack = False
+        if len(self.H5Dataset.attrs.items()) > 0:
+            self.isStack = ("axes" in self.H5Dataset.attrs.items()[0])
+        #self.isStack = (len(list(self.H5Dataset.shape)) == 3)
+        else:
+            self.isStack = False
         # check whether or not it is text
         self.isText = (str(self.H5Dataset.dtype.name).find("string") != -1)
         # shape?
@@ -89,6 +89,10 @@ class DataItem:
     def height(self,forceRefresh=False):
         return self.shape(forceRefresh)[-2]
     def data(self,**kwargs):
+        try:
+            self.H5Dataset.refresh()
+        except:
+            self.logger.debug("Failed to refresh dataset. Probably the h5py version that is installed does not support SWMR.")
         complex_mode = kwargs.get("complex_mode",None)
         if self.isComplex == False and complex_mode != None:
             return None
@@ -135,6 +139,10 @@ class DataItem:
                     d = numpy.min(d,0)
                 elif integrationMode == "max":
                     d = numpy.max(d,0)
+        elif self.isStack and self.format == 1:
+            d = numpy.array(self.H5Dataset)[:self.shape(True)[0],:]
+        elif self.isStack and self.format == 0:
+            d = numpy.array(self.H5Dataset)[:self.shape(True)[0]]
         else:
             d = numpy.array(self.H5Dataset)
         ix = kwargs.get("ix",None)
@@ -146,10 +154,15 @@ class DataItem:
                 d = d[iy,ix]
         windowSize = kwargs.get("windowSize",None)
         if windowSize != None:
-            window= numpy.ones(int(windowSize))/float(windowSize)
-            d = numpy.convolve(d, window, 'same')
-            d[-windowSize/2:] *= (float(windowSize)/(windowSize-numpy.arange(windowSize/2)))[:]
-            d[:windowSize/2] *= (float(windowSize)/(windowSize-numpy.arange(windowSize/2,0,-1)))[:]
+            # Running average by convolution with an exponentially decaying weight kernel in respect to time.
+            # d12: decay half-time
+            # The total window size is two times d12, defining the absolute length of the memory.
+            d12 = int(windowSize/2.)
+            x = numpy.arange(2*d12-1,-1,-1)
+            tmp = numpy.exp(x**2/d12**2*numpy.log(2))
+            w = tmp/tmp.sum()
+            N = len(d)
+            d = numpy.convolve(d, w, 'full')[:N]
         if self.isComplex:
             if complex_mode == "phase":
                 d = numpy.angle(d)
