@@ -31,6 +31,7 @@ class View2D(View,QtOpenGL.QGLWidget):
 
         self.viewer = viewer
         self.centralImg = 0
+        #self.targetCentralImg = None
         # translation in unit of window pixels
         self.translation = [0,0]
         self.zoom = 4.0
@@ -76,6 +77,7 @@ class View2D(View,QtOpenGL.QGLWidget):
         self.slideshowTimer.timeout.connect(self.nextSlideRow)
 
         self.stackSizeChanged.connect(self.browseToLastIfAuto)
+        #self.translationChanged.connect(self.checkTargetCentralImage)
 
 	settings = QtCore.QSettings()
         self.PNGOutputPath = settings.value("PNGOutputPath")
@@ -647,9 +649,23 @@ class View2D(View,QtOpenGL.QGLWidget):
     def scrollToImage(self,imgIndex):
         if imgIndex == None:
             return None
+    #    self.targetCentralImg = imgIndex
         (x,y,z) = self.imageToWindow(imgIndex,'Center',True)
         self.translateTo((x,-y))
+    #def checkTargetCentralImage(self):
+    #    if self.targetCentralImg != None:
+    #        if self.centralImg != self.targetCentralImg:
+    #            centralViewIndex = self.indexProjector.imgToIndex(self.centralImg)
+    #            targetCentralViewIndex = self.indexProjector.imgToIndex(self.targetCentralImg)
+    #            distance = centralViewIndex-targetCentralViewIndex
+    #            if distance > 0:
+    #                self.translateBy((0,-1))
+    #            elif distance < 0:
+    #                self.translateBy((0,1))
+    #            else:
+    #                self.targetCentralImg = None 
     def translateBy(self,translationBy,wrap=False):
+        print [self.translation[0]+translationBy[0],self.translation[1]+translationBy[1]]
         self.translateTo([self.translation[0]+translationBy[0],self.translation[1]+translationBy[1]],wrap)
     def translateTo(self,translation,wrap=False):
         self.translation[0] = translation[0]
