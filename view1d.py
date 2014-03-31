@@ -23,7 +23,6 @@ class View1D(View,QtGui.QFrame):
         self.setPixelStack()
         self.setWindowSize()
         self.nBins = 200
-        self.stackSizeChanged.connect(self.refreshPlot)
     def initPlot(self,widgetType="plot"):
         self.lineColor = (255,255,255)
         self.lineWidth = 1
@@ -80,10 +79,9 @@ class View1D(View,QtGui.QFrame):
     def toggleAutoLast(self):
         self.autoLast = not self.autoLast
     # DATA
-    def updateShape(self):
+    def onStackSizeChanged(self,newStackSize):
         if self.dataItemY != None:
-            if self.dataItemY.shape() != self.dataItemY.shape(True):
-                self.refreshPlot()
+            self.refreshPlot()
     def addInfLine(self):
         if self.infLine == None:
             infLine = pyqtgraph.InfiniteLine(0,90,None,True)

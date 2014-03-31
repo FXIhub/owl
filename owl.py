@@ -77,7 +77,7 @@ class Viewer(QtGui.QMainWindow):
         QtCore.QTimer.singleShot(0,self.after_show)
         self.updateTimer = QtCore.QTimer()
         self.updateTimer.setInterval(int(settings.value("updateTimer")))
-        self.updateTimer.timeout.connect(self.updateData)
+        self.updateTimer.timeout.connect(self.fileloader.stack.updateStackSize())
 
         self.view.view1D.setWindowSize(float(settings.value("movingAverageSize")))
 
@@ -250,7 +250,6 @@ class Viewer(QtGui.QMainWindow):
         self.view.view1D.dataItemYChanged.connect(self.handleDataY1DChanged)
         #self.view.view2D.needDataImage.connect(self.handleNeedDataImage)
         self.view.view2D.dataItemChanged.connect(self.handleData2DChanged)
-        self.view.view2D.stackSizeChanged.connect(self.handleStackSizeChanged)
         self.CXINavigation.dataBoxes["image"].button.needData.connect(self.handleNeedDataImage)
         self.CXINavigation.dataBoxes["mask"].button.needData.connect(self.handleNeedDataMask)
         self.CXINavigation.dataMenus["mask"].triggered.connect(self.handleMaskOutBitsChanged)
@@ -273,6 +272,8 @@ class Viewer(QtGui.QMainWindow):
 	self.dataProp.imageStackStdButton.released.connect(lambda: self.handleNeedDataIntegratedImage("std"))
 	self.dataProp.imageStackMinButton.released.connect(lambda: self.handleNeedDataIntegratedImage("min"))
 	self.dataProp.imageStackMaxButton.released.connect(lambda: self.handleNeedDataIntegratedImage("max"))
+
+        self.fileLoader.stack.stackSizeChanged.connect(self.handleStackSizeChanged)
 
 
     def openFileClicked(self):
@@ -526,8 +527,11 @@ class Viewer(QtGui.QMainWindow):
                 if hasattr(dataItems[k],"fullName"):
                     n = dataItems[k].fullName
             self.CXINavigation.dataBoxes[k].button.setName(n)
-    def handleStackSizeChanged(self):
-        self.dataProp.updateShape()
+    def handleStackSizeChanged(self,newStackSize=0):
+        self.view.view2D.indexProjector.onStackSizeChanged(newStackSize)
+        self.view.view2D.onStackSizeChanged(newStackSize)
+        self.view.view1D.onStackSizeChanged(newStackSize)
+        self.dataProp.onStackSizeChanged(newStackSize)
     def handleMask2DChanged(self,dataItem):
         n = None
         if dataItem != None:
@@ -541,10 +545,6 @@ class Viewer(QtGui.QMainWindow):
             self.updateTimer.stop()
         else:
             self.updateTimer.start()
-    def updateData(self):
-        self.view.view2D.indexProjector.updateStackSize()
-        self.view.view2D.updateStackSize()
-        self.view.view1D.updateShape()
 
 class PreferencesDialog(QtGui.QDialog):
     def __init__(self,parent):

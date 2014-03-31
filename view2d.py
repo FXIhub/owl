@@ -76,7 +76,7 @@ class View2D(View,QtOpenGL.QGLWidget):
         self.slideshowTimer.setInterval(2000)
         self.slideshowTimer.timeout.connect(self.nextSlideRow)
 
-        self.stackSizeChanged.connect(self.browseToLastIfAuto)
+
         #self.translationChanged.connect(self.checkTargetCentralImage)
 
 	settings = QtCore.QSettings()
@@ -653,7 +653,6 @@ class View2D(View,QtOpenGL.QGLWidget):
             (x,y,z) = self.imageToWindow(imgIndex,'Center',True)
             self.translateTo((x,-y))
     def translateBy(self,translationBy,wrap=False):
-        print [self.translation[0]+translationBy[0],self.translation[1]+translationBy[1]]
         self.translateTo([self.translation[0]+translationBy[0],self.translation[1]+translationBy[1]],wrap)
     def translateTo(self,translation,wrap=False):
         self.translation[0] = translation[0]
@@ -720,9 +719,8 @@ class View2D(View,QtOpenGL.QGLWidget):
         img_height =  self.getImgHeight("window",True)
         self.translateTo([0,img_height*int(numpy.floor(index/self.stackWidth))])
     def browseToLastIfAuto(self,size):
-        self.indexProjector.handleStackSizeChanged(size)
         if self.autoLast:
-            self.browseToViewIndex(size-1)
+            self.browseToViewIndex(self.stackSize-1)
     def mouseReleaseEvent(self, event):
         self.dragging = False
         # Select even when draggin
@@ -972,28 +970,20 @@ class View2D(View,QtOpenGL.QGLWidget):
         image.save(filename)
         self.viewer.statusBar.showMessage("Saving image %i to %s" % (self.centralImg,filename),1000)	
 
-    def getStackSize(self):
-        self.updateStackSize()
-        return self.stackSize
-        #if self.data == None:
-        #    return 0
-        #else:
-        #    len(self.data)
     def toggleAutoLast(self):
         self.autoLast = not self.autoLast
     # DATA
-    def updateStackSize(self, emitChanged=True):
+    def onStackSizeChanged(self):
         oldSize = self.stackSize
         if self.data != None:
             self.has_data = True        
             if self.data.isStack:
-		self.stackSize = self.data.shape(True)[0]
+		self.stackSize = self.data.shape()[0]
             else:
                 self.stackSize = 1
             #print "Stack size: %i" % self.stackSize
         else:
             self.stackSize = 0
             self.has_data = False
-        if emitChanged == True and self.stackSize != oldSize:# and (self.data == None or self.data.isStack):
-            #print "Stack size %i" % self.stackSize
-            self.stackSizeChanged.emit(self.stackSize)
+        if self.stackSize != oldSize:# and (self.data == None or self.data.isStack):
+            self.browseToLastIfAuto()

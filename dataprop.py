@@ -27,6 +27,8 @@ class DataProp(QtGui.QWidget):
         self.view2DProp = {}
         self.view1DProp = {}
         self.vbox = QtGui.QVBoxLayout()
+        # stack
+        self.stackSize = None
         # scrolling
         self.vboxScroll = QtGui.QVBoxLayout()
         self.scrollWidget = QtGui.QWidget()
@@ -427,13 +429,14 @@ class DataProp(QtGui.QWidget):
         self.currentImg.edited = True
         self.emitView2DProp()
     # DATA
+    def onStackSizeChanged(self,newStackSize):
+        self.stackSize = newStackSize
+        self.updateShape()
     def updateShape(self):        
         if self.data != None:
-            # update cache
-            self.shapeChache = self.data.shape()
             # update shape label
             string = "Shape: "
-            shape = list(self.shapeCache)
+            shape = list(self.data.shape)
             for d in shape:
                 string += str(d)+"x"
             string = string[:-1]
@@ -625,19 +628,19 @@ class DataProp(QtGui.QWidget):
             self.filterBox.hide()
     def setFilters(self,foo=None):
         P = self.view2DProp
-        P["filterMask"] = None
+        D = []
         if self.activeFilters != []:
+            P["filterMask"] = numpy.array(self.stackSize,dtype="bool")
             for f in self.activeFilters:
-                if P["filterMask"] == None:
-                    P["filterMask"] = numpy.ones(f.data.shape()[0],dtype="bool")
                 vmin = float(f.vminLineEdit.text())
                 vmax= float(f.vmaxLineEdit.text())
                 data = numpy.array(f.data,dtype="float")
-                P["filterMask"] *= (data >= vmin) * (data <= vmax)
-            Ntot = len(data)
+                P["filterMask"] *= ((data >= vmin) * (data <= vmax))[:self.stackSize]
+            Ntot = self.stackSize
             Nsel = P["filterMask"].sum()
             p = 100*Nsel/(1.*Ntot)
         else:
+            P["filterMask"] = None
             Ntot = 0
             Nsel = 0
             p = 100.

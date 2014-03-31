@@ -22,6 +22,7 @@ class FileLoader:
                 self.children[k] = GroupItem(self,"/"+k)
         self.dataItems = {}
         self.collectDataItems(self.children)
+        self.stack = Stack(self.f)
     def collectDataItems(self,item):
         for k in item.keys():
             child = item[k]
@@ -31,6 +32,32 @@ class FileLoader:
                 self.collectDataItems(child.children)
             else:
                 print "no valid item."
+
+class Stack:
+    stackSizeChanged = QtCore.Signal(int)
+    def __init__(self,f):
+        self.f = f
+        self.H5Datasets = {} # full name : dataset
+        self.stackSize = None
+    def addDataset(self,fullName):
+        self.H5Datasets[fullName] = self.f[fullName]
+    def removeDataset(self,fullName):
+        del self.H5Datasets[fullName]
+    def updateStackSize(self):
+        if not self.H5Datasets == {}:
+            N = []
+            for n,ds in self.H5Datasets.items():
+                try:
+                    ds.refresh()
+                except:
+                    self.logger.debug("Failed to refresh dataset. Probably the h5py version that is installed does not support SWMR.")
+                N.append(ds.shape[0])
+            N = numpy.array(N).min()
+        else:
+            N = None
+        if N != self.stackSize:
+            self.stackSizeChanged.emit(N)
+        self.stackSize = N
 
 class GroupItem:
     def __init__(self,parent,fullName):
