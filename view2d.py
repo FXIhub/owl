@@ -665,7 +665,7 @@ class View2D(View,QtOpenGL.QGLWidget):
     #            else:
     #                self.targetCentralImg = None 
     def translateBy(self,translationBy,wrap=False):
-        print [self.translation[0]+translationBy[0],self.translation[1]+translationBy[1]]
+        #print [self.translation[0]+translationBy[0],self.translation[1]+translationBy[1]]
         self.translateTo([self.translation[0]+translationBy[0],self.translation[1]+translationBy[1]],wrap)
     def translateTo(self,translation,wrap=False):
         self.translation[0] = translation[0]
