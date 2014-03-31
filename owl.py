@@ -526,7 +526,7 @@ class Viewer(QtGui.QMainWindow):
                     n = dataItems[k].fullName
             self.CXINavigation.dataBoxes[k].button.setName(n)
     def handleStackSizeChanged(self):
-        self.dataProp.refreshDimensionality()
+        self.dataProp.updateShape()
     def handleMask2DChanged(self,dataItem):
         n = None
         if dataItem != None:

@@ -46,7 +46,7 @@ class DataProp(QtGui.QWidget):
         #self.generalBox.isChecked(True)
         self.generalBox.vbox = QtGui.QVBoxLayout()
         self.generalBox.setLayout(self.generalBox.vbox)
-        self.dimensionality = QtGui.QLabel("Dimensions:", parent=self)
+        self.shape = QtGui.QLabel("Shape:", parent=self)
         self.datatype = QtGui.QLabel("Data Type:", parent=self)
         self.datasize = QtGui.QLabel("Data Size:", parent=self)
         self.dataform = QtGui.QLabel("Data Form:", parent=self)
@@ -65,7 +65,7 @@ class DataProp(QtGui.QWidget):
         self.currentImg.hbox.addWidget(self.currentImg)
         self.currentImg.edited = False 
 
-        self.generalBox.vbox.addWidget(self.dimensionality)
+        self.generalBox.vbox.addWidget(self.shape)
         self.generalBox.vbox.addWidget(self.datatype)
         self.generalBox.vbox.addWidget(self.datasize)
         self.generalBox.vbox.addWidget(self.dataform)
@@ -416,7 +416,6 @@ class DataProp(QtGui.QWidget):
         self.plotPointsCheckBox.toggled.connect(self.emitView1DProp)
         self.plotNBinsEdit.editingFinished.connect(self.emitView1DProp)
         self.currentImg.editingFinished.connect(self.onCurrentImg)
-
     def clear(self):
         self.clearView2DProp()
         self.clearData()
@@ -428,18 +427,20 @@ class DataProp(QtGui.QWidget):
         self.currentImg.edited = True
         self.emitView2DProp()
     # DATA
-    def setDimensionality(self,data=None):
-        if data != None:
-            string = "Dimensions: "
-            shape = list(data.shape())
+    def updateShape(self):        
+        if self.data != None:
+            # update cache
+            self.shapeChache = self.data.shape()
+            # update shape label
+            string = "Shape: "
+            shape = list(self.shapeCache)
             for d in shape:
                 string += str(d)+"x"
             string = string[:-1]
-            self.dimensionality.setText(string)
-    def refreshDimensionality(self):
-        self.setDimensionality(self.data)
+            self.shape.setText(string)
+            # update filters?
     def setData(self,data=None):
-        self.setDimensionality(data)
+        self.updateShape()
         if data != None:
             self.data = data
             self.datatype.setText("Data Type: %s" % (data.dtypeName))
@@ -461,7 +462,7 @@ class DataProp(QtGui.QWidget):
         self.currentViewIndex.setText("Central Index: %i (%i)" % (viewIndex,NViewIndex))
     def clearData(self):
         self.data = None
-        self.dimensionality.setText("Dimensions: ")
+        self.shape.setText("Shape: ")
         self.datatype.setText("Data Type: ")
         self.datasize.setText("Data Size: ")
         self.dataform.setText("Data Form: ")
@@ -628,7 +629,7 @@ class DataProp(QtGui.QWidget):
         if self.activeFilters != []:
             for f in self.activeFilters:
                 if P["filterMask"] == None:
-                    P["filterMask"] = numpy.ones(f.data.shape[0],dtype="bool")
+                    P["filterMask"] = numpy.ones(f.data.shape()[0],dtype="bool")
                 vmin = float(f.vminLineEdit.text())
                 vmax= float(f.vmaxLineEdit.text())
                 data = numpy.array(f.data,dtype="float")

@@ -647,8 +647,16 @@ class View2D(View,QtOpenGL.QGLWidget):
     def scrollToImage(self,imgIndex):
         if imgIndex == None:
             return None
-        (x,y,z) = self.imageToWindow(imgIndex,'Center',True)
-        self.translateTo((x,-y))
+        else:
+            #self.targetCentralImg = imgIndex
+            (x,y,z) = self.imageToWindow(imgIndex,'Center',True)
+            self.translateTo((x,-y))
+    #def checkTargetCentralImage(self):
+    #    if self.targetCentralImage != None:
+    #        if self.centralImage != self.targetCentralImage:
+    #            centralViewIndex = self.indexProjector.imgToIndex(self.centralImage)
+    #            targetCentralViewIndex = self.indexProjector.imgToIndex(self.targetCentralImage)
+    #            distance = centralViewIndex-targetCentralViewIndex
     def translateBy(self,translationBy,wrap=False):
         self.translateTo([self.translation[0]+translationBy[0],self.translation[1]+translationBy[1]],wrap)
     def translateTo(self,translation,wrap=False):
