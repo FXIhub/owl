@@ -44,7 +44,7 @@ class FileLoader(QtCore.QObject):
                 d.H5Dataset.refresh()
                 #except:
                 #    self.logger.debug("Failed to refresh dataset. Probably the h5py version that is installed does not support SWMR.")
-                N.append(d.H5Dataset.shape[0])
+                N.append(d.H5Dataset.attrs.get("numEvents", (d.H5Dataset.shape))[0])
         if len(N) > 0:
             N = numpy.array(N).min()
         else:
