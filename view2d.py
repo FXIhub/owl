@@ -77,7 +77,6 @@ class View2D(View,QtOpenGL.QGLWidget):
         self.slideshowTimer.setInterval(2000)
         self.slideshowTimer.timeout.connect(self.nextSlideRow)
 
-
         #self.translationChanged.connect(self.checkTargetCentralImage)
 
 	settings = QtCore.QSettings()
@@ -730,7 +729,7 @@ class View2D(View,QtOpenGL.QGLWidget):
     def browseToLastIfAuto(self):
         if self.autoLast:
             if self.data != None:
-                self.browseToViewIndex(self.data.shape()[0]-1)
+                self.browseToViewIndex(self.indexProjector.getNViewIndices()-1)
     def mouseReleaseEvent(self, event):
         self.dragging = False
         # Select even when draggin
