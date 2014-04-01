@@ -21,8 +21,8 @@ class View2D(View,QtOpenGL.QGLWidget):
     stackWidthChanged = QtCore.Signal(int)
     pixelClicked = QtCore.Signal(dict)
     dataItemChanged = QtCore.Signal(object,object)
-    def __init__(self,viewer,parent=None):
-        View.__init__(self,parent,"image")
+    def __init__(self,parent,viewer,indexProjector):
+        View.__init__(self,parent,indexProjector,"image")
         QtOpenGL.QGLWidget.__init__(self,parent)
         self.autoLast = False
         self.logger = logging.getLogger("View2D")
@@ -113,9 +113,9 @@ class View2D(View,QtOpenGL.QGLWidget):
         else:
             return self.mask.data()
     def getData(self,img=None):
-        return self.data.data(img=img,integrationMode=self.integrationMode,filterMask=self.indexProjector.filterMask,N=self.imageStackN)
+        return self.data.data(img=img,integrationMode=self.integrationMode,filterMask=self.indexProjector.filterMask(),N=self.imageStackN)
     def getPhase(self,img=None):
-        return self.data.data(img=img,integrationMode=self.integrationMode,filterMask=self.indexProjector.filterMask,N=self.imageStackN,complex_mode="phase")
+        return self.data.data(img=img,integrationMode=self.integrationMode,filterMask=self.indexProjector.filterMask(),N=self.imageStackN,complex_mode="phase")
     def stopThreads(self):
         while(self.imageLoader.isRunning()):
             self.imageLoader.quit()
@@ -953,7 +953,7 @@ class View2D(View,QtOpenGL.QGLWidget):
             if not hasattr(self, 'colormapText') or self.colormapText != prop["colormapText"]:
                 self.colormapText = prop["colormapText"]
             self.setStackWidth(prop["imageStackSubplotsValue"])
-            self.indexProjector.setProjector(prop["sortingDataItem"],prop["sortingInverted"],prop["filterMask"])
+            self.indexProjector.setProjector(prop["sortingDataItem"],prop["sortingInverted"])
             self.imageStackN = prop["N"]
             if prop["img"] != None:
                 self.scrollToImage(prop["img"])

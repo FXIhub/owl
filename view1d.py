@@ -7,8 +7,8 @@ class View1D(View,QtGui.QFrame):
     viewIndexSelected = QtCore.Signal(int)
     dataItemXChanged = QtCore.Signal(object)
     dataItemYChanged = QtCore.Signal(object)
-    def __init__(self,parent=None):
-        View.__init__(self,parent,"plot")
+    def __init__(self,parent=None,indexProjector=None):
+        View.__init__(self,parent,indexProjector,"plot")
         QtGui.QFrame.__init__(self,parent)
         self.hbox = QtGui.QHBoxLayout(self)
         margin = 20

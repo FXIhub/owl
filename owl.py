@@ -13,6 +13,7 @@ import numpy
 import math
 import settingsOwl
 from geometry import *
+from indexprojector import *
 from dataprop import *
 from dataloader import *
 from cxitree import *
@@ -50,11 +51,12 @@ class Viewer(QtGui.QMainWindow):
         self.statusBar.showMessage("Initializing...")
         self.init_settings()
         self.splitter = QtGui.QSplitter(self)        
-        self.view = ViewSplitter(self)
+        self.indexProjector = IndexProjector()
+        self.view = ViewSplitter(self,self.indexProjector)
         self.init_menus()
 
         self.fileLoader = FileLoader(self)
-        self.dataProp = DataProp(self)
+        self.dataProp = DataProp(self,self.indexProjector)
         self.CXINavigation = CXINavigation(self)
         self.splitter.addWidget(self.CXINavigation)
         self.splitter.addWidget(self.view)

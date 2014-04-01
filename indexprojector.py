@@ -11,11 +11,32 @@ class IndexProjector(QtCore.QObject):
         self.logger = logging.getLogger("IndexProjector")
         # If you want to see debug messages change level here
         self.logger.setLevel(settingsOwl.loglev["IndexProjector"])
-    def setProjector(self,sortingDataItem,sortingInverted,filterMask):
+        self.filters = []
+        self.filterMask = None
+    def setProjector(self,sortingDataItem,sortingInverted):
         self.sortingDataItem = sortingDataItem
         self.sortingInverted = sortingInverted
-        self.filterMask = filterMask
         self.update()
+    def addFilter(self,dataItem):
+        self.filters.append(dataItem)
+    def removeFilter(self,index):
+        self.filters.pop(index)
+    def updateFilterMask(self,vmins=None,vmaxs=None):
+        if vmins == None or vmaxs == None:
+            self._filterMask = None
+        else:
+            if len(self.filters) > 0:
+                F = numpy.ones(self.stackSize,dtype="bool")
+                for f,vmin,vmax in zip(self.filters,vmins,vmaxs):
+                    F *= (f <= vmax) * (f >= vmin)
+                self._filterMask = F
+            else:
+                self._filterMask = None
+    def filterMask(self):
+        if self._filterMask == None:
+            return numpy.ones(self.stackSize,dtype="bool")
+        else:
+            return self._filterMask
     def update(self):
         if self.stackSize != 0:
             self.imgs = numpy.arange(self.stackSize,dtype="int")
@@ -27,9 +48,9 @@ class IndexProjector(QtCore.QObject):
                     sortingDataItem = numpy.arange(self.stackSize,dtype="int")
             else:
                 sortingDataItem = numpy.arange(self.stackSize,dtype="int")
-            if self.filterMask != None:
-                sortingDataItemFiltered = sortingDataItem[self.filterMask]
-                self.imgs = self.imgs[self.filterMask]
+            if self._filterMask != None:
+                sortingDataItemFiltered = sortingDataItem[self.filterMask()]
+                self.imgs = self.imgs[self.filterMask()]
             else:
                 sortingDataItemFiltered = sortingDataItem
             if self.sortingInverted:
@@ -72,7 +93,7 @@ class IndexProjector(QtCore.QObject):
                 return self.imgs[int(index)]
     def clear(self):
         self.stackSize = 0
-        self.filterMask = None
+        self._filterMask = None
         self.sortingDataItem = None
         self.sortingInverted = False
         self.viewIndices = None

@@ -18,11 +18,12 @@ def sizeof_fmt(num):
 class DataProp(QtGui.QWidget):
     view2DPropChanged = QtCore.Signal(dict)
     view1DPropChanged = QtCore.Signal(dict)
-    def __init__(self,parent=None):
+    def __init__(self,parent=None,indexProjector=None):
         QtGui.QWidget.__init__(self,parent)
         self.setFocusPolicy(QtCore.Qt.ClickFocus)
 
         self.viewer = parent
+        self.indexProjector = indexProjector
         # this dict holds all current settings
         self.view2DProp = {}
         self.view1DProp = {}
@@ -615,6 +616,7 @@ class DataProp(QtGui.QWidget):
             filterWidget.dataItem.selectStack()
             filterWidget.show()
             filterWidget.refreshData(data)
+        self.indexProjector.addFilter(filterWidget.dataItem)
         self.setFilters()
         self.filterBox.show()
     def removeFilter(self,index):
@@ -629,17 +631,19 @@ class DataProp(QtGui.QWidget):
         self.setFilters()
         if self.activeFilters == []:
             self.filterBox.hide()
+        self.indexProjector.removeFilter(index)
     def setFilters(self,foo=None):
         P = self.view2DProp
         D = []
         if self.activeFilters != []:
-            P["filterMask"] = numpy.array(self.stackSize,dtype="bool")
-            for f in self.activeFilters:
-                vmin = float(f.vminLineEdit.text())
-                vmax= float(f.vmaxLineEdit.text())
-                data = numpy.array(f.data,dtype="float")
-                P["filterMask"] *= ((data >= vmin) * (data <= vmax))[:self.stackSize]
-            Ntot = self.stackSize
+            vmins = numpy.zeros(len(self.activeFilters))
+            vmaxs = numpy.zeros(len(self.activeFilters))
+            for i,f in zip(range(len(self.activeFilters)),self.activeFilters):
+                vmins[i] = float(f.vminLineEdit.text())
+                vmaxs[i] = float(f.vmaxLineEdit.text())
+            self.indexProjector.updateFilterMask(vmins,vmaxs)
+            P["filterMask"] = self.indexProjector.filterMask()
+            Ntot = len(P["filterMask"])
             Nsel = P["filterMask"].sum()
             p = 100*Nsel/(1.*Ntot)
         else:
