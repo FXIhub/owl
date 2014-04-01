@@ -153,7 +153,6 @@ class View1D(View,QtGui.QFrame):
                 dataX = self.dataItemX.data()
             if self.indexProjector.imgs != None and dataY.shape[0] == self.indexProjector.imgs.shape[0]:
                 dataY = dataY[self.indexProjector.imgs]
-            print dataX.shape,dataY.shape
             self.p.setData(dataX,dataY)
         elif self.plotMode == "histogram":
             if self.nBins == None:

@@ -7,12 +7,14 @@ class IndexProjector(QtCore.QObject):
     def __init__(self):
         QtCore.QObject.__init__(self)
         self.stackSize = 0
-        self.clear()
         self.logger = logging.getLogger("IndexProjector")
         # If you want to see debug messages change level here
         self.logger.setLevel(settingsOwl.loglev["IndexProjector"])
         self.filters = []
         self._filterMask = None
+        self.vmins = None
+        self.vmaxs = None
+        self.clear()
     def setProjector(self,sortingDataItem,sortingInverted):
         self.sortingDataItem = sortingDataItem
         self.sortingInverted = sortingInverted
@@ -26,18 +28,23 @@ class IndexProjector(QtCore.QObject):
             self._filterMask = None
         else:
             if len(self.filters) > 0:
-                F = numpy.ones(self.stackSize,dtype="bool")
-                for f,vmin,vmax in zip(self.filters,vmins,vmaxs):
-                    F *= (f <= vmax) * (f >= vmin)
-                self._filterMask = F
+                F = numpy.ones(shape=(len(self.filters),self.stackSize),dtype="bool")
+                for i,f in zip(range(len(self.filters)),self.filters):
+                    F[i,:] = f.data()[:self.stackSize]
+                for i,vmin,vmax in zip(range(len(self.filters)),vmins,vmaxs):
+                    F[i,:] = (F[i,:] <= vmax) * (F[i,:] >= vmin)
+                self._filterMask = numpy.array(F.prod(0),dtype="bool")
             else:
                 self._filterMask = None
+        self.vmins = vmins
+        self.vmaxs = vmaxs
     def filterMask(self):
         if self._filterMask == None:
             return numpy.ones(self.stackSize,dtype="bool")
         else:
             return self._filterMask
     def update(self):
+        self.updateFilterMask(self.vmins,self.vmaxs)
         if self.stackSize != 0:
             self.imgs = numpy.arange(self.stackSize,dtype="int")
             if self.sortingDataItem != None:
@@ -49,8 +56,9 @@ class IndexProjector(QtCore.QObject):
             else:
                 sortingDataItem = numpy.arange(self.stackSize,dtype="int")
             if self._filterMask != None:
-                sortingDataItemFiltered = sortingDataItem[self.filterMask()]
-                self.imgs = self.imgs[self.filterMask()]
+                M = self.filterMask()
+                sortingDataItemFiltered = sortingDataItem[M]
+                self.imgs = self.imgs[M]
             else:
                 sortingDataItemFiltered = sortingDataItem
             if self.sortingInverted:

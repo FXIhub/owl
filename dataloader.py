@@ -44,14 +44,15 @@ class FileLoader(QtCore.QObject):
                 d.H5Dataset.refresh()
                 #except:
                 #    self.logger.debug("Failed to refresh dataset. Probably the h5py version that is installed does not support SWMR.")
-                N.append(d.H5Dataset.attrs.get("numEvents", (d.H5Dataset.shape))[0])
+                N.append(d.H5Dataset.attrs.get("numEvents", d.H5Dataset.shape)[0])
         if len(N) > 0:
             N = numpy.array(N).min()
         else:
             N = None
         if N != self.stackSize:
+            self.stackSize = N
             self.stackSizeChanged.emit(N)
-        self.stackSize = N
+
 
 class GroupItem:
     def __init__(self,parent,fileLoader,fullName):
@@ -77,9 +78,9 @@ class DataItem:
         self.H5Dataset = parent.H5Group[self.name]
         self.dtypeName = self.H5Dataset.dtype.name
         self.dtypeItemsize = self.H5Dataset.dtype.itemsize
-        self.deselectStack()
         self.logger = logging.getLogger("DataItem")
         self.logger.setLevel(settingsOwl.loglev["DataItem"])
+        self.isSelectedStack = False
         # check whether or not it is a stack
         if len(self.H5Dataset.attrs.items()) > 0:
             self.isStack = ("axes" in self.H5Dataset.attrs.items()[0])
@@ -108,10 +109,15 @@ class DataItem:
     def height(self,forceRefresh=False):
         return self.shape(forceRefresh)[-2]
     def deselectStack(self):
-        self.isSelectedStack = False
+        if self.isSelectedStack:
+            self.isSelectedStack = False
+            self.fileLoader.updateStackSize()
+        else:
+            self.isSelectedStack = False
     def selectStack(self):
         if self.isStack:
             self.isSelectedStack = True
+            self.fileLoader.updateStackSize()
     def data(self,**kwargs):
         # COMMENT: Refreshing datasets can have the side effect that they are being closed. Why is that?
         #try:
@@ -176,8 +182,6 @@ class DataItem:
                 d = numpy.array(self.H5Dataset)[:self.fileLoader.stackSize,:]
         elif self.isStack and self.format == 0:
             if self.fileLoader.stackSize == None:
-                print self.fullName
-                print self.H5Dataset
                 d = numpy.array(self.H5Dataset)
             else:
                 d = numpy.array(self.H5Dataset)[:self.fileLoader.stackSize]
