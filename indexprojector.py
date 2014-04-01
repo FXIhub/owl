@@ -12,7 +12,7 @@ class IndexProjector(QtCore.QObject):
         # If you want to see debug messages change level here
         self.logger.setLevel(settingsOwl.loglev["IndexProjector"])
         self.filters = []
-        self.filterMask = None
+        self._filterMask = None
     def setProjector(self,sortingDataItem,sortingInverted):
         self.sortingDataItem = sortingDataItem
         self.sortingInverted = sortingInverted
