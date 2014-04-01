@@ -37,6 +37,7 @@ class View2D(View,QtOpenGL.QGLWidget):
         self.zoom = 4.0
         #self.setFocusPolicy(QtCore.Qt.ClickFocus)
         self.data = None
+        self.mask = None
         self.texturesLoading = {}
         self.imageStackN = None
         
@@ -84,14 +85,21 @@ class View2D(View,QtOpenGL.QGLWidget):
 	#print self.PNGOutputPath
 
     def setData(self,dataItem=None):
+        if self.data != None:
+            self.data.deselectStack()
         self.data = dataItem
         if self.data != None:
+            self.data.selectStack()
             self.has_data = True
         else:
             self.has_data = False
         self.dataItemChanged.emit(self.data,self.mask)
     def setMask(self,dataItem=None):
+        if self.mask != None:
+            self.mask.deselectStack()
         self.mask = dataItem
+        if self.mask != None:
+            self.mask.selectStack()
         self.dataItemChanged.emit(self.data,self.mask)
     def setMaskOutBits(self,maskOutBits=0):
         self.maskOutBits = maskOutBits
@@ -534,9 +542,10 @@ class View2D(View,QtOpenGL.QGLWidget):
 #        glFlush()
 #        print '%s function took %0.3f ms' % ("paintGL", (time4-time3)*1000.0)
 #        self.time1 = time.time()
-    
     def loadStack(self,data):
         self.setData(data)
+        if data.isStack:
+            data.isSelectedStack = True
         self.zoomFromStackWidth()
     # will have to be changed when filter is implemented
     def getNImages(self):
@@ -718,9 +727,10 @@ class View2D(View,QtOpenGL.QGLWidget):
     def browseToViewIndex(self,index):
         img_height =  self.getImgHeight("window",True)
         self.translateTo([0,img_height*int(numpy.floor(index/self.stackWidth))])
-    def browseToLastIfAuto(self,size):
+    def browseToLastIfAuto(self):
         if self.autoLast:
-            self.browseToViewIndex(self.stackSize-1)
+            if self.data != None:
+                self.browseToViewIndex(self.data.shape()[0]-1)
     def mouseReleaseEvent(self, event):
         self.dragging = False
         # Select even when draggin
@@ -949,7 +959,6 @@ class View2D(View,QtOpenGL.QGLWidget):
             if prop["img"] != None:
                 self.scrollToImage(prop["img"])
         self.updateGL()
-
     def saveToPNG(self):
         try:
             import Image
@@ -972,18 +981,12 @@ class View2D(View,QtOpenGL.QGLWidget):
 
     def toggleAutoLast(self):
         self.autoLast = not self.autoLast
+        self.browseToLastIfAuto()
     # DATA
-    def onStackSizeChanged(self):
-        oldSize = self.stackSize
+    def onStackSizeChanged(self,newStackSize):
+        # not sure if this is needed
         if self.data != None:
             self.has_data = True        
-            if self.data.isStack:
-		self.stackSize = self.data.shape()[0]
-            else:
-                self.stackSize = 1
-            #print "Stack size: %i" % self.stackSize
         else:
-            self.stackSize = 0
             self.has_data = False
-        if self.stackSize != oldSize:# and (self.data == None or self.data.isStack):
-            self.browseToLastIfAuto()
+        self.browseToLastIfAuto()

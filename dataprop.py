@@ -436,16 +436,16 @@ class DataProp(QtGui.QWidget):
         if self.data != None:
             # update shape label
             string = "Shape: "
-            shape = list(self.data.shape)
+            shape = list(self.data.shape())
             for d in shape:
                 string += str(d)+"x"
             string = string[:-1]
             self.shape.setText(string)
             # update filters?
     def setData(self,data=None):
+        self.data = data
         self.updateShape()
         if data != None:
-            self.data = data
             self.datatype.setText("Data Type: %s" % (data.dtypeName))
             self.datasize.setText("Data Size: %s" % sizeof_fmt(data.dtypeItemsize*reduce(mul,data.shape())))
             if data.isStack:
@@ -605,18 +605,21 @@ class DataProp(QtGui.QWidget):
     def addFilter(self,data):
         if self.inactiveFilters == []:
             filterWidget = FilterWidget(self,data)
+            filterWidget.dataItem.selectStack()
             filterWidget.limitsChanged.connect(self.emitView2DProp)
             self.filterBox.vbox.addWidget(filterWidget)
             self.activeFilters.append(filterWidget)
         else:
             self.activeFilters.append(self.inactiveFilters.pop(0))
             filterWidget = self.activeFilters[-1]
+            filterWidget.dataItem.selectStack()
             filterWidget.show()
             filterWidget.refreshData(data)
         self.setFilters()
         self.filterBox.show()
     def removeFilter(self,index):
         filterWidget = self.activeFilters.pop(index)
+        filterWidget.dataItem.deselectStack()
         self.filterBox.vbox.removeWidget(filterWidget)
         self.filterBox.vbox.addWidget(filterWidget)
         self.inactiveFilters.append(filterWidget)

@@ -43,13 +43,8 @@ class IndexProjector(QtCore.QObject):
             self.imgs = None
         self.projectionChanged.emit(self)
     def onStackSizeChanged(self,newStackSize):
-        if self.sortingDataItem != None:
-            if newStackSize != self.stackSize:
-                self.stackSize = newStackSize
-                self.update()
-        else:
-            self.stackSize = 0
-            self.update()
+        self.stackSize = newStackSize
+        self.update()
     def getNViewIndices(self):
         if self.imgs != None:
             return len(self.imgs)

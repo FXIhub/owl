@@ -53,7 +53,7 @@ class Viewer(QtGui.QMainWindow):
         self.view = ViewSplitter(self)
         self.init_menus()
 
-
+        self.fileLoader = FileLoader(self)
         self.dataProp = DataProp(self)
         self.CXINavigation = CXINavigation(self)
         self.splitter.addWidget(self.CXINavigation)
@@ -77,7 +77,7 @@ class Viewer(QtGui.QMainWindow):
         QtCore.QTimer.singleShot(0,self.after_show)
         self.updateTimer = QtCore.QTimer()
         self.updateTimer.setInterval(int(settings.value("updateTimer")))
-        self.updateTimer.timeout.connect(self.fileloader.stack.updateStackSize())
+        self.updateTimer.timeout.connect(self.fileLoader.updateStackSize)
 
         self.view.view1D.setWindowSize(float(settings.value("movingAverageSize")))
 
@@ -91,7 +91,7 @@ class Viewer(QtGui.QMainWindow):
             self.openCXIFile(args.filename)        
     def openCXIFile(self,filename):
 	self.filename = filename
-        self.fileLoader = FileLoader(filename)
+        self.fileLoader.loadFile(filename)
         self.CXINavigation.CXITree.buildTree(self.fileLoader)
     def init_settings(self):
         settings = QtCore.QSettings()
@@ -273,8 +273,7 @@ class Viewer(QtGui.QMainWindow):
 	self.dataProp.imageStackMinButton.released.connect(lambda: self.handleNeedDataIntegratedImage("min"))
 	self.dataProp.imageStackMaxButton.released.connect(lambda: self.handleNeedDataIntegratedImage("max"))
 
-        self.fileLoader.stack.stackSizeChanged.connect(self.handleStackSizeChanged)
-
+        self.fileLoader.stackSizeChanged.connect(self.onStackSizeChanged)
 
     def openFileClicked(self):
         fileName = QtGui.QFileDialog.getOpenFileName(self,"Open CXI File", None, "CXI Files (*.cxi)");
@@ -375,10 +374,9 @@ class Viewer(QtGui.QMainWindow):
             elif group+"/mask_shared" in self.CXINavigation.CXITree.fileLoader.dataItems.keys():
                 self.handleNeedDataMask(group+"/mask_shared")
         self.view.view2DScrollWidget.update()
-        self.updateData()
+        #self.updateData()
     def handleNeedDataIntegratedImage(self,integrationMode):
 	self.view.view2D.integrationMode = integrationMode
-	self.view.view2D.updateStackSize(True)
 	self.view.view2D.clearTextures()
     def handleNeedDataMask(self,dataName=None):
         if dataName == "" or dataName == None:
@@ -476,11 +474,11 @@ class Viewer(QtGui.QMainWindow):
             self.dataProp.plotBox.show()
             self.viewActions["View 1D"].setChecked(True)
             self.statusBar.showMessage("Loaded Y data for plot: %s" % dataName,1000)
-    def handleView1DPropChanged(self,prop):
-        self.view.view1D.show()
-        self.dataProp.plotBox.show()
-        self.viewActions["View 1D"].setChecked(True)
-        self.view.view1D.setProps(prop)
+    #def handleView1DPropChanged(self,prop):
+    #    self.view.view1D.show()
+    #    self.dataProp.plotBox.show()
+    #    self.viewActions["View 1D"].setChecked(True)
+    #    self.view.view1D.setProps(prop)
         #self.CXINavigation.dataBoxes["plot"].button.setName("%s (%i,%i)" % (dataName,ix,iy))
         #self.statusBar.showMessage("Loaded pixel stack to plot: %s (%i,%i)" % (data.name,iy,ix),1000)
     def handlePlotModeTriggered(self,foovalue=None):
@@ -527,7 +525,7 @@ class Viewer(QtGui.QMainWindow):
                 if hasattr(dataItems[k],"fullName"):
                     n = dataItems[k].fullName
             self.CXINavigation.dataBoxes[k].button.setName(n)
-    def handleStackSizeChanged(self,newStackSize=0):
+    def onStackSizeChanged(self,newStackSize=0):
         self.view.view2D.indexProjector.onStackSizeChanged(newStackSize)
         self.view.view2D.onStackSizeChanged(newStackSize)
         self.view.view1D.onStackSizeChanged(newStackSize)

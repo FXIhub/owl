@@ -7,7 +7,6 @@ class View(QtCore.QObject):
     needDataset = QtCore.Signal(str)
     datasetChanged = QtCore.Signal(h5py.Dataset,str)
     indexProjector = IndexProjector()
-    stackSizeChanged = QtCore.Signal(int)
     def __init__(self,parent=None,datasetMode="image"):
         QtCore.QObject.__init__(self)
         self.parent = parent
@@ -15,7 +14,7 @@ class View(QtCore.QObject):
         self.stackSize = 0
         self.datasetMode = datasetMode
 	self.integrationMode = None
-        self.stackSizeChanged.connect(self.indexProjector.handleStackSizeChanged)
+
     def dragEnterEvent(self, e):
         if e.mimeData().hasFormat('text/plain'):
             e.accept()

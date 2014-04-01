@@ -44,22 +44,24 @@ class View1D(View,QtGui.QFrame):
         self.setStyle()
         #self.p.update()
     def setDataItemX(self,dataItem):
+        if self.dataItemX != None:
+            self.dataItemX.deselectStack()
         self.dataItemX = dataItem
         if hasattr(dataItem,"fullName"): 
             self.dataItemXLabel = dataItem.fullName
+            self.dataItemX.selectStack()
         else:
             self.dataItemXLabel = ""
         self.dataItemXChanged.emit(dataItem)
     def setDataItemY(self,dataItem):
+        if self.dataItemY != None:
+            self.dataItemY.deselectStack()
         self.dataItemY = dataItem
         if hasattr(dataItem,"fullName"):
             self.dataItemYLabel = dataItem.fullName
+            self.dataItemY.selectStack()
         else:
             self.dataItemYLabel = ""
-        if dataItem.isStack:
-            self.stackSize = self.dataItemY.shape(True)[0]
-        else:
-            self.stackSize = 0
         self.setPixelStack()
         self.dataItemYChanged.emit(dataItem)
     def setPixelStack(self,ix=None,iy=None,N=None):
@@ -80,6 +82,7 @@ class View1D(View,QtGui.QFrame):
         self.autoLast = not self.autoLast
     # DATA
     def onStackSizeChanged(self,newStackSize):
+        #self.stackSize = newStackSize
         if self.dataItemY != None:
             self.refreshPlot()
     def addInfLine(self):
@@ -150,6 +153,7 @@ class View1D(View,QtGui.QFrame):
                 dataX = self.dataItemX.data()
             if self.indexProjector.imgs != None and dataY.shape[0] == self.indexProjector.imgs.shape[0]:
                 dataY = dataY[self.indexProjector.imgs]
+            print dataX.shape,dataY.shape
             self.p.setData(dataX,dataY)
         elif self.plotMode == "histogram":
             if self.nBins == None:
