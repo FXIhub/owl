@@ -27,6 +27,8 @@ class DataProp(QtGui.QWidget):
         self.view2DProp = {}
         self.view1DProp = {}
         self.vbox = QtGui.QVBoxLayout()
+        # stack
+        self.stackSize = None
         # scrolling
         self.vboxScroll = QtGui.QVBoxLayout()
         self.scrollWidget = QtGui.QWidget()
@@ -46,7 +48,7 @@ class DataProp(QtGui.QWidget):
         #self.generalBox.isChecked(True)
         self.generalBox.vbox = QtGui.QVBoxLayout()
         self.generalBox.setLayout(self.generalBox.vbox)
-        self.dimensionality = QtGui.QLabel("Dimensions:", parent=self)
+        self.shape = QtGui.QLabel("Shape:", parent=self)
         self.datatype = QtGui.QLabel("Data Type:", parent=self)
         self.datasize = QtGui.QLabel("Data Size:", parent=self)
         self.dataform = QtGui.QLabel("Data Form:", parent=self)
@@ -65,7 +67,7 @@ class DataProp(QtGui.QWidget):
         self.currentImg.hbox.addWidget(self.currentImg)
         self.currentImg.edited = False 
 
-        self.generalBox.vbox.addWidget(self.dimensionality)
+        self.generalBox.vbox.addWidget(self.shape)
         self.generalBox.vbox.addWidget(self.datatype)
         self.generalBox.vbox.addWidget(self.datasize)
         self.generalBox.vbox.addWidget(self.dataform)
@@ -416,7 +418,6 @@ class DataProp(QtGui.QWidget):
         self.plotPointsCheckBox.toggled.connect(self.emitView1DProp)
         self.plotNBinsEdit.editingFinished.connect(self.emitView1DProp)
         self.currentImg.editingFinished.connect(self.onCurrentImg)
-
     def clear(self):
         self.clearView2DProp()
         self.clearData()
@@ -428,20 +429,23 @@ class DataProp(QtGui.QWidget):
         self.currentImg.edited = True
         self.emitView2DProp()
     # DATA
-    def setDimensionality(self,data=None):
-        if data != None:
-            string = "Dimensions: "
-            shape = list(data.shape())
+    def onStackSizeChanged(self,newStackSize):
+        self.stackSize = newStackSize
+        self.updateShape()
+    def updateShape(self):        
+        if self.data != None:
+            # update shape label
+            string = "Shape: "
+            shape = list(self.data.shape())
             for d in shape:
                 string += str(d)+"x"
             string = string[:-1]
-            self.dimensionality.setText(string)
-    def refreshDimensionality(self):
-        self.setDimensionality(self.data)
+            self.shape.setText(string)
+            # update filters?
     def setData(self,data=None):
-        self.setDimensionality(data)
+        self.data = data
+        self.updateShape()
         if data != None:
-            self.data = data
             self.datatype.setText("Data Type: %s" % (data.dtypeName))
             self.datasize.setText("Data Size: %s" % sizeof_fmt(data.dtypeItemsize*reduce(mul,data.shape())))
             if data.isStack:
@@ -461,7 +465,7 @@ class DataProp(QtGui.QWidget):
         self.currentViewIndex.setText("Central Index: %i (%i)" % (viewIndex,NViewIndex))
     def clearData(self):
         self.data = None
-        self.dimensionality.setText("Dimensions: ")
+        self.shape.setText("Shape: ")
         self.datatype.setText("Data Type: ")
         self.datasize.setText("Data Size: ")
         self.dataform.setText("Data Form: ")
@@ -601,18 +605,21 @@ class DataProp(QtGui.QWidget):
     def addFilter(self,data):
         if self.inactiveFilters == []:
             filterWidget = FilterWidget(self,data)
+            filterWidget.dataItem.selectStack()
             filterWidget.limitsChanged.connect(self.emitView2DProp)
             self.filterBox.vbox.addWidget(filterWidget)
             self.activeFilters.append(filterWidget)
         else:
             self.activeFilters.append(self.inactiveFilters.pop(0))
             filterWidget = self.activeFilters[-1]
+            filterWidget.dataItem.selectStack()
             filterWidget.show()
             filterWidget.refreshData(data)
         self.setFilters()
         self.filterBox.show()
     def removeFilter(self,index):
         filterWidget = self.activeFilters.pop(index)
+        filterWidget.dataItem.deselectStack()
         self.filterBox.vbox.removeWidget(filterWidget)
         self.filterBox.vbox.addWidget(filterWidget)
         self.inactiveFilters.append(filterWidget)
@@ -624,19 +631,19 @@ class DataProp(QtGui.QWidget):
             self.filterBox.hide()
     def setFilters(self,foo=None):
         P = self.view2DProp
-        P["filterMask"] = None
+        D = []
         if self.activeFilters != []:
+            P["filterMask"] = numpy.array(self.stackSize,dtype="bool")
             for f in self.activeFilters:
-                if P["filterMask"] == None:
-                    P["filterMask"] = numpy.ones(f.data.shape[0],dtype="bool")
                 vmin = float(f.vminLineEdit.text())
                 vmax= float(f.vmaxLineEdit.text())
                 data = numpy.array(f.data,dtype="float")
-                P["filterMask"] *= (data >= vmin) * (data <= vmax)
-            Ntot = len(data)
+                P["filterMask"] *= ((data >= vmin) * (data <= vmax))[:self.stackSize]
+            Ntot = self.stackSize
             Nsel = P["filterMask"].sum()
             p = 100*Nsel/(1.*Ntot)
         else:
+            P["filterMask"] = None
             Ntot = 0
             Nsel = 0
             p = 100.
