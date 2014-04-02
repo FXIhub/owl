@@ -41,6 +41,7 @@ class FileLoader(QtCore.QObject):
         for n,d in self.dataItems.items():
             if d.isSelectedStack:
                 #try:
+                print d.H5Dataset
                 d.H5Dataset.refresh()
                 #except:
                 #    self.logger.debug("Failed to refresh dataset. Probably the h5py version that is installed does not support SWMR.")
@@ -95,7 +96,7 @@ class DataItem:
         self.isComplex = (str(self.H5Dataset.dtype.name).lower().find("complex") != -1)
         # image stack?
         if self.isStack: self.format -= 1
-    def shape(self,forceRefresh=False):
+    def shape(self):
         shape = self.H5Dataset.shape
         if self.isSelectedStack and self.fileLoader.stackSize != None:
             shape = list(shape)
@@ -104,10 +105,10 @@ class DataItem:
             #self._shape.insert(0,self.H5Dataset.attrs.get("numEvents", (self.H5Dataset.shape))[0])
             shape = tuple(shape)
         return shape
-    def width(self,forceRefresh=False):
-        return self.shape(forceRefresh)[-1]
-    def height(self,forceRefresh=False):
-        return self.shape(forceRefresh)[-2]
+    def width(self):
+        return self.shape()[-1]
+    def height(self):
+        return self.shape()[-2]
     def deselectStack(self):
         if self.isSelectedStack:
             self.isSelectedStack = False
@@ -157,7 +158,7 @@ class DataItem:
                         temp[i,:,:] = d[iz[i]]
                     d = temp
             else:
-                s = numpy.array(list(self.shape(True)))
+                s = numpy.array(list(self.shape()))
                 k = 1
                 for si in s: k *= si                
                 if k > 100000000:

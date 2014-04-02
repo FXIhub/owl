@@ -135,6 +135,9 @@ class View1D(View,QtGui.QFrame):
         if self.dataItemY == None:
             dataY = None
         else:
+            print self.dataItemY.H5Dataset
+            print self.dataItemY.H5Dataset[:10]
+            print self.dataItemY.H5Dataset.shape
             dataY = self.dataItemY.data(ix=self.ix,iy=self.iy,N=self.N,windowSize=self.windowSize())
         if dataY == None:
             self.p.setData([0])
