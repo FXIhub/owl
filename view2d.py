@@ -21,8 +21,8 @@ class View2D(View,QtOpenGL.QGLWidget):
     stackWidthChanged = QtCore.Signal(int)
     pixelClicked = QtCore.Signal(dict)
     dataItemChanged = QtCore.Signal(object,object)
-    def __init__(self,viewer,parent=None):
-        View.__init__(self,parent,"image")
+    def __init__(self,parent,viewer,indexProjector):
+        View.__init__(self,parent,indexProjector,"image")
         QtOpenGL.QGLWidget.__init__(self,parent)
         self.autoLast = False
         self.logger = logging.getLogger("View2D")
@@ -31,11 +31,13 @@ class View2D(View,QtOpenGL.QGLWidget):
 
         self.viewer = viewer
         self.centralImg = 0
+        #self.targetCentralImg = None
         # translation in unit of window pixels
         self.translation = [0,0]
         self.zoom = 4.0
         #self.setFocusPolicy(QtCore.Qt.ClickFocus)
-        self.data = {}
+        self.data = None
+        self.mask = None
         self.texturesLoading = {}
         self.imageStackN = None
         
@@ -75,21 +77,28 @@ class View2D(View,QtOpenGL.QGLWidget):
         self.slideshowTimer.setInterval(2000)
         self.slideshowTimer.timeout.connect(self.nextSlideRow)
 
-        self.stackSizeChanged.connect(self.browseToLastIfAuto)
+        #self.translationChanged.connect(self.checkTargetCentralImage)
 
 	settings = QtCore.QSettings()
         self.PNGOutputPath = settings.value("PNGOutputPath")
 	#print self.PNGOutputPath
 
     def setData(self,dataItem=None):
+        if self.data != None:
+            self.data.deselectStack()
         self.data = dataItem
         if self.data != None:
+            self.data.selectStack()
             self.has_data = True
         else:
             self.has_data = False
         self.dataItemChanged.emit(self.data,self.mask)
     def setMask(self,dataItem=None):
+        if self.mask != None:
+            self.mask.deselectStack()
         self.mask = dataItem
+        if self.mask != None:
+            self.mask.selectStack()
         self.dataItemChanged.emit(self.data,self.mask)
     def setMaskOutBits(self,maskOutBits=0):
         self.maskOutBits = maskOutBits
@@ -104,9 +113,9 @@ class View2D(View,QtOpenGL.QGLWidget):
         else:
             return self.mask.data()
     def getData(self,img=None):
-        return self.data.data(img=img,integrationMode=self.integrationMode,filterMask=self.indexProjector.filterMask,N=self.imageStackN)
+        return self.data.data(img=img,integrationMode=self.integrationMode,filterMask=self.indexProjector.filterMask(),N=self.imageStackN)
     def getPhase(self,img=None):
-        return self.data.data(img=img,integrationMode=self.integrationMode,filterMask=self.indexProjector.filterMask,N=self.imageStackN,complex_mode="phase")
+        return self.data.data(img=img,integrationMode=self.integrationMode,filterMask=self.indexProjector.filterMask(),N=self.imageStackN,complex_mode="phase")
     def stopThreads(self):
         while(self.imageLoader.isRunning()):
             self.imageLoader.quit()
@@ -532,9 +541,10 @@ class View2D(View,QtOpenGL.QGLWidget):
 #        glFlush()
 #        print '%s function took %0.3f ms' % ("paintGL", (time4-time3)*1000.0)
 #        self.time1 = time.time()
-    
     def loadStack(self,data):
         self.setData(data)
+        if data.isStack:
+            data.isSelectedStack = True
         self.zoomFromStackWidth()
     # will have to be changed when filter is implemented
     def getNImages(self):
@@ -551,7 +561,7 @@ class View2D(View,QtOpenGL.QGLWidget):
             else:
                 return len(self.indexProjector.imgs)
     def getImgHeight(self,reference,border=False):
-        if self.data != {} and self.data != None:
+        if self.data != None:
             imgHeight = self.data.height()
             if border == True:
                 imgHeight += self.subplotSceneBorder()
@@ -647,8 +657,9 @@ class View2D(View,QtOpenGL.QGLWidget):
     def scrollToImage(self,imgIndex):
         if imgIndex == None:
             return None
-        (x,y,z) = self.imageToWindow(imgIndex,'Center',True)
-        self.translateTo((x,y))
+        else:
+            (x,y,z) = self.imageToWindow(imgIndex,'Center',True)
+            self.translateTo((x,-y))
     def translateBy(self,translationBy,wrap=False):
         self.translateTo([self.translation[0]+translationBy[0],self.translation[1]+translationBy[1]],wrap)
     def translateTo(self,translation,wrap=False):
@@ -702,7 +713,6 @@ class View2D(View,QtOpenGL.QGLWidget):
             self.slideshowTimer.stop()
         else:
             self.slideshowTimer.start()
-
     def nextSlideRow(self):
         self.nextRow(wrap=True)
     def nextRow(self,wrap=False):
@@ -716,10 +726,10 @@ class View2D(View,QtOpenGL.QGLWidget):
     def browseToViewIndex(self,index):
         img_height =  self.getImgHeight("window",True)
         self.translateTo([0,img_height*int(numpy.floor(index/self.stackWidth))])
-    def browseToLastIfAuto(self,size):
-        self.indexProjector.handleStackSizeChanged
+    def browseToLastIfAuto(self):
         if self.autoLast:
-            self.browseToViewIndex(size-1)
+            if self.data != None:
+                self.browseToViewIndex(self.indexProjector.getNViewIndices()-1)
     def mouseReleaseEvent(self, event):
         self.dragging = False
         # Select even when draggin
@@ -943,12 +953,11 @@ class View2D(View,QtOpenGL.QGLWidget):
             if not hasattr(self, 'colormapText') or self.colormapText != prop["colormapText"]:
                 self.colormapText = prop["colormapText"]
             self.setStackWidth(prop["imageStackSubplotsValue"])
-            self.indexProjector.setProjector(prop["sortingDataItem"],prop["sortingInverted"],prop["filterMask"])
+            self.indexProjector.setProjector(prop["sortingDataItem"],prop["sortingInverted"])
             self.imageStackN = prop["N"]
             if prop["img"] != None:
                 self.scrollToImage(prop["img"])
         self.updateGL()
-
     def saveToPNG(self):
         try:
             import Image
@@ -969,27 +978,14 @@ class View2D(View,QtOpenGL.QGLWidget):
         image.save(filename)
         self.viewer.statusBar.showMessage("Saving image %i to %s" % (self.centralImg,filename),1000)	
 
-    def getStackSize(self):
-        self.updateStackSize()
-        return self.stackSize
-        #if self.data == None:
-        #    return 0
-        #else:
-        #    len(self.data)
     def toggleAutoLast(self):
         self.autoLast = not self.autoLast
+        self.browseToLastIfAuto()
     # DATA
-    def updateStackSize(self, emitChanged=True):
-        oldSize = self.stackSize
+    def onStackSizeChanged(self,newStackSize):
+        # not sure if this is needed
         if self.data != None:
             self.has_data = True        
-            if self.data.isStack:
-		self.stackSize = self.data.shape()[0]
-            else:
-                self.stackSize = 1
         else:
-            self.stackSize = 0
             self.has_data = False
-        if emitChanged == True and self.stackSize != oldSize:# and (self.data == None or self.data.isStack):
-            #print "Stack size %i" % self.stackSize
-            self.stackSizeChanged.emit(self.stackSize)
+        self.browseToLastIfAuto()

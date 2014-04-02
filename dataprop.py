@@ -18,15 +18,18 @@ def sizeof_fmt(num):
 class DataProp(QtGui.QWidget):
     view2DPropChanged = QtCore.Signal(dict)
     view1DPropChanged = QtCore.Signal(dict)
-    def __init__(self,parent=None):
+    def __init__(self,parent=None,indexProjector=None):
         QtGui.QWidget.__init__(self,parent)
         self.setFocusPolicy(QtCore.Qt.ClickFocus)
 
         self.viewer = parent
+        self.indexProjector = indexProjector
         # this dict holds all current settings
         self.view2DProp = {}
         self.view1DProp = {}
         self.vbox = QtGui.QVBoxLayout()
+        # stack
+        self.stackSize = None
         # scrolling
         self.vboxScroll = QtGui.QVBoxLayout()
         self.scrollWidget = QtGui.QWidget()
@@ -46,7 +49,7 @@ class DataProp(QtGui.QWidget):
         #self.generalBox.isChecked(True)
         self.generalBox.vbox = QtGui.QVBoxLayout()
         self.generalBox.setLayout(self.generalBox.vbox)
-        self.dimensionality = QtGui.QLabel("Dimensions:", parent=self)
+        self.shape = QtGui.QLabel("Shape:", parent=self)
         self.datatype = QtGui.QLabel("Data Type:", parent=self)
         self.datasize = QtGui.QLabel("Data Size:", parent=self)
         self.dataform = QtGui.QLabel("Data Form:", parent=self)
@@ -57,15 +60,15 @@ class DataProp(QtGui.QWidget):
         self.currentImg.setMaximumWidth(100)
         self.currentImg.validator = QtGui.QIntValidator()
         self.currentImg.validator.setBottom(0)
-        self.currentImg.edited = False 
         self.currentImg.setValidator(self.currentImg.validator)
         self.currentImg.hbox = QtGui.QHBoxLayout()
         self.currentImg.label = QtGui.QLabel("Central Image:", parent=self)
         self.currentImg.hbox.addWidget(self.currentImg.label)
         self.currentImg.hbox.addStretch()
         self.currentImg.hbox.addWidget(self.currentImg)
+        self.currentImg.edited = False 
 
-        self.generalBox.vbox.addWidget(self.dimensionality)
+        self.generalBox.vbox.addWidget(self.shape)
         self.generalBox.vbox.addWidget(self.datatype)
         self.generalBox.vbox.addWidget(self.datasize)
         self.generalBox.vbox.addWidget(self.dataform)
@@ -416,7 +419,6 @@ class DataProp(QtGui.QWidget):
         self.plotPointsCheckBox.toggled.connect(self.emitView1DProp)
         self.plotNBinsEdit.editingFinished.connect(self.emitView1DProp)
         self.currentImg.editingFinished.connect(self.onCurrentImg)
-
     def clear(self):
         self.clearView2DProp()
         self.clearData()
@@ -428,15 +430,23 @@ class DataProp(QtGui.QWidget):
         self.currentImg.edited = True
         self.emitView2DProp()
     # DATA
-    def setData(self,data=None):
-        if data != None:
-            self.data = data
-            string = "Dimensions: "
-            shape = list(data.shape())
+    def onStackSizeChanged(self,newStackSize):
+        self.stackSize = newStackSize
+        self.updateShape()
+    def updateShape(self):        
+        if self.data != None:
+            # update shape label
+            string = "Shape: "
+            shape = list(self.data.shape())
             for d in shape:
                 string += str(d)+"x"
             string = string[:-1]
-            self.dimensionality.setText(string)
+            self.shape.setText(string)
+            # update filters?
+    def setData(self,data=None):
+        self.data = data
+        self.updateShape()
+        if data != None:
             self.datatype.setText("Data Type: %s" % (data.dtypeName))
             self.datasize.setText("Data Size: %s" % sizeof_fmt(data.dtypeItemsize*reduce(mul,data.shape())))
             if data.isStack:
@@ -456,7 +466,7 @@ class DataProp(QtGui.QWidget):
         self.currentViewIndex.setText("Central Index: %i (%i)" % (viewIndex,NViewIndex))
     def clearData(self):
         self.data = None
-        self.dimensionality.setText("Dimensions: ")
+        self.shape.setText("Shape: ")
         self.datatype.setText("Data Type: ")
         self.datasize.setText("Data Size: ")
         self.dataform.setText("Data Form: ")
@@ -596,18 +606,22 @@ class DataProp(QtGui.QWidget):
     def addFilter(self,data):
         if self.inactiveFilters == []:
             filterWidget = FilterWidget(self,data)
+            filterWidget.dataItem.selectStack()
             filterWidget.limitsChanged.connect(self.emitView2DProp)
             self.filterBox.vbox.addWidget(filterWidget)
             self.activeFilters.append(filterWidget)
         else:
             self.activeFilters.append(self.inactiveFilters.pop(0))
             filterWidget = self.activeFilters[-1]
+            filterWidget.dataItem.selectStack()
             filterWidget.show()
             filterWidget.refreshData(data)
+        self.indexProjector.addFilter(filterWidget.dataItem)
         self.setFilters()
         self.filterBox.show()
     def removeFilter(self,index):
         filterWidget = self.activeFilters.pop(index)
+        filterWidget.dataItem.deselectStack()
         self.filterBox.vbox.removeWidget(filterWidget)
         self.filterBox.vbox.addWidget(filterWidget)
         self.inactiveFilters.append(filterWidget)
@@ -617,21 +631,23 @@ class DataProp(QtGui.QWidget):
         self.setFilters()
         if self.activeFilters == []:
             self.filterBox.hide()
+        self.indexProjector.removeFilter(index)
     def setFilters(self,foo=None):
         P = self.view2DProp
-        P["filterMask"] = None
+        D = []
         if self.activeFilters != []:
-            for f in self.activeFilters:
-                if P["filterMask"] == None:
-                    P["filterMask"] = numpy.ones(f.data.shape[0],dtype="bool")
-                vmin = float(f.vminLineEdit.text())
-                vmax= float(f.vmaxLineEdit.text())
-                data = numpy.array(f.data,dtype="float")
-                P["filterMask"] *= (data >= vmin) * (data <= vmax)
-            Ntot = len(data)
+            vmins = numpy.zeros(len(self.activeFilters))
+            vmaxs = numpy.zeros(len(self.activeFilters))
+            for i,f in zip(range(len(self.activeFilters)),self.activeFilters):
+                vmins[i] = float(f.vminLineEdit.text())
+                vmaxs[i] = float(f.vmaxLineEdit.text())
+            self.indexProjector.updateFilterMask(vmins,vmaxs)
+            P["filterMask"] = self.indexProjector.filterMask()
+            Ntot = len(P["filterMask"])
             Nsel = P["filterMask"].sum()
             p = 100*Nsel/(1.*Ntot)
         else:
+            P["filterMask"] = None
             Ntot = 0
             Nsel = 0
             p = 100.
@@ -692,9 +708,8 @@ class DataProp(QtGui.QWidget):
             try:
                 i = int(i)
                 P["img"] = i
-
             except:
-                P["img"] = None                
+                P["img"] = None
         self.currentImg.edited = False
     # update and emit current diplay properties        
     def emitView1DProp(self):
