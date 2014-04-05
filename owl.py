@@ -359,6 +359,9 @@ class Viewer(QtGui.QMainWindow):
             self.CXINavigation.CXITree.loadData1()
             return
         dataItem = self.CXINavigation.CXITree.fileLoader.dataItems[dataName]
+        if not dataItem.isPresentable:
+            self.statusBar.showMessage("Data not presentable.")
+            return
         if dataItem.format == 2:        
             self.CXINavigation.dataBoxes["image"].button.setName(dataName)
             self.view.view2D.clear()
@@ -376,7 +379,6 @@ class Viewer(QtGui.QMainWindow):
             elif group+"/mask_shared" in self.CXINavigation.CXITree.fileLoader.dataItems.keys():
                 self.handleNeedDataMask(group+"/mask_shared")
         self.view.view2DScrollWidget.update()
-        #self.updateData()
     def handleNeedDataIntegratedImage(self,integrationMode):
 	self.view.view2D.integrationMode = integrationMode
 	self.view.view2D.clearTextures()
@@ -389,6 +391,9 @@ class Viewer(QtGui.QMainWindow):
             self.statusBar.showMessage("Reset mask.",1000)
         else:
             dataItem = self.CXINavigation.CXITree.fileLoader.dataItems[dataName]
+            if not dataItem.isPresentable:
+                self.statusBar.showMessage("Data not presentable.")
+                return
             maskShape = (dataItem.shape()[-2],dataItem.shape()[-1])
             imageShape = (self.view.view2D.data.shape()[-2],self.view.view2D.data.shape()[-1])
             if maskShape != imageShape:
@@ -409,6 +414,9 @@ class Viewer(QtGui.QMainWindow):
         senderBox = self.sender().dataBox
         if self.CXINavigation.dataBoxes["filter0"] == senderBox:
             dataItem = self.CXINavigation.CXITree.fileLoader.dataItems[dataName]
+            if not dataItem.isPresentable:
+                self.statusBar.showMessage("Data not presentable.")
+                return
             if dataItem.format == 0:
                 targetBox = self.CXINavigation.addFilterBox()
                 self.dataProp.addFilter(dataItem)
@@ -426,6 +434,9 @@ class Viewer(QtGui.QMainWindow):
             else:
                 targetBox = senderBox
                 dataItem = self.CXINavigation.CXITree.fileLoader.dataItems[dataName]
+                if not dataItem.isPresentable:
+                    self.statusBar.showMessage("Data not presentable.")
+                    return
                 self.dataProp.refreshFilter(dataItem,i)
                 self.dataProp.view2DPropChanged.emit(self.dataProp.view2DProp)
                 targetBox.button.setName(dataName)
@@ -439,6 +450,9 @@ class Viewer(QtGui.QMainWindow):
             self.statusBar.showMessage("Reset sorting.",1000)
         else:
             dataItem = self.CXINavigation.CXITree.fileLoader.dataItems[dataName]
+            if not dataItem.isPresentable:
+                self.statusBar.showMessage("Data not presentable.")
+                return
             if dataItem.format == 0 and dataItem.isStack:
                 self.CXINavigation.dataBoxes["sort"].button.setName(dataName)
                 self.dataProp.refreshSorting(dataItem)
@@ -455,6 +469,9 @@ class Viewer(QtGui.QMainWindow):
             self.statusBar.showMessage("Reset X data for plot." % dataName,1000)
         else:
             dataItem = self.CXINavigation.CXITree.fileLoader.dataItems[dataName]
+            if not dataItem.isPresentable:
+                self.statusBar.showMessage("Data not presentable.")
+                return
             self.view.view1D.setDataItemX(dataItem)
             self.view.view1D.refreshPlot()
             #self.CXINavigation.dataBoxes["plot X"].button.setName(dataName)
@@ -469,6 +486,9 @@ class Viewer(QtGui.QMainWindow):
             self.statusBar.showMessage("Reset Y data for plot." % dataName,1000)
         else:
             dataItem = self.CXINavigation.CXITree.fileLoader.dataItems[dataName]
+            if not dataItem.isPresentable:
+                self.statusBar.showMessage("Data not presentable.")
+                return
             self.view.view1D.setDataItemY(dataItem)
             self.view.view1D.refreshPlot()
             #self.CXINavigation.dataBoxes["plot Y"].button.setName(dataName)

@@ -153,7 +153,8 @@ class View1D(View,QtGui.QFrame):
                 dataX = self.dataItemX.data()
             if self.indexProjector.imgs != None and dataY.shape[0] == self.indexProjector.imgs.shape[0]:
                 dataY = dataY[self.indexProjector.imgs]
-            self.p.setData(dataX,dataY)
+            validMask = numpy.isfinite(dataX)*numpy.isfinite(dataY)
+            self.p.setData(dataX[validMask],dataY[validMask])
         elif self.plotMode == "histogram":
             if self.nBins == None:
                 N = 200

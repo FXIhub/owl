@@ -41,10 +41,15 @@ class FileLoader(QtCore.QObject):
         for n,d in self.dataItems.items():
             if d.isSelectedStack:
                 #try:
-                d.H5Dataset.refresh()
+                #print "About to refresh dataset:"
+                #print dataItem.H5Dataset.dtype.name
+                #print d.fullName,d.H5Dataset,d.H5Dataset.attrs.get("numEvents"),d.H5Dataset.id.id
+                self.f[n].refresh()
+                #print "Dataset refreshed:"
+                #print d.fullName,d.H5Dataset,d.H5Dataset.attrs.get("numEvents")
                 #except:
                 #    self.logger.debug("Failed to refresh dataset. Probably the h5py version that is installed does not support SWMR.")
-                N.append(d.H5Dataset.attrs.get("numEvents", d.H5Dataset.shape)[0])
+                N.append(self.f[n].attrs.get("numEvents", self.f[n].shape)[0])
         if len(N) > 0:
             N = numpy.array(N).min()
         else:
@@ -75,28 +80,30 @@ class DataItem:
         self.fileLoader = fileLoader
         self.fullName = fullName
         self.name = fullName.split("/")[-1]
-        self.H5Dataset = parent.H5Group[self.name]
-        self.dtypeName = self.H5Dataset.dtype.name
-        self.dtypeItemsize = self.H5Dataset.dtype.itemsize
+        #self.H5Dataset = parent.H5Group[self.name]
+        self.dtypeName = self.fileLoader.f[self.fullName].dtype.name
+        self.dtypeItemsize = self.fileLoader.f[self.fullName].dtype.itemsize
         self.logger = logging.getLogger("DataItem")
         self.logger.setLevel(settingsOwl.loglev["DataItem"])
         self.isSelectedStack = False
         # check whether or not it is a stack
-        if len(self.H5Dataset.attrs.items()) > 0:
-            self.isStack = ("axes" in self.H5Dataset.attrs.items()[0])
+        if len(self.fileLoader.f[self.fullName].attrs.items()) > 0:
+            self.isStack = ("axes" in self.fileLoader.f[self.fullName].attrs.items()[0])
         #self.isStack = (len(list(self.H5Dataset.shape)) == 3)
         else:
             self.isStack = False
         # check whether or not it is text
-        self.isText = (str(self.H5Dataset.dtype.name).find("string") != -1)
+        self.isText = (str(self.fileLoader.f[self.fullName].dtype.name).find("string") != -1)
+        # presentable as values
+        self.isPresentable = (self.isText == False)
         # shape?
         self.format = len(self.shape())
         # complex?
-        self.isComplex = (str(self.H5Dataset.dtype.name).lower().find("complex") != -1)
+        self.isComplex = (str(self.fileLoader.f[self.fullName].dtype.name).lower().find("complex") != -1)
         # image stack?
         if self.isStack: self.format -= 1
     def shape(self,forceRefresh=False):
-        shape = self.H5Dataset.shape
+        shape = self.fileLoader.f[self.fullName].shape
         if self.isSelectedStack and self.fileLoader.stackSize != None:
             shape = list(shape)
             shape.pop(0)
@@ -121,7 +128,7 @@ class DataItem:
     def data(self,**kwargs):
         # COMMENT: Refreshing datasets can have the side effect that they are being closed. Why is that?
         #try:
-        #    self.H5Dataset.refresh()
+        self.fileLoader.f[self.fullName].refresh()
         #except:
         #    self.logger.debug("Failed to refresh dataset. Probably the h5py version that is installed does not support SWMR.")
         complex_mode = kwargs.get("complex_mode",None)
@@ -134,15 +141,15 @@ class DataItem:
             integrationMode = kwargs.get("integrationMode",None)
             pickMode = kwargs.get("pickMode","random")
             if img != None:
-                d = numpy.array(self.H5Dataset[img])
+                d = numpy.array(self.fileLoader.f[self.fullName][img])
             elif N != None:
                 if self.isSelectedStack and self.fileLoader.stackSize != None:
                     if self.fileloader.stackSize == None:
-                        d = self.H5Dataset
+                        d = self.fileLoader.f[self.fullName]
                     else:
-                        d = self.H5Dataset[:self.fileLoader.stackSize]
+                        d = self.fileLoader.f[self.fullName][:self.fileLoader.stackSize]
                 else:
-                    d = self.H5Dataset
+                    d = self.fileLoader.f[self.fullName]
                 if filterMask != None:
                     d = d[filterMask]
                 if pickMode == None or N >= d.shape[0]:
@@ -164,7 +171,7 @@ class DataItem:
                     self.logger.warning("You do not really want to load a dataset of the length of %i into memory." % k)
                     d = numpy.zeros(1)
                 else:
-                    d = numpy.array(self.H5Dataset).flatten()
+                    d = numpy.array(self.fileLoader.f[self.fullName]).flatten()
 
             if integrationMode != None:
                 if integrationMode == "mean":
@@ -177,16 +184,16 @@ class DataItem:
                     d = numpy.max(d,0)
         elif self.isStack and self.format == 1:
             if self.fileLoader.stackSize == None:
-                d = numpy.array(self.H5Dataset)[:,:]
+                d = numpy.array(self.fileLoader.f[self.fullName])[:,:]
             else:
-                d = numpy.array(self.H5Dataset)[:self.fileLoader.stackSize,:]
+                d = numpy.array(self.fileLoader.f[self.fullName])[:self.fileLoader.stackSize,:]
         elif self.isStack and self.format == 0:
             if self.fileLoader.stackSize == None:
-                d = numpy.array(self.H5Dataset)
+                d = numpy.array(self.fileLoader.f[self.fullName])
             else:
-                d = numpy.array(self.H5Dataset)[:self.fileLoader.stackSize]
+                d = numpy.array(self.fileLoader.f[self.fullName])[:self.fileLoader.stackSize]
         else:
-            d = numpy.array(self.H5Dataset)
+            d = numpy.array(self.fileLoader.f[self.fullName])
         ix = kwargs.get("ix",None)
         iy = kwargs.get("iy",None)
         if ix != None and iy != None:
