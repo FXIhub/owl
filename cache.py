@@ -108,7 +108,7 @@ class GLCache(Cache):
             if(self.maxSize > 0):
                 while len(self.dict) >= self.maxSize:
                     (k,v) = self.dict.popitem(last=False) # FIFO pop
-                    self.logger.warning("Texture %d , %s to be removed is %s" % (k, str(v), str(glIsTexture(v))))
+                    self.logger.debug("Texture %d , %s to be removed is %s" % (k, str(v), str(glIsTexture(v))))
                     glDeleteTextures(v)
                     self.logger.debug("Removing %d from GLCache" % k)
 

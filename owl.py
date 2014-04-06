@@ -270,10 +270,10 @@ class Viewer(QtGui.QMainWindow):
         self.goMenu.previousRow.triggered.connect(self.view.view2D.previousRow)
 	self.saveMenu.toPNG.triggered.connect(self.view.view2D.saveToPNG)
 
-	self.dataProp.imageStackMeanButton.released.connect(lambda: self.handleNeedDataIntegratedImage("mean"))
-	self.dataProp.imageStackStdButton.released.connect(lambda: self.handleNeedDataIntegratedImage("std"))
-	self.dataProp.imageStackMinButton.released.connect(lambda: self.handleNeedDataIntegratedImage("min"))
-	self.dataProp.imageStackMaxButton.released.connect(lambda: self.handleNeedDataIntegratedImage("max"))
+	#self.dataProp.imageStackMeanButton.released.connect(lambda: self.handleNeedDataIntegratedImage("mean"))
+	#self.dataProp.imageStackStdButton.released.connect(lambda: self.handleNeedDataIntegratedImage("std"))
+	#self.dataProp.imageStackMinButton.released.connect(lambda: self.handleNeedDataIntegratedImage("min"))
+	#self.dataProp.imageStackMaxButton.released.connect(lambda: self.handleNeedDataIntegratedImage("max"))
 
         self.fileLoader.stackSizeChanged.connect(self.onStackSizeChanged)
 
@@ -548,7 +548,7 @@ class Viewer(QtGui.QMainWindow):
                     n = dataItems[k].fullName
             self.CXINavigation.dataBoxes[k].button.setName(n)
     def onStackSizeChanged(self,newStackSize=0):
-        self.view.view2D.indexProjector.onStackSizeChanged(newStackSize)
+        self.indexProjector.onStackSizeChanged(newStackSize)
         self.view.view2D.onStackSizeChanged(newStackSize)
         self.view.view1D.onStackSizeChanged(newStackSize)
         self.dataProp.onStackSizeChanged(newStackSize)

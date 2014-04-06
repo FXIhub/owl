@@ -156,10 +156,10 @@ class View1D(View,QtGui.QFrame):
             validMask = numpy.isfinite(dataX)*numpy.isfinite(dataY)
             self.p.setData(dataX[validMask],dataY[validMask])
         elif self.plotMode == "histogram":
-            if self.nBins == None:
-                N = 200
-            else:
-                N = self.nBins
+            #if self.nBins == None:
+            #    N = 200
+            #else:
+            N = self.nBins
             (hist,edges) = numpy.histogram(dataY,bins=N)
             edges = (edges[:-1]+edges[1:])/2.0
             self.p.setData(edges,hist)        
@@ -174,11 +174,11 @@ class View1D(View,QtGui.QFrame):
         else:
             line = None
         self.setStyle(symbol=symbol,line=line)
-        self.nBins = props["N"]
+        #self.nBins = props["N"]
         self.refreshPlot()
     def emitViewIndexSelected(self,foovalue=None):
         index = int(self.infLine.getXPos())
         self.viewIndexSelected.emit(index)
-    def onPlotNBinsEdit(self):
-        self.nBins = int(self.sender().text())
-        self.refreshPlot()
+    #def onPlotNBinsEdit(self):
+    #    self.nBins = int(self.sender().text())
+    #    self.refreshPlot()
