@@ -1,3 +1,4 @@
+import sys
 from PySide import QtGui, QtCore, QtOpenGL
 from matplotlib import colors
 from matplotlib import cm
