@@ -79,6 +79,7 @@ class View2D(View,QtOpenGL.QGLWidget):
 
 	settings = QtCore.QSettings()
         self.PNGOutputPath = settings.value("PNGOutputPath")
+        self.MarkOutputPath = settings.value("MarkOutputPath")
 	#print self.PNGOutputPath
 
     def setData(self,dataItem=None):
@@ -968,6 +969,11 @@ class View2D(View,QtOpenGL.QGLWidget):
         filename = "%s/%s_%s_%i.png" % (self.PNGOutputPath,(self.viewer.filename.split("/")[-1])[:-4],self.data.name,self.centralImg)
         image.save(filename)
         self.viewer.statusBar.showMessage("Saving image %i to %s" % (self.centralImg,filename),1000)	
+
+    def addtoMarked(self):
+        file = open('%s/%s_marked.txt' %(self.MarkOutputPath, self.viewer.filename.split("/")[-1][:-4]), 'a')
+        file.write('%s\n' %self.selectedImage)
+        file.close()
 
     def getStackSize(self):
         self.updateStackSize()

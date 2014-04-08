@@ -107,6 +107,8 @@ class Viewer(QtGui.QMainWindow):
             settings.setValue("updateTimer", 10000);
         if(not settings.contains("PNGOutputPath")):
             settings.setValue("PNGOutputPath", "./");
+        if(not settings.contains("MarkOutputPath")):
+            settings.setValue("MarkOutputPath", "./");
     def init_menus(self):
         self.fileMenu = self.menuBar().addMenu(self.tr("&File"));
         self.openFile = QtGui.QAction("Open",self)
@@ -140,6 +142,11 @@ class Viewer(QtGui.QMainWindow):
         act = QtGui.QAction("To PNG",self)
         act.setShortcut(QtGui.QKeySequence("Ctrl+P"))
         self.saveMenu.toPNG = act
+        self.saveMenu.addAction(act)
+
+        act = QtGui.QAction("Mark", self)
+        act.setShortcut(QtGui.QKeySequence("Ctrl+M"))
+        self.saveMenu.Mark = act
         self.saveMenu.addAction(act)
 
         self.viewMenu = self.menuBar().addMenu(self.tr("&View"));
@@ -259,6 +266,7 @@ class Viewer(QtGui.QMainWindow):
         self.goMenu.nextRow.triggered.connect(self.view.view2D.nextRow)
         self.goMenu.previousRow.triggered.connect(self.view.view2D.previousRow)
 	self.saveMenu.toPNG.triggered.connect(self.view.view2D.saveToPNG)
+        self.saveMenu.Mark.triggered.connect(self.view.view2D.addtoMarked)
 
 	self.dataProp.imageStackMeanButton.released.connect(lambda: self.handleNeedDataIntegratedImage("mean"))
 	self.dataProp.imageStackStdButton.released.connect(lambda: self.handleNeedDataIntegratedImage("std"))
@@ -340,6 +348,9 @@ class Viewer(QtGui.QMainWindow):
             v = diag.PNGOutputPath.text()
             settings.setValue("PNGOutputPath",v)
             self.view.view2D.PNGOutputPath = v
+            v = diag.MarkOutputPath.text()
+            settings.setValue("MarkOutputPath",v)
+            self.view.view2D.MarkOutputPath = v
     def handleNeedDataImage(self,dataName=None):
         if dataName == "" or dataName == None:
             self.CXINavigation.CXITree.loadData1()
@@ -603,6 +614,12 @@ class PreferencesDialog(QtGui.QDialog):
         self.PNGOutputPath = QtGui.QLineEdit()
         self.PNGOutputPath.setText(settings.value("PNGOutputPath"))
         grid.addWidget(self.PNGOutputPath,row,1)
+        row += 1
+
+        grid.addWidget(QtGui.QLabel("Mark output path:",self),row,0)
+        self.MarkOutputPath = QtGui.QLineEdit()
+        self.MarkOutputPath.setText(settings.value("MarkOutputPath"))
+        grid.addWidget(self.MarkOutputPath,row,1)
         row += 1
 
         self.layout().addLayout(grid)
