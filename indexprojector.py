@@ -1,31 +1,64 @@
 from PySide import QtCore
-import numpy
-
+import numpy,logging
+import settingsOwl
 
 class IndexProjector(QtCore.QObject):
     projectionChanged = QtCore.Signal(object)
     def __init__(self):
         QtCore.QObject.__init__(self)
         self.stackSize = 0
+        self.logger = logging.getLogger("IndexProjector")
+        # If you want to see debug messages change level here
+        self.logger.setLevel(settingsOwl.loglev["IndexProjector"])
+        self.filters = []
+        self._filterMask = None
+        self.vmins = None
+        self.vmaxs = None
         self.clear()
-    def setProjector(self,sortingDataItem,sortingInverted,filterMask):
+    def setProjector(self,sortingDataItem,sortingInverted):
         self.sortingDataItem = sortingDataItem
         self.sortingInverted = sortingInverted
-        self.filterMask = filterMask
         self.update()
+    def addFilter(self,dataItem):
+        self.filters.append(dataItem)
+    def removeFilter(self,index):
+        self.filters.pop(index)
+    def updateFilterMask(self,vmins=None,vmaxs=None):
+        if vmins == None or vmaxs == None:
+            self._filterMask = None
+        else:
+            if len(self.filters) > 0:
+                F = numpy.ones(shape=(len(self.filters),self.stackSize),dtype="bool")
+                for i,f in zip(range(len(self.filters)),self.filters):
+                    F[i,:] = f.data()[:self.stackSize]
+                for i,vmin,vmax in zip(range(len(self.filters)),vmins,vmaxs):
+                    F[i,:] = (F[i,:] <= vmax) * (F[i,:] >= vmin)
+                self._filterMask = numpy.array(F.prod(0),dtype="bool")
+            else:
+                self._filterMask = None
+        self.vmins = vmins
+        self.vmaxs = vmaxs
+    def filterMask(self):
+        if self._filterMask == None:
+            return numpy.ones(self.stackSize,dtype="bool")
+        else:
+            return self._filterMask
     def update(self):
+        self.updateFilterMask(self.vmins,self.vmaxs)
         if self.stackSize != 0:
             self.imgs = numpy.arange(self.stackSize,dtype="int")
             if self.sortingDataItem != None:
                 if self.sortingDataItem.shape()[0] == self.stackSize:
                     sortingDataItem = -numpy.array(self.sortingDataItem.data())
                 else:
+                    self.logger.debug("The data for sorting does not match the size of the stack.")
                     sortingDataItem = numpy.arange(self.stackSize,dtype="int")
             else:
                 sortingDataItem = numpy.arange(self.stackSize,dtype="int")
-            if self.filterMask != None:
-                sortingDataItemFiltered = sortingDataItem[self.filterMask]
-                self.imgs = self.imgs[self.filterMask]
+            if self._filterMask != None:
+                M = self.filterMask()
+                sortingDataItemFiltered = sortingDataItem[M]
+                self.imgs = self.imgs[M]
             else:
                 sortingDataItemFiltered = sortingDataItem
             if self.sortingInverted:
@@ -38,6 +71,9 @@ class IndexProjector(QtCore.QObject):
             self.viewIndices = None
             self.imgs = None
         self.projectionChanged.emit(self)
+    def onStackSizeChanged(self,newStackSize):
+        self.stackSize = newStackSize
+        self.update()
     def getNViewIndices(self):
         if self.imgs != None:
             return len(self.imgs)
@@ -63,12 +99,9 @@ class IndexProjector(QtCore.QObject):
                 return self.imgs[-1]
             else:
                 return self.imgs[int(index)]
-    def handleStackSizeChanged(self,stackSize):
-        self.stackSize = stackSize
-        self.update()
     def clear(self):
         self.stackSize = 0
-        self.filterMask = None
+        self._filterMask = None
         self.sortingDataItem = None
         self.sortingInverted = False
         self.viewIndices = None

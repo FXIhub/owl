@@ -18,15 +18,18 @@ def sizeof_fmt(num):
 class DataProp(QtGui.QWidget):
     view2DPropChanged = QtCore.Signal(dict)
     view1DPropChanged = QtCore.Signal(dict)
-    def __init__(self,parent=None):
+    def __init__(self,parent=None,indexProjector=None):
         QtGui.QWidget.__init__(self,parent)
         self.setFocusPolicy(QtCore.Qt.ClickFocus)
 
         self.viewer = parent
+        self.indexProjector = indexProjector
         # this dict holds all current settings
         self.view2DProp = {}
         self.view1DProp = {}
         self.vbox = QtGui.QVBoxLayout()
+        # stack
+        self.stackSize = None
         # scrolling
         self.vboxScroll = QtGui.QVBoxLayout()
         self.scrollWidget = QtGui.QWidget()
@@ -46,7 +49,7 @@ class DataProp(QtGui.QWidget):
         #self.generalBox.isChecked(True)
         self.generalBox.vbox = QtGui.QVBoxLayout()
         self.generalBox.setLayout(self.generalBox.vbox)
-        self.dimensionality = QtGui.QLabel("Dimensions:", parent=self)
+        self.shape = QtGui.QLabel("Shape:", parent=self)
         self.datatype = QtGui.QLabel("Data Type:", parent=self)
         self.datasize = QtGui.QLabel("Data Size:", parent=self)
         self.dataform = QtGui.QLabel("Data Form:", parent=self)
@@ -57,15 +60,15 @@ class DataProp(QtGui.QWidget):
         self.currentImg.setMaximumWidth(100)
         self.currentImg.validator = QtGui.QIntValidator()
         self.currentImg.validator.setBottom(0)
-        self.currentImg.edited = False 
         self.currentImg.setValidator(self.currentImg.validator)
         self.currentImg.hbox = QtGui.QHBoxLayout()
         self.currentImg.label = QtGui.QLabel("Central Image:", parent=self)
         self.currentImg.hbox.addWidget(self.currentImg.label)
         self.currentImg.hbox.addStretch()
         self.currentImg.hbox.addWidget(self.currentImg)
+        self.currentImg.edited = False 
 
-        self.generalBox.vbox.addWidget(self.dimensionality)
+        self.generalBox.vbox.addWidget(self.shape)
         self.generalBox.vbox.addWidget(self.datatype)
         self.generalBox.vbox.addWidget(self.datasize)
         self.generalBox.vbox.addWidget(self.dataform)
@@ -84,26 +87,26 @@ class DataProp(QtGui.QWidget):
         hbox.addWidget(self.imageStackSubplots)
         self.imageStackBox.vbox.addLayout(hbox)
 
-        hbox0 = QtGui.QHBoxLayout()
-        vbox = QtGui.QVBoxLayout()
-	self.imageStackMeanButton = QtGui.QPushButton("Mean",parent=self)
-	self.imageStackStdButton = QtGui.QPushButton("Std",parent=self)
-	self.imageStackMinButton = QtGui.QPushButton("Min",parent=self)
-	self.imageStackMaxButton = QtGui.QPushButton("Max",parent=self)
-        validator = QtGui.QIntValidator()
-        validator.setBottom(0)
-        hbox = QtGui.QHBoxLayout()
-        hbox.addWidget(QtGui.QLabel("N:"))
-        self.imageStackNEdit = QtGui.QLineEdit(self)
-        self.imageStackNEdit.setMaximumWidth(100)
-        hbox.addWidget(self.imageStackNEdit)
-        vbox.addWidget(self.imageStackMeanButton)
-	vbox.addWidget(self.imageStackStdButton)
-	vbox.addWidget(self.imageStackMinButton)
-	vbox.addWidget(self.imageStackMaxButton)
-        hbox0.addLayout(hbox)
-        hbox0.addLayout(vbox)
-        self.imageStackBox.vbox.addLayout(hbox0)
+        #hbox0 = QtGui.QHBoxLayout()
+        #vbox = QtGui.QVBoxLayout()
+	#self.imageStackMeanButton = QtGui.QPushButton("Mean",parent=self)
+	#self.imageStackStdButton = QtGui.QPushButton("Std",parent=self)
+	#self.imageStackMinButton = QtGui.QPushButton("Min",parent=self)
+	#self.imageStackMaxButton = QtGui.QPushButton("Max",parent=self)
+        #validator = QtGui.QIntValidator()
+        #validator.setBottom(0)
+        #hbox = QtGui.QHBoxLayout()
+        #hbox.addWidget(QtGui.QLabel("N:"))
+        #self.imageStackNEdit = QtGui.QLineEdit(self)
+        #self.imageStackNEdit.setMaximumWidth(100)
+        #hbox.addWidget(self.imageStackNEdit)
+        #vbox.addWidget(self.imageStackMeanButton)
+	#vbox.addWidget(self.imageStackStdButton)
+	#vbox.addWidget(self.imageStackMinButton)
+	#vbox.addWidget(self.imageStackMaxButton)
+        #hbox0.addLayout(hbox)
+        #hbox0.addLayout(vbox)
+        #self.imageStackBox.vbox.addLayout(hbox0)
 	
         # properties: selected image
         self.imageBox = QtGui.QGroupBox("Selected Image");
@@ -301,52 +304,55 @@ class DataProp(QtGui.QWidget):
         self.filterBox.hide()
         self.activeFilters = []
         self.inactiveFilters = []
+
         # pixel stack
-        self.pixelStackBox = QtGui.QGroupBox("Pixel stack")
-        self.pixelStackBox.vbox = QtGui.QVBoxLayout()
-        hbox0 = QtGui.QHBoxLayout()
+        #self.pixelStackBox = QtGui.QGroupBox("Pixel stack")
+        #self.pixelStackBox.vbox = QtGui.QVBoxLayout()
+        #hbox0 = QtGui.QHBoxLayout()
 
-        validator = QtGui.QIntValidator()
-        validator.setBottom(0)
-        self.pixelStackXEdit = QtGui.QLineEdit(self)
-        self.pixelStackXEdit.setMaximumWidth(100)
-        self.pixelStackXEdit.setValidator(validator)
-        self.pixelStackYEdit = QtGui.QLineEdit(self)
-        self.pixelStackYEdit.setMaximumWidth(100)
-        self.pixelStackYEdit.setValidator(validator)
-        self.pixelStackNEdit = QtGui.QLineEdit(self)
-        self.pixelStackNEdit.setMaximumWidth(100)
-        self.pixelStackNEdit.setValidator(validator)
+        #validator = QtGui.QIntValidator()
+        #validator.setBottom(0)
+        #self.pixelStackXEdit = QtGui.QLineEdit(self)
+        #self.pixelStackXEdit.setMaximumWidth(100)
+        #self.pixelStackXEdit.setValidator(validator)
+        #self.pixelStackYEdit = QtGui.QLineEdit(self)
+        #self.pixelStackYEdit.setMaximumWidth(100)
+        #self.pixelStackYEdit.setValidator(validator)
+        #self.pixelStackNEdit = QtGui.QLineEdit(self)
+        #self.pixelStackNEdit.setMaximumWidth(100)
+        #self.pixelStackNEdit.setValidator(validator)
 
-        vbox = QtGui.QVBoxLayout()
+        #vbox = QtGui.QVBoxLayout()
 
-        hbox = QtGui.QHBoxLayout()
-        hbox.addWidget(QtGui.QLabel("X:"))
-        hbox.addWidget(self.pixelStackXEdit)
-        vbox.addLayout(hbox)
+        #hbox = QtGui.QHBoxLayout()
+        #hbox.addWidget(QtGui.QLabel("X:"))
+        #hbox.addWidget(self.pixelStackXEdit)
+        #vbox.addLayout(hbox)
 
-        hbox = QtGui.QHBoxLayout()
-        hbox.addWidget(QtGui.QLabel("Y:"))
-        hbox.addWidget(self.pixelStackYEdit)
-        vbox.addLayout(hbox)
+        #hbox = QtGui.QHBoxLayout()
+        #hbox.addWidget(QtGui.QLabel("Y:"))
+        #hbox.addWidget(self.pixelStackYEdit)
+        #vbox.addLayout(hbox)
 
-        hbox = QtGui.QHBoxLayout()
-        hbox.addWidget(QtGui.QLabel("N:"))
-        hbox.addWidget(self.pixelStackNEdit)
-        vbox.addLayout(hbox)
+        #hbox = QtGui.QHBoxLayout()
+        #hbox.addWidget(QtGui.QLabel("N:"))
+        #hbox.addWidget(self.pixelStackNEdit)
+        #vbox.addLayout(hbox)
 
-        hbox0.addLayout(vbox)
+        #hbox0.addLayout(vbox)
 
-        self.pixelStackPickButton = QtGui.QPushButton("Pick",self)
-        self.pixelStackPick = False
-        hbox0.addWidget(self.pixelStackPickButton)
-        self.pixelStackBox.vbox.addLayout(hbox0)
+        #self.pixelStackPickButton = QtGui.QPushButton("Pick",self)
+        #self.pixelStackPick = False
+        #hbox0.addWidget(self.pixelStackPickButton)
+        #self.pixelStackBox.vbox.addLayout(hbox0)
 
-        self.pixelStackPlotButton = QtGui.QPushButton("Plot",self)
-        self.pixelStackBox.vbox.addWidget(self.pixelStackPlotButton)
+        #self.pixelStackPlotButton = QtGui.QPushButton("Plot",self)
+        #self.pixelStackBox.vbox.addWidget(self.pixelStackPlotButton)
         
-        self.pixelStackBox.setLayout(self.pixelStackBox.vbox)
-        self.pixelStackBox.show()
+        #self.pixelStackBox.setLayout(self.pixelStackBox.vbox)
+        #self.pixelStackBox.show()
+
+        # plot box
 
         self.plotBox = QtGui.QGroupBox("Plot")
         self.plotBox.vbox = QtGui.QVBoxLayout()
@@ -358,7 +364,7 @@ class DataProp(QtGui.QWidget):
         validatorSci.setNotation(QtGui.QDoubleValidator.ScientificNotation)
 
         self.plotNBinsEdit = QtGui.QLineEdit(self)
-        #self.plotNBinsEdit.setMaximumWidth(100)
+        self.plotNBinsEdit.setMaximumWidth(100)
         self.plotNBinsEdit.setValidator(validatorInt)
 
         hbox = QtGui.QHBoxLayout()
@@ -387,7 +393,7 @@ class DataProp(QtGui.QWidget):
         self.vboxScroll.addWidget(self.imageBox) 
         self.vboxScroll.addWidget(self.pixelBox)               
         self.vboxScroll.addWidget(self.displayBox)
-        self.vboxScroll.addWidget(self.pixelStackBox)
+        #self.vboxScroll.addWidget(self.pixelStackBox)
         self.vboxScroll.addWidget(self.imageStackBox)
         self.vboxScroll.addWidget(self.sortingBox)
         self.vboxScroll.addWidget(self.filterBox)
@@ -410,13 +416,12 @@ class DataProp(QtGui.QWidget):
         self.invertSortingCheckBox.toggled.connect(self.emitView2DProp)
         self.invertSortingCheckBox.toggled.connect(self.emitView1DProp)
         self.viewer.colormapActionGroup.triggered.connect(self.emitView2DProp)
-        self.pixelStackPickButton.released.connect(self.onPixelStackPickButton)
-        self.pixelStackPlotButton.released.connect(self.emitView1DProp)
+        #self.pixelStackPickButton.released.connect(self.onPixelStackPickButton)
+        #self.pixelStackPlotButton.released.connect(self.emitView1DProp)
         self.plotLinesCheckBox.toggled.connect(self.emitView1DProp)
         self.plotPointsCheckBox.toggled.connect(self.emitView1DProp)
         self.plotNBinsEdit.editingFinished.connect(self.emitView1DProp)
         self.currentImg.editingFinished.connect(self.onCurrentImg)
-
     def clear(self):
         self.clearView2DProp()
         self.clearData()
@@ -428,15 +433,23 @@ class DataProp(QtGui.QWidget):
         self.currentImg.edited = True
         self.emitView2DProp()
     # DATA
-    def setData(self,data=None):
-        if data != None:
-            self.data = data
-            string = "Dimensions: "
-            shape = list(data.shape())
+    def onStackSizeChanged(self,newStackSize):
+        self.stackSize = newStackSize
+        self.updateShape()
+    def updateShape(self):        
+        if self.data != None:
+            # update shape label
+            string = "Shape: "
+            shape = list(self.data.shape())
             for d in shape:
                 string += str(d)+"x"
             string = string[:-1]
-            self.dimensionality.setText(string)
+            self.shape.setText(string)
+            # update filters?
+    def setData(self,data=None):
+        self.data = data
+        self.updateShape()
+        if data != None:
             self.datatype.setText("Data Type: %s" % (data.dtypeName))
             self.datasize.setText("Data Size: %s" % sizeof_fmt(data.dtypeItemsize*reduce(mul,data.shape())))
             if data.isStack:
@@ -456,7 +469,7 @@ class DataProp(QtGui.QWidget):
         self.currentViewIndex.setText("Central Index: %i (%i)" % (viewIndex,NViewIndex))
     def clearData(self):
         self.data = None
-        self.dimensionality.setText("Dimensions: ")
+        self.shape.setText("Shape: ")
         self.datatype.setText("Data Type: ")
         self.datasize.setText("Data Size: ")
         self.dataform.setText("Data Form: ")
@@ -489,11 +502,11 @@ class DataProp(QtGui.QWidget):
             self.intensityHistogramRegion.sigRegionChangeFinished.connect(self.onHistogramClicked)
             self.intensityHistogram.addItem(self.intensityHistogramRegion)
             self.intensityHistogram.autoRange()
-            if self.pixelStackPick:
-                self.pixelStackPick = False
-                self.pixelStackXEdit.setText(str(int(info["ix"])))
-                self.pixelStackYEdit.setText(str(int(info["iy"])))
-                self.pixelStackNEdit.setText(str(self.data.shape()[0]))
+            #if self.pixelStackPick:
+            #    self.pixelStackPick = False
+            #    self.pixelStackXEdit.setText(str(int(info["ix"])))
+            #    self.pixelStackYEdit.setText(str(int(info["iy"])))
+            #    self.pixelStackNEdit.setText(str(self.data.shape()[0]))
         else:
             self.imageBox.hide()
             self.pixelBox.hide()
@@ -596,18 +609,22 @@ class DataProp(QtGui.QWidget):
     def addFilter(self,data):
         if self.inactiveFilters == []:
             filterWidget = FilterWidget(self,data)
+            filterWidget.dataItem.selectStack()
             filterWidget.limitsChanged.connect(self.emitView2DProp)
             self.filterBox.vbox.addWidget(filterWidget)
             self.activeFilters.append(filterWidget)
         else:
             self.activeFilters.append(self.inactiveFilters.pop(0))
             filterWidget = self.activeFilters[-1]
+            filterWidget.dataItem.selectStack()
             filterWidget.show()
             filterWidget.refreshData(data)
+        self.indexProjector.addFilter(filterWidget.dataItem)
         self.setFilters()
         self.filterBox.show()
     def removeFilter(self,index):
         filterWidget = self.activeFilters.pop(index)
+        filterWidget.dataItem.deselectStack()
         self.filterBox.vbox.removeWidget(filterWidget)
         self.filterBox.vbox.addWidget(filterWidget)
         self.inactiveFilters.append(filterWidget)
@@ -617,21 +634,23 @@ class DataProp(QtGui.QWidget):
         self.setFilters()
         if self.activeFilters == []:
             self.filterBox.hide()
+        self.indexProjector.removeFilter(index)
     def setFilters(self,foo=None):
         P = self.view2DProp
-        P["filterMask"] = None
+        D = []
         if self.activeFilters != []:
-            for f in self.activeFilters:
-                if P["filterMask"] == None:
-                    P["filterMask"] = numpy.ones(f.data.shape[0],dtype="bool")
-                vmin = float(f.vminLineEdit.text())
-                vmax= float(f.vmaxLineEdit.text())
-                data = numpy.array(f.data,dtype="float")
-                P["filterMask"] *= (data >= vmin) * (data <= vmax)
-            Ntot = len(data)
+            vmins = numpy.zeros(len(self.activeFilters))
+            vmaxs = numpy.zeros(len(self.activeFilters))
+            for i,f in zip(range(len(self.activeFilters)),self.activeFilters):
+                vmins[i] = float(f.vminLineEdit.text())
+                vmaxs[i] = float(f.vmaxLineEdit.text())
+            self.indexProjector.updateFilterMask(vmins,vmaxs)
+            P["filterMask"] = self.indexProjector.filterMask()
+            Ntot = len(P["filterMask"])
             Nsel = P["filterMask"].sum()
             p = 100*Nsel/(1.*Ntot)
         else:
+            P["filterMask"] = None
             Ntot = 0
             Nsel = 0
             p = 100.
@@ -649,32 +668,32 @@ class DataProp(QtGui.QWidget):
     #    else:
     #        P["pixelStackX"] = int(x)
     #        P["pixekStackY"] = int(y)
-    def setImageStackN(self):
-        P = self.view2DProp
-        if self.imageStackNEdit.text() == "":
-            P["N"] = None
-        else:
-            P["N"] = int(self.imageStackNEdit.text())
-    def clearPixelStack(self):
-        self.pixelStackXEdit.setText("")
-        self.pixelStackYEdit.setText("")
-        self.pixelStackNEdit.setText("")
-    def onPixelStackPickButton(self):
-        self.pixelStackPick = True
-    def setPixelStack(self):
-        P = self.view1DProp
-        if self.pixelStackXEdit.text() == "":
-            P["ix"] = None
-        else:
-            P["ix"] = int(self.pixelStackXEdit.text())
-        if self.pixelStackYEdit.text() == "":
-            P["iy"] = None
-        else:
-            P["iy"] = int(self.pixelStackYEdit.text())
-        if self.pixelStackNEdit.text() == "":
-            P["N"] = None
-        else:
-            P["N"] = int(self.pixelStackNEdit.text())
+    #def setImageStackN(self):
+    #    P = self.view2DProp
+    #    if self.imageStackNEdit.text() == "":
+    #        P["N"] = None
+    #    else:
+    #        P["N"] = int(self.imageStackNEdit.text())
+    #def clearPixelStack(self):
+    #    self.pixelStackXEdit.setText("")
+    #    self.pixelStackYEdit.setText("")
+    #    self.pixelStackNEdit.setText("")
+    #def onPixelStackPickButton(self):
+    #    self.pixelStackPick = True
+    #def setPixelStack(self):
+    #    P = self.view1DProp
+    #    if self.pixelStackXEdit.text() == "":
+    #        P["ix"] = None
+    #    else:
+    #        P["ix"] = int(self.pixelStackXEdit.text())
+    #    if self.pixelStackYEdit.text() == "":
+    #        P["iy"] = None
+    #    else:
+    #        P["iy"] = int(self.pixelStackYEdit.text())
+    #    if self.pixelStackNEdit.text() == "":
+    #        P["N"] = None
+    #    else:
+    #        P["N"] = int(self.pixelStackNEdit.text())
     def setPlotStyle(self):
         P = self.view1DProp
         P["lines"] = self.plotLinesCheckBox.isChecked()
@@ -692,13 +711,12 @@ class DataProp(QtGui.QWidget):
             try:
                 i = int(i)
                 P["img"] = i
-
             except:
-                P["img"] = None                
+                P["img"] = None
         self.currentImg.edited = False
     # update and emit current diplay properties        
     def emitView1DProp(self):
-        self.setPixelStack()
+        #self.setPixelStack()
         self.setPlotStyle()
         self.view1DPropChanged.emit(self.view1DProp)
     def emitView2DProp(self):
@@ -707,7 +725,7 @@ class DataProp(QtGui.QWidget):
         self.setColormap()
         self.setSorting()
         self.setFilters()
-        self.setImageStackN()
+        #self.setImageStackN()
         self.setCurrentImg()
         self.view2DPropChanged.emit(self.view2DProp)
     def checkLimits(self):

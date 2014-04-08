@@ -11,7 +11,9 @@ from PySide import QtGui, QtCore, QtOpenGL
 
 import numpy
 import math
+import settingsOwl
 from geometry import *
+from indexprojector import *
 from dataprop import *
 from dataloader import *
 from cxitree import *
@@ -33,8 +35,7 @@ View only tagged ones
 Tagging with numbers
 Different tags different colors
 Multiple tags per image
-
-
+More precise browse to img. At the moment we end up somewhere close to the image of intrest but not exactly to it.
 """
 
         
@@ -42,15 +43,20 @@ class Viewer(QtGui.QMainWindow):
     def __init__(self):
         QtGui.QMainWindow.__init__(self)
 
+        self.logger = logging.getLogger("Viewer")
+        # If you want to see debug messages change level here
+        self.logger.setLevel(settingsOwl.loglev["Viewer"])
+
         self.statusBar = self.statusBar()
         self.statusBar.showMessage("Initializing...")
         self.init_settings()
         self.splitter = QtGui.QSplitter(self)        
-        self.view = ViewSplitter(self)
+        self.indexProjector = IndexProjector()
+        self.view = ViewSplitter(self,self.indexProjector)
         self.init_menus()
 
-
-        self.dataProp = DataProp(self)
+        self.fileLoader = FileLoader(self)
+        self.dataProp = DataProp(self,self.indexProjector)
         self.CXINavigation = CXINavigation(self)
         self.splitter.addWidget(self.CXINavigation)
         self.splitter.addWidget(self.view)
@@ -73,7 +79,9 @@ class Viewer(QtGui.QMainWindow):
         QtCore.QTimer.singleShot(0,self.after_show)
         self.updateTimer = QtCore.QTimer()
         self.updateTimer.setInterval(int(settings.value("updateTimer")))
-        self.updateTimer.timeout.connect(self.updateData)
+        self.updateTimer.timeout.connect(self.fileLoader.updateStackSize)
+
+        self.view.view1D.setWindowSize(float(settings.value("movingAverageSize")))
 
         self.initConnections()
         self.dataProp.emitView1DProp()
@@ -85,7 +93,7 @@ class Viewer(QtGui.QMainWindow):
             self.openCXIFile(args.filename)        
     def openCXIFile(self,filename):
 	self.filename = filename
-        self.fileLoader = FileLoader(filename)
+        self.fileLoader.loadFile(filename)
         self.CXINavigation.CXITree.buildTree(self.fileLoader)
     def init_settings(self):
         settings = QtCore.QSettings()
@@ -105,6 +113,8 @@ class Viewer(QtGui.QMainWindow):
             settings.setValue("textureCacheSize", 256);  
         if(not settings.contains("updateTimer")):
             settings.setValue("updateTimer", 10000);
+        if(not settings.contains("movingAverageSize")):
+            settings.setValue("movingAverageSize", 10.);
         if(not settings.contains("PNGOutputPath")):
             settings.setValue("PNGOutputPath", "./");
         if(not settings.contains("MarkOutputPath")):
@@ -268,11 +278,12 @@ class Viewer(QtGui.QMainWindow):
 	self.saveMenu.toPNG.triggered.connect(self.view.view2D.saveToPNG)
         self.saveMenu.Mark.triggered.connect(self.view.view2D.addtoMarked)
 
-	self.dataProp.imageStackMeanButton.released.connect(lambda: self.handleNeedDataIntegratedImage("mean"))
-	self.dataProp.imageStackStdButton.released.connect(lambda: self.handleNeedDataIntegratedImage("std"))
-	self.dataProp.imageStackMinButton.released.connect(lambda: self.handleNeedDataIntegratedImage("min"))
-	self.dataProp.imageStackMaxButton.released.connect(lambda: self.handleNeedDataIntegratedImage("max"))
+	#self.dataProp.imageStackMeanButton.released.connect(lambda: self.handleNeedDataIntegratedImage("mean"))
+	#self.dataProp.imageStackStdButton.released.connect(lambda: self.handleNeedDataIntegratedImage("std"))
+	#self.dataProp.imageStackMinButton.released.connect(lambda: self.handleNeedDataIntegratedImage("min"))
+	#self.dataProp.imageStackMaxButton.released.connect(lambda: self.handleNeedDataIntegratedImage("max"))
 
+        self.fileLoader.stackSizeChanged.connect(self.onStackSizeChanged)
 
     def openFileClicked(self):
         fileName = QtGui.QFileDialog.getOpenFileName(self,"Open CXI File", None, "CXI Files (*.cxi)");
@@ -345,6 +356,9 @@ class Viewer(QtGui.QMainWindow):
             v = diag.updateTimerSpin.value()
             settings.setValue("updateTimer",v)
             self.updateTimer.setInterval(v)
+            v = diag.movingAverageSizeSpin.value()
+            settings.setValue("movingAverageSize",v)
+            self.view.view1D.setWindowSize(v)
             v = diag.PNGOutputPath.text()
             settings.setValue("PNGOutputPath",v)
             self.view.view2D.PNGOutputPath = v
@@ -356,6 +370,9 @@ class Viewer(QtGui.QMainWindow):
             self.CXINavigation.CXITree.loadData1()
             return
         dataItem = self.CXINavigation.CXITree.fileLoader.dataItems[dataName]
+        if not dataItem.isPresentable:
+            self.statusBar.showMessage("Data not presentable.")
+            return
         if dataItem.format == 2:        
             self.CXINavigation.dataBoxes["image"].button.setName(dataName)
             self.view.view2D.clear()
@@ -373,10 +390,8 @@ class Viewer(QtGui.QMainWindow):
             elif group+"/mask_shared" in self.CXINavigation.CXITree.fileLoader.dataItems.keys():
                 self.handleNeedDataMask(group+"/mask_shared")
         self.view.view2DScrollWidget.update()
-        self.updateData()
     def handleNeedDataIntegratedImage(self,integrationMode):
 	self.view.view2D.integrationMode = integrationMode
-	self.view.view2D.updateStackSize(True)
 	self.view.view2D.clearTextures()
     def handleNeedDataMask(self,dataName=None):
         if dataName == "" or dataName == None:
@@ -387,6 +402,9 @@ class Viewer(QtGui.QMainWindow):
             self.statusBar.showMessage("Reset mask.",1000)
         else:
             dataItem = self.CXINavigation.CXITree.fileLoader.dataItems[dataName]
+            if not dataItem.isPresentable:
+                self.statusBar.showMessage("Data not presentable.")
+                return
             maskShape = (dataItem.shape()[-2],dataItem.shape()[-1])
             imageShape = (self.view.view2D.data.shape()[-2],self.view.view2D.data.shape()[-1])
             if maskShape != imageShape:
@@ -407,12 +425,17 @@ class Viewer(QtGui.QMainWindow):
         senderBox = self.sender().dataBox
         if self.CXINavigation.dataBoxes["filter0"] == senderBox:
             dataItem = self.CXINavigation.CXITree.fileLoader.dataItems[dataName]
+            if not dataItem.isPresentable:
+                self.statusBar.showMessage("Data not presentable.")
+                return
             if dataItem.format == 0:
                 targetBox = self.CXINavigation.addFilterBox()
                 self.dataProp.addFilter(dataItem)
                 self.dataProp.view2DPropChanged.emit(self.dataProp.view2DProp)
                 targetBox.button.setName(dataName)
                 targetBox.button.needData.connect(self.handleNeedDataFilter)
+            else:
+                self.statusBar.showMessage("Data item has incorrect format for becoming a filter.")
         else:
             i = self.CXINavigation.dataBoxes["filters"].index(senderBox)
             if dataName == "" or dataName == None:
@@ -422,6 +445,9 @@ class Viewer(QtGui.QMainWindow):
             else:
                 targetBox = senderBox
                 dataItem = self.CXINavigation.CXITree.fileLoader.dataItems[dataName]
+                if not dataItem.isPresentable:
+                    self.statusBar.showMessage("Data not presentable.")
+                    return
                 self.dataProp.refreshFilter(dataItem,i)
                 self.dataProp.view2DPropChanged.emit(self.dataProp.view2DProp)
                 targetBox.button.setName(dataName)
@@ -435,6 +461,9 @@ class Viewer(QtGui.QMainWindow):
             self.statusBar.showMessage("Reset sorting.",1000)
         else:
             dataItem = self.CXINavigation.CXITree.fileLoader.dataItems[dataName]
+            if not dataItem.isPresentable:
+                self.statusBar.showMessage("Data not presentable.")
+                return
             if dataItem.format == 0 and dataItem.isStack:
                 self.CXINavigation.dataBoxes["sort"].button.setName(dataName)
                 self.dataProp.refreshSorting(dataItem)
@@ -451,6 +480,9 @@ class Viewer(QtGui.QMainWindow):
             self.statusBar.showMessage("Reset X data for plot." % dataName,1000)
         else:
             dataItem = self.CXINavigation.CXITree.fileLoader.dataItems[dataName]
+            if not dataItem.isPresentable:
+                self.statusBar.showMessage("Data not presentable.")
+                return
             self.view.view1D.setDataItemX(dataItem)
             self.view.view1D.refreshPlot()
             #self.CXINavigation.dataBoxes["plot X"].button.setName(dataName)
@@ -465,6 +497,9 @@ class Viewer(QtGui.QMainWindow):
             self.statusBar.showMessage("Reset Y data for plot." % dataName,1000)
         else:
             dataItem = self.CXINavigation.CXITree.fileLoader.dataItems[dataName]
+            if not dataItem.isPresentable:
+                self.statusBar.showMessage("Data not presentable.")
+                return
             self.view.view1D.setDataItemY(dataItem)
             self.view.view1D.refreshPlot()
             #self.CXINavigation.dataBoxes["plot Y"].button.setName(dataName)
@@ -472,17 +507,17 @@ class Viewer(QtGui.QMainWindow):
             self.dataProp.plotBox.show()
             self.viewActions["View 1D"].setChecked(True)
             self.statusBar.showMessage("Loaded Y data for plot: %s" % dataName,1000)
-    def handleView1DPropChanged(self,prop):
-        self.view.view1D.show()
-        self.dataProp.plotBox.show()
-        self.viewActions["View 1D"].setChecked(True)
-        self.view.view1D.setProps(prop)
+    #def handleView1DPropChanged(self,prop):
+    #    self.view.view1D.show()
+    #    self.dataProp.plotBox.show()
+    #    self.viewActions["View 1D"].setChecked(True)
+    #    self.view.view1D.setProps(prop)
         #self.CXINavigation.dataBoxes["plot"].button.setName("%s (%i,%i)" % (dataName,ix,iy))
         #self.statusBar.showMessage("Loaded pixel stack to plot: %s (%i,%i)" % (data.name,iy,ix),1000)
     def handlePlotModeTriggered(self,foovalue=None):
         self.view.view1D.setPlotMode(self.CXINavigation.dataMenus["plot Y"].getPlotMode())
         self.view.view1D.refreshPlot()
-        if self.view.view1D.dataY != None:
+        if self.view.view1D.dataItemY != None:
             self.viewActions["View 1D"].setChecked(True)
             self.view.view1D.show()
             self.dataProp.plotBox.show()
@@ -523,6 +558,11 @@ class Viewer(QtGui.QMainWindow):
                 if hasattr(dataItems[k],"fullName"):
                     n = dataItems[k].fullName
             self.CXINavigation.dataBoxes[k].button.setName(n)
+    def onStackSizeChanged(self,newStackSize=0):
+        self.indexProjector.onStackSizeChanged(newStackSize)
+        self.view.view2D.onStackSizeChanged(newStackSize)
+        self.view.view1D.onStackSizeChanged(newStackSize)
+        self.dataProp.onStackSizeChanged(newStackSize)
     def handleMask2DChanged(self,dataItem):
         n = None
         if dataItem != None:
@@ -536,9 +576,6 @@ class Viewer(QtGui.QMainWindow):
             self.updateTimer.stop()
         else:
             self.updateTimer.start()
-    def updateData(self):
-        self.view.view2D.updateStackSize()
-        self.view.view1D.refreshPlot()
 
 class PreferencesDialog(QtGui.QDialog):
     def __init__(self,parent):
@@ -608,6 +645,14 @@ class PreferencesDialog(QtGui.QDialog):
         self.updateTimerSpin.setSingleStep(1000)
         self.updateTimerSpin.setValue(int(settings.value("updateTimer")))
         grid.addWidget(self.updateTimerSpin,row,1)
+        row += 1
+
+        grid.addWidget(QtGui.QLabel("Moving average window size:",self),row,0)
+        self.movingAverageSizeSpin = QtGui.QSpinBox()
+        self.movingAverageSizeSpin.setMaximum(86400000)
+        self.movingAverageSizeSpin.setSingleStep(1)
+        self.movingAverageSizeSpin.setValue(float(settings.value("movingAverageSize")))
+        grid.addWidget(self.movingAverageSizeSpin,row,1)
         row += 1
 
         grid.addWidget(QtGui.QLabel("PNG output path:",self),row,0)

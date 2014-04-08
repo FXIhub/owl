@@ -7,8 +7,8 @@ class View1D(View,QtGui.QFrame):
     viewIndexSelected = QtCore.Signal(int)
     dataItemXChanged = QtCore.Signal(object)
     dataItemYChanged = QtCore.Signal(object)
-    def __init__(self,parent=None):
-        View.__init__(self,parent,"plot")
+    def __init__(self,parent=None,indexProjector=None):
+        View.__init__(self,parent,indexProjector,"plot")
         QtGui.QFrame.__init__(self,parent)
         self.hbox = QtGui.QHBoxLayout(self)
         margin = 20
@@ -21,9 +21,8 @@ class View1D(View,QtGui.QFrame):
         self.dataItemY = None
         self.dataItemX = None
         self.setPixelStack()
-        self.setMovingAverage()
+        self.setWindowSize()
         self.nBins = 200
-        self.stackSizeChanged.connect(self.refreshPlot)
     def initPlot(self,widgetType="plot"):
         self.lineColor = (255,255,255)
         self.lineWidth = 1
@@ -45,38 +44,47 @@ class View1D(View,QtGui.QFrame):
         self.setStyle()
         #self.p.update()
     def setDataItemX(self,dataItem):
+        if self.dataItemX != None:
+            self.dataItemX.deselectStack()
         self.dataItemX = dataItem
         if hasattr(dataItem,"fullName"): 
             self.dataItemXLabel = dataItem.fullName
+            self.dataItemX.selectStack()
         else:
             self.dataItemXLabel = ""
         self.dataItemXChanged.emit(dataItem)
     def setDataItemY(self,dataItem):
+        if self.dataItemY != None:
+            self.dataItemY.deselectStack()
         self.dataItemY = dataItem
         if hasattr(dataItem,"fullName"):
             self.dataItemYLabel = dataItem.fullName
+            self.dataItemY.selectStack()
         else:
             self.dataItemYLabel = ""
-        if dataItem.isStack:
-            self.stackSize = self.dataItemY.shape(True)[0]
-        else:
-            self.stackSize = 0
         self.setPixelStack()
-        self.setMovingAverage()
         self.dataItemYChanged.emit(dataItem)
     def setPixelStack(self,ix=None,iy=None,N=None):
         self.ix = ix
         self.iy = iy
         self.N = N
-    def setMovingAverage(self,windowSize=None):
-        self.windowSize = windowSize
+    def setWindowSize(self,windowSize=None):
+        if windowSize == None:
+            self._windowSize = 100
+        else:
+            self._windowSize = windowSize
+    def windowSize(self):
+        if self.plotMode == "average":
+            return self._windowSize
+        else:
+            return None
     def toggleAutoLast(self):
         self.autoLast = not self.autoLast
     # DATA
-    def updateShape(self):
+    def onStackSizeChanged(self,newStackSize):
+        #self.stackSize = newStackSize
         if self.dataItemY != None:
-            if self.dataItemY.shape() != self.dataItemY.shape(True):
-                self.refreshPlot()
+            self.refreshPlot()
     def addInfLine(self):
         if self.infLine == None:
             infLine = pyqtgraph.InfiniteLine(0,90,None,True)
@@ -127,7 +135,7 @@ class View1D(View,QtGui.QFrame):
         if self.dataItemY == None:
             dataY = None
         else:
-            dataY = self.dataItemY.data(ix=self.ix,iy=self.iy,N=self.N,windowSize=self.windowSize)
+            dataY = self.dataItemY.data(ix=self.ix,iy=self.iy,N=self.N,windowSize=self.windowSize())
         if dataY == None:
             self.p.setData([0])
             self.setPlotMode(self.plotMode)
@@ -145,12 +153,13 @@ class View1D(View,QtGui.QFrame):
                 dataX = self.dataItemX.data()
             if self.indexProjector.imgs != None and dataY.shape[0] == self.indexProjector.imgs.shape[0]:
                 dataY = dataY[self.indexProjector.imgs]
-            self.p.setData(dataX,dataY)
+            validMask = numpy.isfinite(dataX)*numpy.isfinite(dataY)
+            self.p.setData(dataX[validMask],dataY[validMask])
         elif self.plotMode == "histogram":
-            if self.nBins == None:
-                N = 200
-            else:
-                N = self.nBins
+            #if self.nBins == None:
+            #    N = 200
+            #else:
+            N = self.nBins
             (hist,edges) = numpy.histogram(dataY,bins=N)
             edges = (edges[:-1]+edges[1:])/2.0
             self.p.setData(edges,hist)        
@@ -165,11 +174,11 @@ class View1D(View,QtGui.QFrame):
         else:
             line = None
         self.setStyle(symbol=symbol,line=line)
-        self.nBins = props["N"]
+        #self.nBins = props["N"]
         self.refreshPlot()
     def emitViewIndexSelected(self,foovalue=None):
         index = int(self.infLine.getXPos())
         self.viewIndexSelected.emit(index)
-    def onPlotNBinsEdit(self):
-        self.nBins = int(self.sender().text())
-        self.refreshPlot()
+    #def onPlotNBinsEdit(self):
+    #    self.nBins = int(self.sender().text())
+    #    self.refreshPlot()
