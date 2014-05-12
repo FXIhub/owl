@@ -40,7 +40,7 @@ class View2D(View,QtOpenGL.QGLWidget):
         self.data = None
         self.mask = None
         self.texturesLoading = {}
-        self.imageStackN = None
+        #self.imageStackN = None
         
         self.imageTextures = GLCache(0)
         self.maskTextures = GLCache(0)
@@ -108,16 +108,16 @@ class View2D(View,QtOpenGL.QGLWidget):
         if self.mask == None:
             return None
         elif self.mask.isStack:
-            if self.integrationMode == None:
-                return self.mask.data(img=img)
-            else:
-                return numpy.zeros(shape=(self.data.shape()[-2],self.data.shape()[-1]))
+            #if self.integrationMode == None:
+            return self.mask.data(img=img)
+            #else:
+            #return numpy.zeros(shape=(self.data.shape()[-2],self.data.shape()[-1]))
         else:
             return self.mask.data()
     def getData(self,img=None):
-        return self.data.data(img=img,integrationMode=self.integrationMode,filterMask=self.indexProjector.filterMask(),N=self.imageStackN)
+        return self.data.data(img=img,filterMask=self.indexProjector.filterMask())
     def getPhase(self,img=None):
-        return self.data.data(img=img,integrationMode=self.integrationMode,filterMask=self.indexProjector.filterMask(),N=self.imageStackN,complex_mode="phase")
+        return self.data.data(img=img,filterMask=self.indexProjector.filterMask(),complex_mode="phase")
     def stopThreads(self):
         while(self.imageLoader.isRunning()):
             self.imageLoader.quit()
@@ -586,8 +586,8 @@ class View2D(View,QtOpenGL.QGLWidget):
         if(self.has_data is False):
             return visible
 
-	if self.integrationMode != None:
-	    return [0]
+        #if self.integrationMode != None:
+	#    return [0]
 
         top_left = self.windowToViewIndex(0,0,0,checkExistance=False,clip=False)
         bottom_right = self.windowToViewIndex(self.width(),self.height(),0,checkExistance=False,clip=False)

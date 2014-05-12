@@ -31,10 +31,13 @@ class IndexProjector(QtCore.QObject):
                 F = numpy.ones(shape=(len(self.filters),self.stackSize),dtype="bool")
                 for i,f in zip(range(len(self.filters)),self.filters):
                     F[i,:] = f.data()[:self.stackSize]
-                for i,vmin,vmax in zip(range(len(self.filters)),vmins,vmaxs):
-                    F[i,:] = (F[i,:] <= vmax) * (F[i,:] >= vmin)
+                for i,filterDataItem,vmin,vmax in zip(range(len(self.filters)),self.filters,vmins,vmaxs):
+                    filt = filterDataItem.data()
+                    F[i,:] = (filt[:] <= vmax) * (filt[:] >= vmin)
                 if len(self.filters) > 1:
-                    self._filterMask = numpy.array(F.prod(0),dtype="bool")
+                    self._filterMask = numpy.array(F.prod(0),dtype="bool").flatten()
+                else:
+                    self._filterMask = F.flatten()
             else:
                 self._filterMask = None
         self.vmins = vmins

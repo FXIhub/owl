@@ -126,11 +126,10 @@ class DataItem:
             self.isSelectedStack = True
             self.fileLoader.updateStackSize()
     def data(self,**kwargs):
-        # COMMENT: Refreshing datasets can have the side effect that they are being closed. Why is that?
-        #try:
-        self.fileLoader.f[self.fullName].refresh()
-        #except:
-        #    self.logger.debug("Failed to refresh dataset. Probably the h5py version that is installed does not support SWMR.")
+        try:
+            self.fileLoader.f[self.fullName].refresh()
+        except:
+            self.logger.debug("Failed to refresh dataset. Probably the h5py version that is installed does not support SWMR.")
         complex_mode = kwargs.get("complex_mode",None)
         if self.isComplex == False and complex_mode != None:
             return None
