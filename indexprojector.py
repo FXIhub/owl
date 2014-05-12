@@ -33,7 +33,8 @@ class IndexProjector(QtCore.QObject):
                     F[i,:] = f.data()[:self.stackSize]
                 for i,vmin,vmax in zip(range(len(self.filters)),vmins,vmaxs):
                     F[i,:] = (F[i,:] <= vmax) * (F[i,:] >= vmin)
-                self._filterMask = numpy.array(F.prod(0),dtype="bool")
+                if len(self.filters) > 1:
+                    self._filterMask = numpy.array(F.prod(0),dtype="bool")
             else:
                 self._filterMask = None
         self.vmins = vmins
