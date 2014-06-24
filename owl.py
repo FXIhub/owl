@@ -50,7 +50,7 @@ class Viewer(QtGui.QMainWindow):
         self.statusBar = self.statusBar()
         self.statusBar.showMessage("Initializing...")
         self.init_settings()
-        self.splitter = QtGui.QSplitter(self)        
+        self.splitter = QtGui.QSplitter(self)
         self.indexProjector = IndexProjector()
         self.view = ViewSplitter(self,self.indexProjector)
         self.init_menus()
@@ -90,7 +90,7 @@ class Viewer(QtGui.QMainWindow):
 
     def after_show(self):
         if(args.filename != ""):
-            self.openCXIFile(args.filename)        
+            self.openCXIFile(args.filename)
     def openCXIFile(self,filename):
 	self.filename = filename
         self.fileLoader.loadFile(filename)
@@ -98,19 +98,19 @@ class Viewer(QtGui.QMainWindow):
     def init_settings(self):
         settings = QtCore.QSettings()
         if(not settings.contains("scrollDirection")):
-            settings.setValue("scrollDirection", 1);  
+            settings.setValue("scrollDirection", 1);
         if(not settings.contains("imageCacheSize")):
             # Default to 1 GB
-            settings.setValue("imageCacheSize", 1024);  
+            settings.setValue("imageCacheSize", 1024);
         if(not settings.contains("phaseCacheSize")):
             # Default to 1 GB
-            settings.setValue("phaseCacheSize", 1024);  
+            settings.setValue("phaseCacheSize", 1024);
         if(not settings.contains("maskCacheSize")):
             # Default to 1 GB
-            settings.setValue("maskCacheSize", 1024);  
+            settings.setValue("maskCacheSize", 1024);
         if(not settings.contains("textureCacheSize")):
             # Default to 256 MB
-            settings.setValue("textureCacheSize", 256);  
+            settings.setValue("textureCacheSize", 256);
         if(not settings.contains("updateTimer")):
             settings.setValue("updateTimer", 10000);
         if(not settings.contains("movingAverageSize")):
@@ -231,7 +231,7 @@ class Viewer(QtGui.QMainWindow):
 
         traditionalColormaps = ['jet','hot','gray','coolwarm','gnuplot','gist_earth']
         self.colormapActions = {}
-        for colormap in traditionalColormaps:            
+        for colormap in traditionalColormaps:
             a = self.colormapMenu.addAction(colormapIcons.pop(colormap),colormap)
             a.setActionGroup(self.colormapActionGroup)
             a.setCheckable(True)
@@ -272,10 +272,10 @@ class Viewer(QtGui.QMainWindow):
         self.dataProp.view2DPropChanged.connect(self.handleView2DPropChanged)
         self.view.view2D.pixelClicked.connect(self.dataProp.onPixelClicked)
         self.view.view2D.centralImgChanged.connect(self.dataProp.refreshDataCurrent)
-        self.view.view1D.viewIndexSelected.connect(self.handleViewIndexSelected)   
+        self.view.view1D.viewIndexSelected.connect(self.handleViewIndexSelected)
         self.goMenu.nextRow.triggered.connect(self.view.view2D.nextRow)
         self.goMenu.previousRow.triggered.connect(self.view.view2D.previousRow)
-	self.saveMenu.toPNG.triggered.connect(self.view.view2D.saveToPNG)
+        self.saveMenu.toPNG.triggered.connect(self.view.view2D.saveToPNG)
         self.saveMenu.Mark.triggered.connect(self.view.view2D.addtoMarked)
 
 	#self.dataProp.imageStackMeanButton.released.connect(lambda: self.handleNeedDataIntegratedImage("mean"))
@@ -307,7 +307,7 @@ class Viewer(QtGui.QMainWindow):
         viewBoxes = {"File Tree" : [self.CXINavigation],
                      "Display Properties" : [self.dataProp],
                      "View 1D" : [self.view.view1D,self.dataProp.plotBox],
-                     "View 2D" : [self.view.view2D,self.dataProp.imageBox,self.dataProp.displayBox,self.dataProp.imageStackBox]}
+                     "View 2D" : [self.view.view2DScrollWidget,self.dataProp.imageBox,self.dataProp.displayBox,self.dataProp.imageStackBox, self.dataProp.generalBox, self.dataProp.pixelBox]}
         boxes = viewBoxes[viewName]
         if(checked):
             self.statusBar.showMessage("Showing %s" % viewName,1000)
@@ -326,7 +326,7 @@ class Viewer(QtGui.QMainWindow):
         settings = QtCore.QSettings()
         settings.setValue("geometry", self.saveGeometry())
         settings.setValue("windowState", self.saveState())
-        settings.setValue("colormap", self.dataProp.view2DProp['colormapText']) 
+        settings.setValue("colormap", self.dataProp.view2DProp['colormapText'])
         settings.setValue("normScaling", self.dataProp.view2DProp['normScaling'])
         settings.setValue("normGamma", self.dataProp.view2DProp['normGamma'])
         settings.setValue("normClamp", self.dataProp.view2DProp['normClamp'])
@@ -373,7 +373,7 @@ class Viewer(QtGui.QMainWindow):
         if not dataItem.isPresentable:
             self.statusBar.showMessage("Data not presentable.")
             return
-        if dataItem.format == 2:        
+        if dataItem.format == 2:
             self.CXINavigation.dataBoxes["image"].button.setName(dataName)
             self.view.view2D.clear()
             self.view.view2D.loadStack(dataItem)
@@ -524,7 +524,7 @@ class Viewer(QtGui.QMainWindow):
         else:
             self.viewActions["View 1D"].setChecked(False)
             self.view.view1D.hide()
-            self.dataProp.plotBox.hide()           
+            self.dataProp.plotBox.hide()
     def handleView2DPropChanged(self,prop):
         self.view.view2D.refreshDisplayProp(prop)
     def handleView1DPropChanged(self,prop):
@@ -537,7 +537,7 @@ class Viewer(QtGui.QMainWindow):
             if dataName[-4:] == "mask":
                 self.handleNeedDataMask(dataName)
             else:
-                self.handleNeedDataImage(dataName)            
+                self.handleNeedDataImage(dataName)
     def handleDataX1DChanged(self,dataItem):
         n = None
         if dataItem != None:
@@ -671,13 +671,13 @@ class PreferencesDialog(QtGui.QDialog):
         self.layout().addStretch()
 
         f = QtGui.QFrame(self)
-        f.setFrameStyle(QtGui.QFrame.HLine | (QtGui.QFrame.Sunken)) 
+        f.setFrameStyle(QtGui.QFrame.HLine | (QtGui.QFrame.Sunken))
         self.layout().addWidget(f)
         self.layout().addWidget(buttonBox)
 
 
 def exceptionHandler(type, value, traceback):
-    sys.__excepthook__(type,value,traceback)    
+    sys.__excepthook__(type,value,traceback)
     app.exit()
     sys.exit(-1)
 

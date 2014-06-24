@@ -11,8 +11,8 @@ class FileLoader(QtCore.QObject):
         QtCore.QObject.__init__(self)
         self.parent = parent
     def loadFile(self,fullFilename):
-        #self.f = h5py.File(fullFilename, "r")
-        self.f = h5py.File(fullFilename, "r*") # for swmr
+        self.f = h5py.File(fullFilename, "r")
+        #self.f = h5py.File(fullFilename, "r*") # for swmr
         self.fullFilename = fullFilename
         self.filename = QtCore.QFileInfo(fullFilename).fileName()
         self.fullName = self.name = "/"
@@ -44,7 +44,7 @@ class FileLoader(QtCore.QObject):
                 #print "About to refresh dataset:"
                 #print dataItem.H5Dataset.dtype.name
                 #print d.fullName,d.H5Dataset,d.H5Dataset.attrs.get("numEvents"),d.H5Dataset.id.id
-                self.f[n].refresh()
+                #self.f[n].refresh()
                 #print "Dataset refreshed:"
                 #print d.fullName,d.H5Dataset,d.H5Dataset.attrs.get("numEvents")
                 #except:
@@ -128,7 +128,7 @@ class DataItem:
     def data(self,**kwargs):
         # COMMENT: Refreshing datasets can have the side effect that they are being closed. Why is that?
         #try:
-        self.fileLoader.f[self.fullName].refresh()
+        #self.fileLoader.f[self.fullName].refresh()
         #except:
         #    self.logger.debug("Failed to refresh dataset. Probably the h5py version that is installed does not support SWMR.")
         complex_mode = kwargs.get("complex_mode",None)
@@ -166,7 +166,7 @@ class DataItem:
             else:
                 s = numpy.array(list(self.shape(True)))
                 k = 1
-                for si in s: k *= si                
+                for si in s: k *= si
                 if k > 100000000:
                     self.logger.warning("You do not really want to load a dataset of the length of %i into memory." % k)
                     d = numpy.zeros(1)
@@ -225,9 +225,9 @@ class DataItem:
         return d
 
 class ImageLoader(QtCore.QObject):
-    imageLoaded = QtCore.Signal(int) 
+    imageLoaded = QtCore.Signal(int)
     def __init__(self,parent = None,view = None):
-        QtCore.QObject.__init__(self,parent)  
+        QtCore.QObject.__init__(self,parent)
         self.view = view
         self.clear()
         self.logger = logging.getLogger("ImageLoader")
@@ -269,7 +269,7 @@ class ImageLoader(QtCore.QObject):
         shape = (min(self.imageData[img].shape[0], 8192), min(self.imageData[img].shape[1], 8192))
         if (shape[1] == 1):
             shape = (shape[0], shape[0])
-            
+
         #self.imageData[img] = self.imageData[img][0:shape[0],0:shape[1]]
         self.imageData[img].resize(shape)
         #        print "Debug b min %f max %f %s %s" % (numpy.amin(self.imageData[img]), numpy.amax(self.imageData[img]), self.imageData[img].shape, self.imageData[img].dtype)
@@ -282,4 +282,3 @@ class ImageLoader(QtCore.QObject):
         self.maskData = ArrayCache(1024*1024*int(QtCore.QSettings().value("maskCacheSize")))
     def loadedImages(self):
         return self.imageData.keys()
-
