@@ -23,6 +23,7 @@ import logging
 import argparse
 import gc
 import time
+import tagsDialog
 
 
 """
@@ -88,6 +89,7 @@ class Viewer(QtGui.QMainWindow):
         self.dataProp.emitView2DProp()
         self.setStyleSheetFromFilename()
 
+        self.tags = []
     def after_show(self):
         if(args.filename != ""):
             self.openCXIFile(args.filename)
@@ -137,6 +139,11 @@ class Viewer(QtGui.QMainWindow):
         #self.geometryMenu.addAction(self.assembleGeometry)
         #self.assembleGeometry.triggered.connect(self.assembleGeometryClicked)
         
+        self.editMenu = self.menuBar().addMenu(self.tr("&Edit"));
+        self.tagsAction = QtGui.QAction("Tags...",self)
+        self.editMenu.addAction(self.tagsAction)
+        self.tagsAction.triggered.connect(self.tagsClicked)
+
         self.goMenu = self.menuBar().addMenu(self.tr("&Go"));
         act = QtGui.QAction("Previous Row",self)
         act.setShortcut(QtGui.QKeySequence.MoveToPreviousPage)
@@ -576,6 +583,101 @@ class Viewer(QtGui.QMainWindow):
             self.updateTimer.stop()
         else:
             self.updateTimer.start()
+    def tagsClicked(self):
+        tagsDialog = TagsDialog(self,self.tags);
+        if(tagsDialog.exec_() == QtGui.QDialog.Accepted):
+            self.tags = tagsDialog.getTags()
+        
+
+
+class TagsDialog(QtGui.QDialog, tagsDialog.Ui_TagsDialog):
+    def __init__(self,parent,tags):
+        QtGui.QDialog.__init__(self,parent,QtCore.Qt.WindowTitleHint)
+        self.setupUi(self)
+        self.okButton.clicked.connect(self.accept)
+        self.cancelButton.clicked.connect(self.reject)
+        self.addButton.clicked.connect(self.addTag)
+        self.deleteButton.clicked.connect(self.deleteTag)
+        # Tango Icon colors from Inkscape
+        self.colors = [QtGui.QColor(52,102,164),
+                       QtGui.QColor(245,121,0),
+                       QtGui.QColor(117,80,123),
+                       QtGui.QColor(115,210,22),
+                       QtGui.QColor(204,0,0),
+                       QtGui.QColor(193,125,17),
+                       QtGui.QColor(237,212,0)]
+        self.tagsTable.cellDoubleClicked.connect(self.onCellDoubleClicked)
+        self.colorIndex = 0
+
+        for i in range(0,len(tags)):
+            self.addTag(tags[i][0],tags[i][1],tags[i][2],tags[i][3])
+    def getTags(self):
+        tags = []
+        for i in range(0,self.tagsTable.columnCount()):
+            tags.append([self.tagsTable.item(0,i).text(),
+                         self.tagsTable.item(1,i).background().color(),
+                         self.tagsTable.cellWidget(2,i).checkbox.checkState(),
+                         int(self.tagsTable.item(3,i).text())])
+        return tags
+    def onCellDoubleClicked(self, row, col):
+        item = self.tagsTable.item(row,col)
+        if(row == 0):
+            # Change name
+            self.tagsTable.editItem(item)
+        if(row == 1):
+            # Change color
+            color = QtGui.QColorDialog.getColor(item.background().color(),self)
+            if(color.isValid()):
+                item.setBackground(color)
+            
+        print "clicked"
+        return
+        
+    def addTag(self,title=None,color=None,check=QtCore.Qt.Unchecked,count=0):
+        self.tagsTable.insertColumn(self.tagsTable.columnCount())
+
+        # The Tag name
+        if(title == None):
+            title = "Tag "+str(self.tagsTable.columnCount())
+        item = QtGui.QTableWidgetItem(title)
+        item.setTextAlignment(QtCore.Qt.AlignHCenter|QtCore.Qt.AlignVCenter)
+        item.setToolTip("Double click to change name")
+        self.tagsTable.setItem(0,self.tagsTable.columnCount()-1,item)
+
+        # The Tag color
+        item = QtGui.QTableWidgetItem()
+        item.setFlags(QtCore.Qt.ItemIsEnabled|QtCore.Qt.ItemIsSelectable)
+        if(color == None):
+            color = self.colors[self.colorIndex%len(self.colors)]
+        self.colorIndex += 1
+        item.setBackground(color)
+        item.setToolTip("Double click to change color")
+        self.tagsTable.setItem(1,self.tagsTable.columnCount()-1,item)
+
+        # The Tag checkbox
+        widget = QtGui.QWidget()
+        layout = QtGui.QHBoxLayout(widget);
+        checkbox = QtGui.QCheckBox()
+        checkbox.setCheckState(check)
+        layout.addWidget(checkbox);
+        layout.setAlignment(QtCore.Qt.AlignCenter);
+        layout.setContentsMargins(0,0,0,0);
+        widget.setLayout(layout);    
+        widget.setToolTip("If enabld hide images which are not tagged")
+        widget.checkbox = checkbox
+        self.tagsTable.setCellWidget(2,self.tagsTable.columnCount()-1,widget)
+
+        # The Tag count
+        item = QtGui.QTableWidgetItem(str(count))
+        item.setTextAlignment(QtCore.Qt.AlignHCenter|QtCore.Qt.AlignVCenter)
+        item.setFlags(QtCore.Qt.ItemIsEnabled|QtCore.Qt.ItemIsSelectable)
+        item.setToolTip("Numbers of images tagged")
+        self.tagsTable.setItem(3,self.tagsTable.columnCount()-1,item)
+
+    def deleteTag(self):
+        self.tagsTable.removeColumn(self.tagsTable.currentColumn())
+        print "Here"
+        
 
 class PreferencesDialog(QtGui.QDialog):
     def __init__(self,parent):

@@ -89,7 +89,6 @@ class DataItem:
         # check whether or not it is a stack
         if len(self.fileLoader.f[self.fullName].attrs.items()) > 0:
             self.isStack = ("axes" in self.fileLoader.f[self.fullName].attrs.items()[0])
-        #self.isStack = (len(list(self.H5Dataset.shape)) == 3)
         else:
             self.isStack = False
         # check whether or not it is text
