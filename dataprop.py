@@ -516,7 +516,13 @@ class DataProp(QtGui.QWidget):
             self.intensityHistogramRegion.sigRegionChangeFinished.connect(self.onHistogramClicked)
             self.intensityHistogram.addItem(self.intensityHistogramRegion)
             self.intensityHistogram.autoRange()
+            # Check if we clicked on a tag
+            if(info["tagClicked"] != -1):
+                # Toggle tag
+                self.data.tagMembers[info["tagClicked"],info["img"]] = (self.data.tagMembers[info["tagClicked"],info["img"]]+1)%2
+            
             self.showTags(self.data)
+            
             #if self.pixelStackPick:
             #    self.pixelStackPick = False
             #    self.pixelStackXEdit.setText(str(int(info["ix"])))
@@ -773,6 +779,7 @@ class DataProp(QtGui.QWidget):
             button.setFixedSize(32,32)
             button.setFlat(True)
             button.setCheckable(True)
+            button.setToolTip(data.tags[i][0])
             if(data.tagMembers[i,img]):
                 button.setChecked(True)
             else:

@@ -85,6 +85,9 @@ class View2D(View,QtOpenGL.QGLWidget):
         self.MarkOutputPath = settings.value("MarkOutputPath")
 	#print self.PNGOutputPath
 
+        self.tag_size = 20
+        self.tag_pad = 4
+        self.tag_distance = self.tag_size + self.tag_pad
     def setData(self,dataItem=None):
         if self.data != None:
             self.data.deselectStack()
@@ -489,6 +492,26 @@ class View2D(View,QtOpenGL.QGLWidget):
             glPopMatrix()
         elif(img == self.selectedImage):
             self.paintSelectedImageBorder(img_width,img_height)
+        if(self.data and self.data.tags and self.data.tags != []):
+            tag_size = self.tag_size
+            tag_pad = self.tag_pad
+            tag_distance = self.tag_distance
+            for i in range(0,len(self.data.tags)):
+                glPushMatrix()
+                color = self.data.tags[i][1]
+                glColor4f(color.redF(),color.greenF(),color.blueF(),0.5);
+                glLineWidth(0.5/self.zoom)
+                if(self.data.tagMembers[i][img]):
+                    glBegin (GL_QUADS);
+                else:
+                    glBegin(GL_LINE_LOOP)
+                glVertex3f (tag_pad, img_height-(tag_pad+tag_size+tag_distance*i), 0.0);
+                glVertex3f (tag_pad+tag_size, img_height-(tag_pad+tag_size+tag_distance*i), 0.0);
+                glVertex3f (tag_pad+tag_size, img_height-(tag_pad+tag_distance*i), 0.0);
+                glVertex3f (tag_pad, img_height-(tag_pad+tag_distance*i), 0.0);
+                glEnd ();
+                glPopMatrix()
+
         glPopMatrix()
     def paintGL(self):
         '''
@@ -773,6 +796,12 @@ class View2D(View,QtOpenGL.QGLWidget):
         info["imageSum"] = numpy.sum(self.loaderThread.imageData[img])
         info["imageMean"] = numpy.mean(self.loaderThread.imageData[img])
         info["imageStd"] = numpy.std(self.loaderThread.imageData[img])
+        img_height = self.getImgHeight("scene",False)
+        info["tagClicked"] = -1
+        if(ix >= self.tag_pad and ix < self.tag_distance):
+            if(iy/self.tag_distance < len(self.data.tags)):
+                if(iy%self.tag_distance >= self.tag_pad):
+                    info["tagClicked"] = int(iy/self.tag_distance)
         return info
     def mouseMoveEvent(self, event):
         if(self.dragging):
@@ -853,8 +882,8 @@ class View2D(View,QtOpenGL.QGLWidget):
         imageWidth = self.getImgWidth("scene",True)
         imageHeight = self.getImgHeight("scene",True)
         border = self.subplotSceneBorder()
-        ix = int(round(xw%imageWidth - border/2.))
-        iy = int(round(imageHeight - yw%imageHeight))
+        ix = int(round(xw%imageWidth - border/2. - 1))
+        iy = int(round(imageHeight - yw%imageHeight - border/2.0 - 1))
         return (ix,iy)
     # Returns the view index (index after sorting and filtering) of the image that is at a particular window location
     def windowToViewIndex(self,x,y,z,checkExistance=True, clip=True):

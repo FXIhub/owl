@@ -677,7 +677,7 @@ class TagsDialog(QtGui.QDialog, tagsDialog.Ui_TagsDialog):
 
         # The Tag name
         if(title == None):
-            title = "Tag "+str(self.tagsTable.columnCount())
+            title = "Tag "+str(self.colorIndex)
         item = QtGui.QTableWidgetItem(title)
         item.setTextAlignment(QtCore.Qt.AlignHCenter|QtCore.Qt.AlignVCenter)
         item.setToolTip("Double click to change name")
