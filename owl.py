@@ -89,7 +89,7 @@ class Viewer(QtGui.QMainWindow):
         self.dataProp.emitView2DProp()
         self.setStyleSheetFromFilename()
 
-        self.tags = []
+        self.tagsChanged = False
     def after_show(self):
         if(args.filename != ""):
             self.openCXIFile(args.filename)
@@ -121,6 +121,15 @@ class Viewer(QtGui.QMainWindow):
             settings.setValue("PNGOutputPath", "./");
         if(not settings.contains("MarkOutputPath")):
             settings.setValue("MarkOutputPath", "./");
+        if(not settings.contains("TagColors")):
+            settings.setValue("TagColors",  [QtGui.QColor(52,102,164),
+                                             QtGui.QColor(245,121,0),
+                                             QtGui.QColor(117,80,123),
+                                             QtGui.QColor(115,210,22),
+                                             QtGui.QColor(204,0,0),
+                                             QtGui.QColor(193,125,17),
+                                             QtGui.QColor(237,212,0)]);        
+
     def init_menus(self):
         self.fileMenu = self.menuBar().addMenu(self.tr("&File"));
         self.openFile = QtGui.QAction("Open",self)
@@ -330,6 +339,11 @@ class Viewer(QtGui.QMainWindow):
         else:
             self.showFullScreen()
     def closeEvent(self,event):
+        if(self.tagsChanged and 
+           QtGui.QMessageBox.question(self,"Save tag changes?",
+                                      "Would you like to save changes to the tags?",
+                                      QtGui.QMessageBox.Save,QtGui.QMessageBox.Discard) == QtGui.QMessageBox.Save):
+            self.fileLoader.saveTags()
         settings = QtCore.QSettings()
         settings.setValue("geometry", self.saveGeometry())
         settings.setValue("windowState", self.saveState())
@@ -584,9 +598,18 @@ class Viewer(QtGui.QMainWindow):
         else:
             self.updateTimer.start()
     def tagsClicked(self):
-        tagsDialog = TagsDialog(self,self.tags);
-        if(tagsDialog.exec_() == QtGui.QDialog.Accepted):
-            self.tags = tagsDialog.getTags()
+        if(self.view.view2D.data):
+            tagsDialog = TagsDialog(self,self.view.view2D.data.tags);
+            if(tagsDialog.exec_() == QtGui.QDialog.Accepted):
+                tags = tagsDialog.getTags()
+                if(tags != self.view.view2D.data.tags):
+                    self.view.view2D.data.setTags(tags)
+                    self.dataProp.showTags(self.view.view2D.data)
+                    self.tagsChanged = True
+                    
+                
+        else:
+            QtGui.QMessageBox.information(self,"Cannot set tags","Cannot set tags if no dataset is open.");
         
 
 
@@ -594,23 +617,37 @@ class TagsDialog(QtGui.QDialog, tagsDialog.Ui_TagsDialog):
     def __init__(self,parent,tags):
         QtGui.QDialog.__init__(self,parent,QtCore.Qt.WindowTitleHint)
         self.setupUi(self)
-        self.okButton.clicked.connect(self.accept)
+        self.okButton.clicked.connect(self.onOkClicked)
         self.cancelButton.clicked.connect(self.reject)
         self.addButton.clicked.connect(self.addTag)
         self.deleteButton.clicked.connect(self.deleteTag)
         # Tango Icon colors from Inkscape
-        self.colors = [QtGui.QColor(52,102,164),
-                       QtGui.QColor(245,121,0),
-                       QtGui.QColor(117,80,123),
-                       QtGui.QColor(115,210,22),
-                       QtGui.QColor(204,0,0),
-                       QtGui.QColor(193,125,17),
-                       QtGui.QColor(237,212,0)]
+        settings = QtCore.QSettings()
+        self.colors = settings.value('TagColors')
         self.tagsTable.cellDoubleClicked.connect(self.onCellDoubleClicked)
+        self.tagsTable.cellClicked.connect(self.onCellClicked)
         self.colorIndex = 0
 
         for i in range(0,len(tags)):
             self.addTag(tags[i][0],tags[i][1],tags[i][2],tags[i][3])
+
+#        self.tagsTable.setStyleSheet("selection-background-color: white; selection-color: black;")
+        self.tagsTable.setStyleSheet("QTableWidget::item:selected{ background-color: white; color: black }")
+
+    def onOkClicked(self):
+        # Check if all Tags have different names and only accept then
+        list = []
+        unique = True
+        for i in range(0,self.tagsTable.columnCount()):
+            tag = self.tagsTable.item(0,i).text()
+            if(tag in list):
+                unique = False
+                QtGui.QMessageBox.warning(self,"Duplicate Tags","You cannot have duplicate tag names. Please change them.")
+                self.tagsTable.editItem(self.tagsTable.item(0,i))
+                break
+            list.append(tag)
+        if(unique):
+            self.accept()
     def getTags(self):
         tags = []
         for i in range(0,self.tagsTable.columnCount()):
@@ -621,16 +658,18 @@ class TagsDialog(QtGui.QDialog, tagsDialog.Ui_TagsDialog):
         return tags
     def onCellDoubleClicked(self, row, col):
         item = self.tagsTable.item(row,col)
-        if(row == 0):
-            # Change name
-            self.tagsTable.editItem(item)
         if(row == 1):
             # Change color
             color = QtGui.QColorDialog.getColor(item.background().color(),self)
             if(color.isValid()):
-                item.setBackground(color)
-            
-        print "clicked"
+                item.setBackground(color)            
+        return
+
+    def onCellClicked(self, row, col):    
+
+        item = self.tagsTable.item(0,col).setSelected(True)
+#        item = self.tagsTable.item(0,col).setCurrentItem(True)
+#        item = self.tagsTable.setCurrentCell(0,col)
         return
         
     def addTag(self,title=None,color=None,check=QtCore.Qt.Unchecked,count=0):
@@ -646,7 +685,7 @@ class TagsDialog(QtGui.QDialog, tagsDialog.Ui_TagsDialog):
 
         # The Tag color
         item = QtGui.QTableWidgetItem()
-        item.setFlags(QtCore.Qt.ItemIsEnabled|QtCore.Qt.ItemIsSelectable)
+        item.setFlags(QtCore.Qt.ItemIsEnabled)
         if(color == None):
             color = self.colors[self.colorIndex%len(self.colors)]
         self.colorIndex += 1
@@ -666,6 +705,7 @@ class TagsDialog(QtGui.QDialog, tagsDialog.Ui_TagsDialog):
         widget.setToolTip("If enabld hide images which are not tagged")
         widget.checkbox = checkbox
         self.tagsTable.setCellWidget(2,self.tagsTable.columnCount()-1,widget)
+
 
         # The Tag count
         item = QtGui.QTableWidgetItem(str(count))

@@ -162,6 +162,20 @@ class DataProp(QtGui.QWidget):
         self.imageStd = widget
         self.imageBox.vbox.addLayout(hbox)
 
+        hbox = QtGui.QHBoxLayout()
+        hbox.addStretch();
+        hbox.addWidget(QtGui.QLabel("No tags available"))
+        hbox.addStretch();
+        hbox.setSpacing(0);
+        widget = QtGui.QWidget()
+        widget.setFixedHeight(32)
+        hbox.setContentsMargins(0,0,0,0);
+        widget.setLayout(hbox)
+
+        self.imageBox.vbox.addWidget(widget)
+#        self.imageBox.vbox.addLayout(hbox)
+        self.tagsBox = hbox
+
         self.imageBox.setLayout(self.imageBox.vbox)
         self.imageBox.hide()
 
@@ -502,6 +516,7 @@ class DataProp(QtGui.QWidget):
             self.intensityHistogramRegion.sigRegionChangeFinished.connect(self.onHistogramClicked)
             self.intensityHistogram.addItem(self.intensityHistogramRegion)
             self.intensityHistogram.autoRange()
+            self.showTags(self.data)
             #if self.pixelStackPick:
             #    self.pixelStackPick = False
             #    self.pixelStackXEdit.setText(str(int(info["ix"])))
@@ -739,6 +754,39 @@ class DataProp(QtGui.QWidget):
                 self.hide()
             else:
                 self.show()
+    def showTags(self,data):
+        # clear layout
+        while True:
+            item = self.tagsBox.takeAt(0)
+            if(item):
+                if(item.widget()):                
+                    item.widget().deleteLater()
+            else:
+                break
+        img = self.viewer.view.view2D.selectedImage
+        group = QtGui.QButtonGroup(self)  
+        group.setExclusive(False)
+        for i in range(0,len(data.tags)):
+            pixmap = QtGui.QPixmap(32,32);
+            pixmap.fill(data.tags[i][1])
+            button = QtGui.QPushButton(pixmap,"")    
+            button.setFixedSize(32,32)
+            button.setFlat(True)
+            button.setCheckable(True)
+            if(data.tagMembers[i,img]):
+                button.setChecked(True)
+            else:
+                button.setChecked(False)
+            self.tagsBox.addWidget(button)
+            group.addButton(button,i)
+        group.buttonClicked[int].connect(self.tagClicked)
+        self.tagGroup = group
+    def tagClicked(self,id):
+        value = self.tagGroup.button(id).isChecked()
+        img = self.viewer.view.view2D.selectedImage
+        self.data.setTag(img,id,value)
+        self.viewer.tagsChanged = True
+               
 
 def paintColormapIcons(W,H):
     a = numpy.outer(numpy.ones(shape=(H,)),numpy.linspace(0.,1.,W))

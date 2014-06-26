@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'tagsDialog.ui'
 #
-# Created: Wed Jun 25 14:46:29 2014
+# Created: Thu Jun 26 11:34:55 2014
 #      by: pyside-uic 0.2.15 running on PySide 1.2.1
 #
 # WARNING! All changes made in this file will be lost!
@@ -36,8 +36,8 @@ class Ui_TagsDialog(object):
         self.gridLayout.addItem(spacerItem1, 1, 0, 1, 1)
         self.tagsTable = QtGui.QTableWidget(TagsDialog)
         self.tagsTable.setAutoScroll(True)
-        self.tagsTable.setAlternatingRowColors(False)
         self.tagsTable.setSelectionMode(QtGui.QAbstractItemView.SingleSelection)
+        self.tagsTable.setSelectionBehavior(QtGui.QAbstractItemView.SelectColumns)
         self.tagsTable.setRowCount(4)
         self.tagsTable.setColumnCount(0)
         self.tagsTable.setObjectName("tagsTable")
