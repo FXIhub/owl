@@ -84,10 +84,6 @@ class View2D(View,QtOpenGL.QGLWidget):
         self.PNGOutputPath = settings.value("PNGOutputPath")
         self.MarkOutputPath = settings.value("MarkOutputPath")
 	#print self.PNGOutputPath
-
-        self.tag_size = 20
-        self.tag_pad = 4
-        self.tag_distance = self.tag_size + self.tag_pad
     def setData(self,dataItem=None):
         if self.data != None:
             self.data.deselectStack()
@@ -493,9 +489,9 @@ class View2D(View,QtOpenGL.QGLWidget):
         elif(img == self.selectedImage):
             self.paintSelectedImageBorder(img_width,img_height)
         if(self.data and self.data.tags and self.data.tags != []):
-            tag_size = self.tag_size
-            tag_pad = self.tag_pad
-            tag_distance = self.tag_distance
+            tag_size = self.tagSize()
+            tag_pad = self.tagPad()
+            tag_distance = self.tagDistance()
             for i in range(0,len(self.data.tags)):
                 glPushMatrix()
                 color = self.data.tags[i][1]
@@ -798,10 +794,10 @@ class View2D(View,QtOpenGL.QGLWidget):
         info["imageStd"] = numpy.std(self.loaderThread.imageData[img])
         img_height = self.getImgHeight("scene",False)
         info["tagClicked"] = -1
-        if(ix >= self.tag_pad and ix < self.tag_distance):
-            if(iy/self.tag_distance < len(self.data.tags)):
-                if(iy%self.tag_distance >= self.tag_pad):
-                    info["tagClicked"] = int(iy/self.tag_distance)
+        if(ix >= self.tagPad() and ix < self.tagDistance()):
+            if(iy/self.tagDistance() < len(self.data.tags)):
+                if(iy%self.tagDistance() >= self.tagPad()):
+                    info["tagClicked"] = int(iy/self.tagDistance())
         return info
     def mouseMoveEvent(self, event):
         if(self.dragging):
@@ -1033,3 +1029,12 @@ class View2D(View,QtOpenGL.QGLWidget):
         else:
             self.has_data = False
         self.browseToLastIfAuto()
+        
+    def tagSize(self):
+        imageWidth = self.getImgWidth("scene",True)
+        return 0.05*imageWidth
+    def tagPad(self):
+        imageWidth = self.getImgWidth("scene",True)
+        return 0.01*imageWidth
+    def tagDistance(self):
+        return self.tagSize()+self.tagPad()
