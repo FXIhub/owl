@@ -24,6 +24,7 @@ import argparse
 import gc
 import time
 import tagsDialog
+import preferencesDialog
 
 
 """
@@ -129,6 +130,19 @@ class Viewer(QtGui.QMainWindow):
                                              QtGui.QColor(204,0,0),
                                              QtGui.QColor(193,125,17),
                                              QtGui.QColor(237,212,0)]);        
+
+#        if(not settings.contains("Shortcuts")):
+        shortcuts = {}
+        shortcuts["Move Selection Right"] = QtGui.QKeySequence("Right").toString()
+        shortcuts["Move Selection Left"] = QtGui.QKeySequence("Left").toString()
+        shortcuts["Move Selection Down"] = QtGui.QKeySequence("Down").toString()
+        shortcuts["Move Selection Up"] = QtGui.QKeySequence("Up").toString()
+        shortcuts["Toggle 1st Tag"] = QtGui.QKeySequence("1").toString()
+        shortcuts["Toggle 2nd Tag"] = QtGui.QKeySequence("2").toString()
+        shortcuts["Toggle 3rd Tag"] = QtGui.QKeySequence("3").toString()
+        for i in range(4,8):
+            shortcuts["Toggle "+str(i)+"th Tag"] = QtGui.QKeySequence(str(i)).toString()
+        settings.setValue("Shortcuts",  shortcuts);
 
     def init_menus(self):
         self.fileMenu = self.menuBar().addMenu(self.tr("&File"));
@@ -268,6 +282,30 @@ class Viewer(QtGui.QMainWindow):
         self.colormapMenu.addMenu(self.exoticColormapMenu)
         self.viewMenu.addMenu(self.colormapMenu)
 
+        shortcuts = settings.value('Shortcuts')
+        self.editMenu.toggleTag = []
+
+        action = QtGui.QAction('Toggle 1st Tag',self)
+        action.setShortcut(QtGui.QKeySequence.fromString(shortcuts['Toggle 1st Tag']))
+        self.addAction(action)
+        self.editMenu.toggleTag.append(action)
+
+        action = QtGui.QAction('Toggle 2nd Tag',self)
+        action.setShortcut(QtGui.QKeySequence.fromString(shortcuts['Toggle 2nd Tag']))
+        self.addAction(action)
+        self.editMenu.toggleTag.append(action)
+
+        action = QtGui.QAction('Toggle 3rd Tag',self)
+        action.setShortcut(QtGui.QKeySequence.fromString(shortcuts['Toggle 3rd Tag']))
+        self.addAction(action)
+        self.editMenu.toggleTag.append(action)
+
+        for i in range(4,8):
+            action = QtGui.QAction('Toggle '+str(i)+'th Tag',self)
+            action.setShortcut(QtGui.QKeySequence.fromString(shortcuts['Toggle '+str(i)+'th Tag']))
+            self.addAction(action)
+            self.editMenu.toggleTag.append(action)
+
     def initConnections(self):
         self.CXINavigation.CXITree.dataClicked.connect(self.handleDataClicked)
         #self.view.view1D.needData.connect(self.handleNeedDataY1D)
@@ -293,6 +331,8 @@ class Viewer(QtGui.QMainWindow):
         self.goMenu.previousRow.triggered.connect(self.view.view2D.previousRow)
         self.saveMenu.toPNG.triggered.connect(self.view.view2D.saveToPNG)
         self.saveMenu.Mark.triggered.connect(self.view.view2D.addtoMarked)
+        for i in range(0,len(self.editMenu.toggleTag)):
+            self.editMenu.toggleTag[i].triggered.connect(lambda id=i: self.dataProp.toggleTag(id))
 
 	#self.dataProp.imageStackMeanButton.released.connect(lambda: self.handleNeedDataIntegratedImage("mean"))
 	#self.dataProp.imageStackStdButton.released.connect(lambda: self.handleNeedDataIntegratedImage("std"))
@@ -386,6 +426,14 @@ class Viewer(QtGui.QMainWindow):
             v = diag.MarkOutputPath.text()
             settings.setValue("MarkOutputPath",v)
             self.view.view2D.MarkOutputPath = v
+
+            shortcuts = settings.value("Shortcuts")
+            for r in range(0,diag.shortcutsTable.rowCount()):
+                name = diag.shortcutsTable.verticalHeaderItem(r).text()            
+                string =  QtGui.QKeySequence.fromString(diag.shortcutsTable.item(r,0).text(),QtGui.QKeySequence.NativeText).toString()
+                shortcuts[name] = string
+            settings.setValue("Shortcuts",shortcuts)
+
     def handleNeedDataImage(self,dataName=None):
         if dataName == "" or dataName == None:
             self.CXINavigation.CXITree.loadData1()
@@ -716,107 +764,49 @@ class TagsDialog(QtGui.QDialog, tagsDialog.Ui_TagsDialog):
 
     def deleteTag(self):
         self.tagsTable.removeColumn(self.tagsTable.currentColumn())
-        print "Here"
         
 
-class PreferencesDialog(QtGui.QDialog):
+class PreferencesDialog(QtGui.QDialog, preferencesDialog.Ui_PreferencesDialog):
     def __init__(self,parent):
         QtGui.QDialog.__init__(self,parent,QtCore.Qt.WindowTitleHint)
-        self.resize(300,150)
-
+        self.setupUi(self)
         settings = QtCore.QSettings()
-
-        buttonBox = QtGui.QDialogButtonBox(QtCore.Qt.Horizontal)
-        buttonBox.setStandardButtons(QtGui.QDialogButtonBox.Ok | QtGui.QDialogButtonBox.Cancel)
-        buttonBox.accepted.connect(self.accept)
-        buttonBox.rejected.connect(self.reject)
-        self.setLayout(QtGui.QVBoxLayout());
-        row = 0
-        grid = QtGui.QGridLayout()
-        grid.addWidget(QtGui.QLabel("Scroll Direction:",self),row,0)
-        self.natural = QtGui.QRadioButton("Natural (Mac)")
-        self.traditional = QtGui.QRadioButton("Traditional (Pc)")
         if(settings.value("scrollDirection") == -1):
             self.natural.setChecked(True)
             self.traditional.setChecked(False)
         else:
             self.natural.setChecked(False)
             self.traditional.setChecked(True)
-        grid.addWidget(self.traditional,row,1)
-        row += 1
-        grid.addWidget(self.natural,row,1)
-        row += 1
-        #    We'll need this when we add more options
-        f = QtGui.QFrame(self)
-        f.setFrameStyle(QtGui.QFrame.HLine | (QtGui.QFrame.Sunken))
-        grid.addWidget(f,row,0,1,2);
-        row += 1
-
-        grid.addWidget(QtGui.QLabel("Image Cache (in MB):",self),row,0)
-        self.imageCacheSpin = QtGui.QSpinBox()
-        self.imageCacheSpin.setMaximum(1024*1024*1024)
-        self.imageCacheSpin.setSingleStep(512)
         self.imageCacheSpin.setValue(int(settings.value("imageCacheSize")))
-        grid.addWidget(self.imageCacheSpin,row,1)
-        row += 1
-
-        grid.addWidget(QtGui.QLabel("Mask Cache (in MB):",self),row,0)
-        self.maskCacheSpin = QtGui.QSpinBox()
-        self.maskCacheSpin.setMaximum(1024*1024*1024)
-        self.maskCacheSpin.setSingleStep(512)
         self.maskCacheSpin.setValue(int(settings.value("maskCacheSize")))
-        grid.addWidget(self.maskCacheSpin,row,1)
-        row += 1
-
-        grid.addWidget(QtGui.QLabel("Texture Cache (in MB):",self),row,0)
-        self.textureCacheSpin = QtGui.QSpinBox()
-        self.textureCacheSpin.setMaximum(1024*1024*1024)
-        self.textureCacheSpin.setSingleStep(128)
         self.textureCacheSpin.setValue(int(settings.value("textureCacheSize")))
-        grid.addWidget(self.textureCacheSpin,row,1)
-        row += 1
-
-        f = QtGui.QFrame(self)
-        f.setFrameStyle(QtGui.QFrame.HLine | (QtGui.QFrame.Sunken))
-        grid.addWidget(f,row,0,1,2);
-        row += 1
-
-        grid.addWidget(QtGui.QLabel("Auto update timer (in ms):",self),row,0)
-        self.updateTimerSpin = QtGui.QSpinBox()
-        self.updateTimerSpin.setMaximum(86400000)
-        self.updateTimerSpin.setSingleStep(1000)
         self.updateTimerSpin.setValue(int(settings.value("updateTimer")))
-        grid.addWidget(self.updateTimerSpin,row,1)
-        row += 1
-
-        grid.addWidget(QtGui.QLabel("Moving average window size:",self),row,0)
-        self.movingAverageSizeSpin = QtGui.QSpinBox()
-        self.movingAverageSizeSpin.setMaximum(86400000)
-        self.movingAverageSizeSpin.setSingleStep(1)
         self.movingAverageSizeSpin.setValue(float(settings.value("movingAverageSize")))
-        grid.addWidget(self.movingAverageSizeSpin,row,1)
-        row += 1
-
-        grid.addWidget(QtGui.QLabel("PNG output path:",self),row,0)
-        self.PNGOutputPath = QtGui.QLineEdit()
         self.PNGOutputPath.setText(settings.value("PNGOutputPath"))
-        grid.addWidget(self.PNGOutputPath,row,1)
-        row += 1
-
-        grid.addWidget(QtGui.QLabel("Mark output path:",self),row,0)
-        self.MarkOutputPath = QtGui.QLineEdit()
         self.MarkOutputPath.setText(settings.value("MarkOutputPath"))
-        grid.addWidget(self.MarkOutputPath,row,1)
-        row += 1
-
-        self.layout().addLayout(grid)
-        self.layout().addStretch()
-
-        f = QtGui.QFrame(self)
-        f.setFrameStyle(QtGui.QFrame.HLine | (QtGui.QFrame.Sunken))
-        self.layout().addWidget(f)
-        self.layout().addWidget(buttonBox)
-
+        self.shortcutsTable.installEventFilter(self)
+        shortcuts = settings.value("Shortcuts")
+        for r in range(0,self.shortcutsTable.rowCount()):
+            name = self.shortcutsTable.verticalHeaderItem(r).text()
+            if(name in shortcuts.keys()):
+                string =  QtGui.QKeySequence.fromString(shortcuts[name]).toString(QtGui.QKeySequence.NativeText)
+                self.shortcutsTable.item(r,0).setText(string)
+            
+    def eventFilter(self,obj,event):
+        # If it's a keypress, there are selected items and the press is not just modifier keys
+        if(event.type() == QtCore.QEvent.KeyPress and len(self.shortcutsTable.selectedItems()) and
+           QtGui.QKeySequence(event.key()).toString() ):
+            key = event.key()
+            if(key == QtCore.Qt.Key_Alt or key == QtCore.Qt.Key_Meta or
+               key == QtCore.Qt.Key_Control or key == QtCore.Qt.Key_Shift):
+                return  QtGui.QDialog.eventFilter(self,obj, event);
+            item = self.shortcutsTable.selectedItems()[0]
+            result = QtGui.QKeySequence((event.modifiers() & ~QtCore.Qt.KeypadModifier) | event.key());  
+            item.setText(result.toString(QtGui.QKeySequence.NativeText))
+            return True
+        else:
+            # standard event processing
+            return QtGui.QDialog.eventFilter(self,obj, event);
 
 def exceptionHandler(type, value, traceback):
     sys.__excepthook__(type,value,traceback)

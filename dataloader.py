@@ -300,6 +300,8 @@ class DataItem:
             colors[i,2] = self.tags[i][1].blue()
         self.fileLoader.f[self.path+'tags'].attrs['colors'] = colors
     def setTag(self,img,tag,value):
+        if(tag >= self.tagMembers.shape[0]):
+            return
         self.tagsDirty = True
         if(value):
             self.tagMembers[tag,img] = 1

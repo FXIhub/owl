@@ -761,6 +761,9 @@ class DataProp(QtGui.QWidget):
             else:
                 self.show()
     def showTags(self,data):
+        img = self.viewer.view.view2D.selectedImage
+        if(img == None):
+            return
         # clear layout
         while True:
             item = self.tagsBox.takeAt(0)
@@ -769,7 +772,6 @@ class DataProp(QtGui.QWidget):
                     item.widget().deleteLater()
             else:
                 break
-        img = self.viewer.view.view2D.selectedImage
         group = QtGui.QButtonGroup(self)  
         group.setExclusive(False)
         for i in range(0,len(data.tags)):
@@ -789,10 +791,23 @@ class DataProp(QtGui.QWidget):
         group.buttonClicked[int].connect(self.tagClicked)
         self.tagGroup = group
     def tagClicked(self,id):
-        value = self.tagGroup.button(id).isChecked()
         img = self.viewer.view.view2D.selectedImage
+        if(img == None):
+            return
+        value = self.tagGroup.button(id).isChecked()
         self.data.setTag(img,id,value)
         self.viewer.tagsChanged = True
+    def toggleTag(self,id):
+        img = self.viewer.view.view2D.selectedImage
+        if(img == None):
+            return
+        if(self.tagGroup.button(id) == None):
+            return
+        self.tagGroup.button(id).toggle()
+        value = self.tagGroup.button(id).isChecked()
+        self.data.setTag(img,id,value)
+        self.viewer.tagsChanged = True
+
                
 
 def paintColormapIcons(W,H):
