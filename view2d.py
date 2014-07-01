@@ -84,6 +84,7 @@ class View2D(View,QtOpenGL.QGLWidget):
         self.PNGOutputPath = settings.value("PNGOutputPath")
         self.MarkOutputPath = settings.value("MarkOutputPath")
 	#print self.PNGOutputPath
+        self.setFocusPolicy(QtCore.Qt.StrongFocus)
     def setData(self,dataItem=None):
         if self.data != None:
             self.data.deselectStack()
@@ -723,12 +724,6 @@ class View2D(View,QtOpenGL.QGLWidget):
         self.translateBy([0,t])
         # Do not allow zooming
        # self.scaleZoom(1+(event.delta()/8.0)/360)
-    def keyPressEvent(self, event):
-        delta = self.width()/20
-        img_height =  self.getImgHeight("window",True)
-        stack_height = math.ceil(((self.getNImages()-0.0001)/self.stackWidth))*img_height
-        if(event.key() == QtCore.Qt.Key_F):
-            self.parent.statusBar.showMessage("Flaged "+str(self.indexProjector.indexToImg(self.hoveredViewIndex())),1000)
     def toggleSlideShow(self):
         if self.slideshowTimer.isActive():
             self.slideshowTimer.stop()
@@ -1038,3 +1033,28 @@ class View2D(View,QtOpenGL.QGLWidget):
         return 0.01*imageWidth
     def tagDistance(self):
         return self.tagSize()+self.tagPad()
+    def moveSelectionBy(self, x,y):
+        if(abs(x) > 1 or abs(y) > 1):
+            raise AssertionError('moveSelection only supports moves <= 1 in x and y')
+        if(self.selectedImage == None):
+            return
+        viewIndex = self.indexProjector.imgToIndex(self.selectedImage)
+        img = self.indexProjector.indexToImg(viewIndex+x+y*self.stackWidth)
+        rowChange = y
+        if(x == 1):
+            if((viewIndex+x) % self.stackWidth == 0):
+                rowChange += 1
+        elif(x == -1):
+            if((viewIndex) % self.stackWidth == 0):
+                rowChange -= 1
+        self.changeRowBy(rowChange)
+        
+                
+        self.selectedImage = img
+        if img in self.loaderThread.imageData.keys():
+            info = self.getPixelInfo(img,0,0)
+            if info == None:
+                return
+            self.pixelClicked.emit(info)
+
+        self.updateGL()

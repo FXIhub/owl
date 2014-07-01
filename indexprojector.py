@@ -101,6 +101,8 @@ class IndexProjector(QtCore.QObject):
         else:
             if int(index) >= len(self.imgs):
                 return self.imgs[-1]
+            elif int(index) < 0:
+                return self.imgs[0]
             else:
                 return self.imgs[int(index)]
     def clear(self):

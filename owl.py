@@ -306,6 +306,26 @@ class Viewer(QtGui.QMainWindow):
             self.addAction(action)
             self.editMenu.toggleTag.append(action)
 
+        action = QtGui.QAction('Move Selection Right',self)
+        action.setShortcut(QtGui.QKeySequence.fromString(shortcuts['Move Selection Right']))
+        self.addAction(action)
+        self.editMenu.moveSelectionRight = action
+
+        action = QtGui.QAction('Move Selection Left',self)
+        action.setShortcut(QtGui.QKeySequence.fromString(shortcuts['Move Selection Left']))
+        self.addAction(action)
+        self.editMenu.moveSelectionLeft = action
+
+        action = QtGui.QAction('Move Selection Up',self)
+        action.setShortcut(QtGui.QKeySequence.fromString(shortcuts['Move Selection Up']))
+        self.addAction(action)
+        self.editMenu.moveSelectionUp = action
+
+        action = QtGui.QAction('Move Selection Down',self)
+        action.setShortcut(QtGui.QKeySequence.fromString(shortcuts['Move Selection Down']))
+        self.addAction(action)
+        self.editMenu.moveSelectionDown = action
+
     def initConnections(self):
         self.CXINavigation.CXITree.dataClicked.connect(self.handleDataClicked)
         #self.view.view1D.needData.connect(self.handleNeedDataY1D)
@@ -333,6 +353,10 @@ class Viewer(QtGui.QMainWindow):
         self.saveMenu.Mark.triggered.connect(self.view.view2D.addtoMarked)
         for i in range(0,len(self.editMenu.toggleTag)):
             self.editMenu.toggleTag[i].triggered.connect(lambda id=i: self.dataProp.toggleTag(id))
+        self.editMenu.moveSelectionRight.triggered.connect(lambda: self.view.view2D.moveSelectionBy(1,0))
+        self.editMenu.moveSelectionLeft.triggered.connect(lambda: self.view.view2D.moveSelectionBy(-1,0))
+        self.editMenu.moveSelectionUp.triggered.connect(lambda: self.view.view2D.moveSelectionBy(0,-1))
+        self.editMenu.moveSelectionDown.triggered.connect(lambda: self.view.view2D.moveSelectionBy(0,1))
 
 	#self.dataProp.imageStackMeanButton.released.connect(lambda: self.handleNeedDataIntegratedImage("mean"))
 	#self.dataProp.imageStackStdButton.released.connect(lambda: self.handleNeedDataIntegratedImage("std"))
