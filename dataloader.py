@@ -11,7 +11,13 @@ class FileLoader(QtCore.QObject):
         QtCore.QObject.__init__(self)
         self.parent = parent
     def loadFile(self,fullFilename):
-        self.f = h5py.File(fullFilename, "r+")
+        try:
+            self.f = h5py.File(fullFilename, "r+")
+        except IOError as e:            
+            if( str(e) == 'Unable to open file (File is already open for write or swmr write)'):                                
+                print "\n\n!!! TIP: Trying running h5clearsb.py on the file !!!\n\n"
+            raise
+#            print e.strerror
         #self.f = h5py.File(fullFilename, "r*") # for swmr
         self.fullFilename = fullFilename
         self.filename = QtCore.QFileInfo(fullFilename).fileName()
