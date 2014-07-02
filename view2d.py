@@ -84,7 +84,7 @@ class View2D(View,QtOpenGL.QGLWidget):
         self.PNGOutputPath = settings.value("PNGOutputPath")
         self.MarkOutputPath = settings.value("MarkOutputPath")
 	#print self.PNGOutputPath
-
+        self.setFocusPolicy(QtCore.Qt.StrongFocus)
     def setData(self,dataItem=None):
         if self.data != None:
             self.data.deselectStack()
@@ -489,6 +489,26 @@ class View2D(View,QtOpenGL.QGLWidget):
             glPopMatrix()
         elif(img == self.selectedImage):
             self.paintSelectedImageBorder(img_width,img_height)
+        if(self.data and self.data.tags and self.data.tags != []):
+            tag_size = self.tagSize()
+            tag_pad = self.tagPad()
+            tag_distance = self.tagDistance()
+            for i in range(0,len(self.data.tags)):
+                glPushMatrix()
+                color = self.data.tags[i][1]
+                glColor4f(color.redF(),color.greenF(),color.blueF(),0.5);
+                glLineWidth(0.5/self.zoom)
+                if(self.data.tagMembers[i][img]):
+                    glBegin (GL_QUADS);
+                else:
+                    glBegin(GL_LINE_LOOP)
+                glVertex3f (tag_pad, img_height-(tag_pad+tag_size+tag_distance*i), 0.0);
+                glVertex3f (tag_pad+tag_size, img_height-(tag_pad+tag_size+tag_distance*i), 0.0);
+                glVertex3f (tag_pad+tag_size, img_height-(tag_pad+tag_distance*i), 0.0);
+                glVertex3f (tag_pad, img_height-(tag_pad+tag_distance*i), 0.0);
+                glEnd ();
+                glPopMatrix()
+
         glPopMatrix()
     def paintGL(self):
         '''
@@ -704,12 +724,6 @@ class View2D(View,QtOpenGL.QGLWidget):
         self.translateBy([0,t])
         # Do not allow zooming
        # self.scaleZoom(1+(event.delta()/8.0)/360)
-    def keyPressEvent(self, event):
-        delta = self.width()/20
-        img_height =  self.getImgHeight("window",True)
-        stack_height = math.ceil(((self.getNImages()-0.0001)/self.stackWidth))*img_height
-        if(event.key() == QtCore.Qt.Key_F):
-            self.parent.statusBar.showMessage("Flaged "+str(self.indexProjector.indexToImg(self.hoveredViewIndex())),1000)
     def toggleSlideShow(self):
         if self.slideshowTimer.isActive():
             self.slideshowTimer.stop()
@@ -773,6 +787,12 @@ class View2D(View,QtOpenGL.QGLWidget):
         info["imageSum"] = numpy.sum(self.loaderThread.imageData[img])
         info["imageMean"] = numpy.mean(self.loaderThread.imageData[img])
         info["imageStd"] = numpy.std(self.loaderThread.imageData[img])
+        img_height = self.getImgHeight("scene",False)
+        info["tagClicked"] = -1
+        if(ix >= self.tagPad() and ix < self.tagDistance()):
+            if(iy/self.tagDistance() < len(self.data.tags)):
+                if(iy%self.tagDistance() >= self.tagPad()):
+                    info["tagClicked"] = int(iy/self.tagDistance())
         return info
     def mouseMoveEvent(self, event):
         if(self.dragging):
@@ -853,8 +873,8 @@ class View2D(View,QtOpenGL.QGLWidget):
         imageWidth = self.getImgWidth("scene",True)
         imageHeight = self.getImgHeight("scene",True)
         border = self.subplotSceneBorder()
-        ix = int(round(xw%imageWidth - border/2.))
-        iy = int(round(imageHeight - yw%imageHeight))
+        ix = int(round(xw%imageWidth - border/2. - 1))
+        iy = int(round(imageHeight - yw%imageHeight - border/2.0 - 1))
         return (ix,iy)
     # Returns the view index (index after sorting and filtering) of the image that is at a particular window location
     def windowToViewIndex(self,x,y,z,checkExistance=True, clip=True):
@@ -1004,3 +1024,37 @@ class View2D(View,QtOpenGL.QGLWidget):
         else:
             self.has_data = False
         self.browseToLastIfAuto()
+        
+    def tagSize(self):
+        imageWidth = self.getImgWidth("scene",True)
+        return 0.05*imageWidth
+    def tagPad(self):
+        imageWidth = self.getImgWidth("scene",True)
+        return 0.01*imageWidth
+    def tagDistance(self):
+        return self.tagSize()+self.tagPad()
+    def moveSelectionBy(self, x,y):
+        if(abs(x) > 1 or abs(y) > 1):
+            raise AssertionError('moveSelection only supports moves <= 1 in x and y')
+        if(self.selectedImage == None):
+            return
+        viewIndex = self.indexProjector.imgToIndex(self.selectedImage)
+        img = self.indexProjector.indexToImg(viewIndex+x+y*self.stackWidth)
+        rowChange = y
+        if(x == 1):
+            if((viewIndex+x) % self.stackWidth == 0):
+                rowChange += 1
+        elif(x == -1):
+            if((viewIndex) % self.stackWidth == 0):
+                rowChange -= 1
+        self.changeRowBy(rowChange)
+        
+                
+        self.selectedImage = img
+        if img in self.loaderThread.imageData.keys():
+            info = self.getPixelInfo(img,0,0)
+            if info == None:
+                return
+            self.pixelClicked.emit(info)
+
+        self.updateGL()

@@ -1,4 +1,4 @@
-from PySide import QtCore
+from PySide import QtGui, QtCore
 import numpy,cmath
 import logging
 from cache import ArrayCache
@@ -11,8 +11,14 @@ class FileLoader(QtCore.QObject):
         QtCore.QObject.__init__(self)
         self.parent = parent
     def loadFile(self,fullFilename):
-        #self.f = h5py.File(fullFilename, "r")
-        self.f = h5py.File(fullFilename, "r*") # for swmr
+        try:
+            self.f = h5py.File(fullFilename, "r+")
+        except IOError as e:            
+            if( str(e) == 'Unable to open file (File is already open for write or swmr write)'):                                
+                print "\n\n!!! TIP: Trying running h5clearsb.py on the file !!!\n\n"
+            raise
+#            print e.strerror
+        #self.f = h5py.File(fullFilename, "r*") # for swmr
         self.fullFilename = fullFilename
         self.filename = QtCore.QFileInfo(fullFilename).fileName()
         self.fullName = self.name = "/"
@@ -44,7 +50,7 @@ class FileLoader(QtCore.QObject):
                 #print "About to refresh dataset:"
                 #print dataItem.H5Dataset.dtype.name
                 #print d.fullName,d.H5Dataset,d.H5Dataset.attrs.get("numEvents"),d.H5Dataset.id.id
-                self.f[n].refresh()
+                #self.f[n].refresh()
                 #print "Dataset refreshed:"
                 #print d.fullName,d.H5Dataset,d.H5Dataset.attrs.get("numEvents")
                 #except:
@@ -57,6 +63,9 @@ class FileLoader(QtCore.QObject):
         if N != self.stackSize:
             self.stackSize = N
             self.stackSizeChanged.emit(N)
+    def saveTags(self):
+        for n,d in self.dataItems.items():
+            d.saveTags()
 
 
 class GroupItem:
@@ -87,9 +96,8 @@ class DataItem:
         self.logger.setLevel(settingsOwl.loglev["DataItem"])
         self.isSelectedStack = False
         # check whether or not it is a stack
-        if len(self.fileLoader.f[self.fullName].attrs.items()) > 0:
-            self.isStack = ("axes" in self.fileLoader.f[self.fullName].attrs.items()[0])
-        #self.isStack = (len(list(self.H5Dataset.shape)) == 3)
+        if len(self.fileLoader.f[self.fullName].attrs.items()) > 0 and "axes" in self.fileLoader.f[self.fullName].attrs.keys():
+            self.isStack = True
         else:
             self.isStack = False
         # check whether or not it is text
@@ -102,6 +110,40 @@ class DataItem:
         self.isComplex = (str(self.fileLoader.f[self.fullName].dtype.name).lower().find("complex") != -1)
         # image stack?
         if self.isStack: self.format -= 1
+
+        # Check for tags
+        self.tags = []
+        self.tagMembers = None
+        self.tagsDirty = False
+        self.path = fullName[0:fullName.rindex('/')+1]
+
+        settings = QtCore.QSettings()
+        defaultColors = settings.value('TagColors')
+#        print self.fileLoader.f[path].keys()
+        if('tags' in self.fileLoader.f[self.path].keys()):
+            self.tagMembers = numpy.array(self.fileLoader.f[self.path+'tags'])
+            has_headings = False
+            has_colors = False
+            if('headings' in self.fileLoader.f[self.path+'tags'].attrs.keys()):
+                has_headings = True
+            if('colors' in self.fileLoader.f[self.path+'tags'].attrs.keys()):
+                has_colors = True
+            
+            for i in range(0,self.tagMembers.shape[0]):
+                if(has_headings):
+                    title = self.fileLoader.f[self.path+'tags'].attrs['headings'][i]
+                else:
+                    title = 'Tag '+(i+1)
+                if(has_colors):
+                    r =  self.fileLoader.f[self.path+'tags'].attrs['colors'][i][0]
+                    g =  self.fileLoader.f[self.path+'tags'].attrs['colors'][i][1]
+                    b =  self.fileLoader.f[self.path+'tags'].attrs['colors'][i][2]
+                    color = QtGui.QColor(r,g,b)
+                else:
+                    color = defaultColors[i]
+                self.tags.append([title,color,QtCore.Qt.Unchecked,self.tagMembers[i,:].sum()])
+
+
     def shape(self,forceRefresh=False):
         shape = self.fileLoader.f[self.fullName].shape
         if self.isSelectedStack and self.fileLoader.stackSize != None:
@@ -130,6 +172,7 @@ class DataItem:
             self.fileLoader.f[self.fullName].refresh()
         except:
             self.logger.debug("Failed to refresh dataset. Probably the h5py version that is installed does not support SWMR.")
+
         complex_mode = kwargs.get("complex_mode",None)
         if self.isComplex == False and complex_mode != None:
             return None
@@ -162,7 +205,7 @@ class DataItem:
             else:
                 s = numpy.array(list(self.shape(True)))
                 k = 1
-                for si in s: k *= si                
+                for si in s: k *= si
                 if k > 100000000:
                     self.logger.warning("You do not really want to load a dataset of the length of %i into memory." % k)
                     d = numpy.zeros(1)
@@ -210,11 +253,60 @@ class DataItem:
                 # default is the absolute value
                 d = abs(d)
         return d
+    def setTags(self,tags):
+        self.tagsDirty = True
+        newMembers = numpy.zeros((len(tags),self.shape()[0]),dtype=numpy.int8)
+        if(self.tagMembers != None):
+            newMembers = numpy.zeros((len(tags),self.shape()[0]),dtype=numpy.int8)
+            # Copy old members to new members
+            for i in range(0,len(tags)):
+                # Check if the new tag is an old tag
+                newTag = True
+                for j in range(0,len(self.tags)):
+                    if tags[i][0] == self.tags[j][0]:
+                        newMembers[i][:] = self.tagMembers[j][:]
+                        newTag = False
+                        break
+                if(newTag):
+                    newMembers[i][:] = 0
+
+        self.tagMembers = newMembers
+        self.tags = tags
+                
+    def saveTags(self):
+        if(self.tagsDirty == False):
+            return
+        if('tags' in self.fileLoader.f[self.path]):
+            del self.fileLoader.f[self.path+'tags']
+        if(self.tags == []):
+            return
+        self.fileLoader.f[self.path].create_dataset('tags',self.tagMembers.shape,maxshape=(None,None),chunks=(1,10000),data=self.tagMembers)
+        # Save tag names
+        headings = []
+        for i in range(0,len(self.tags)):
+            headings.append(str(self.tags[i][0]))
+        self.fileLoader.f[self.path+'tags'].attrs['headings'] = headings
+        # Save tag colors
+        colors = numpy.zeros((len(self.tags),3),dtype=numpy.uint8)
+        for i in range(0,len(self.tags)):
+            colors[i,0] = self.tags[i][1].red()
+            colors[i,1] = self.tags[i][1].green()
+            colors[i,2] = self.tags[i][1].blue()
+        self.fileLoader.f[self.path+'tags'].attrs['colors'] = colors
+    def setTag(self,img,tag,value):
+        if(tag >= self.tagMembers.shape[0]):
+            return
+        self.tagsDirty = True
+        if(value):
+            self.tagMembers[tag,img] = 1
+        else:
+            self.tagMembers[tag,img] = 0
+
 
 class ImageLoader(QtCore.QObject):
-    imageLoaded = QtCore.Signal(int) 
+    imageLoaded = QtCore.Signal(int)
     def __init__(self,parent = None,view = None):
-        QtCore.QObject.__init__(self,parent)  
+        QtCore.QObject.__init__(self,parent)
         self.view = view
         self.clear()
         self.logger = logging.getLogger("ImageLoader")
@@ -256,7 +348,7 @@ class ImageLoader(QtCore.QObject):
         shape = (min(self.imageData[img].shape[0], 8192), min(self.imageData[img].shape[1], 8192))
         if (shape[1] == 1):
             shape = (shape[0], shape[0])
-            
+
         #self.imageData[img] = self.imageData[img][0:shape[0],0:shape[1]]
         self.imageData[img].resize(shape)
         #        print "Debug b min %f max %f %s %s" % (numpy.amin(self.imageData[img]), numpy.amax(self.imageData[img]), self.imageData[img].shape, self.imageData[img].dtype)
@@ -269,4 +361,3 @@ class ImageLoader(QtCore.QObject):
         self.maskData = ArrayCache(1024*1024*int(QtCore.QSettings().value("maskCacheSize")))
     def loadedImages(self):
         return self.imageData.keys()
-

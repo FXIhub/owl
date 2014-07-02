@@ -13,7 +13,7 @@ def sizeof_fmt(num):
             return "%3.1f %s" % (num, x)
         num /= 1024.0
     return "%3.1f %s" % (num, 'TB')
-    
+
 
 class DataProp(QtGui.QWidget):
     view2DPropChanged = QtCore.Signal(dict)
@@ -66,7 +66,7 @@ class DataProp(QtGui.QWidget):
         self.currentImg.hbox.addWidget(self.currentImg.label)
         self.currentImg.hbox.addStretch()
         self.currentImg.hbox.addWidget(self.currentImg)
-        self.currentImg.edited = False 
+        self.currentImg.edited = False
 
         self.generalBox.vbox.addWidget(self.shape)
         self.generalBox.vbox.addWidget(self.datatype)
@@ -107,7 +107,7 @@ class DataProp(QtGui.QWidget):
         #hbox0.addLayout(hbox)
         #hbox0.addLayout(vbox)
         #self.imageStackBox.vbox.addLayout(hbox0)
-	
+
         # properties: selected image
         self.imageBox = QtGui.QGroupBox("Selected Image");
         self.imageBox.vbox = QtGui.QVBoxLayout()
@@ -126,7 +126,7 @@ class DataProp(QtGui.QWidget):
         hbox.addWidget(widget)
         self.imageViewIndex = widget
         self.imageBox.vbox.addLayout(hbox)
-        
+
         hbox = QtGui.QHBoxLayout()
         hbox.addWidget(QtGui.QLabel("Minimum value:"))
         widget = QtGui.QLabel("None",parent=self)
@@ -161,6 +161,20 @@ class DataProp(QtGui.QWidget):
         hbox.addWidget(widget)
         self.imageStd = widget
         self.imageBox.vbox.addLayout(hbox)
+
+        hbox = QtGui.QHBoxLayout()
+        hbox.addStretch();
+        hbox.addWidget(QtGui.QLabel("No tags available"))
+        hbox.addStretch();
+        hbox.setSpacing(0);
+        widget = QtGui.QWidget()
+        widget.setFixedHeight(32)
+        hbox.setContentsMargins(0,0,0,0);
+        widget.setLayout(hbox)
+
+        self.imageBox.vbox.addWidget(widget)
+#        self.imageBox.vbox.addLayout(hbox)
+        self.tagsBox = hbox
 
         self.imageBox.setLayout(self.imageBox.vbox)
         self.imageBox.hide()
@@ -213,7 +227,7 @@ class DataProp(QtGui.QWidget):
         # Make the histogram fit the available width
         self.intensityHistogram.setSizePolicy(QtGui.QSizePolicy.Ignored,QtGui.QSizePolicy.Preferred)
         self.displayBox.vbox.addWidget(self.intensityHistogram)
-        # property: NORM        
+        # property: NORM
         # normVmax
         hbox = QtGui.QHBoxLayout()
         hbox.addWidget(QtGui.QLabel("Maximum value:"))
@@ -232,7 +246,7 @@ class DataProp(QtGui.QWidget):
         self.displayMin.setSingleStep(1.)
         hbox.addWidget(self.displayMin)
         self.displayBox.vbox.addLayout(hbox)
-        
+
         vbox = QtGui.QVBoxLayout()
 
         # autorange
@@ -244,7 +258,7 @@ class DataProp(QtGui.QWidget):
         self.displayAutorange = QtGui.QCheckBox("",parent=self)
         hbox.addWidget(self.displayAutorange)
         vbox.addLayout(hbox)
-        
+
         # normClamp
         hbox = QtGui.QHBoxLayout()
         label = QtGui.QLabel("Clamp")
@@ -280,7 +294,7 @@ class DataProp(QtGui.QWidget):
         self.displayGamma.setValue(0.25);
         self.displayGamma.setSingleStep(0.25);
         hbox.addWidget(self.displayPow)
-        hbox.addWidget(self.displayGamma)        
+        hbox.addWidget(self.displayGamma)
         vbox.addLayout(hbox)
         self.displayBox.vbox.addLayout(vbox)
         self.displayBox.setLayout(self.displayBox.vbox)
@@ -348,7 +362,7 @@ class DataProp(QtGui.QWidget):
 
         #self.pixelStackPlotButton = QtGui.QPushButton("Plot",self)
         #self.pixelStackBox.vbox.addWidget(self.pixelStackPlotButton)
-        
+
         #self.pixelStackBox.setLayout(self.pixelStackBox.vbox)
         #self.pixelStackBox.show()
 
@@ -390,26 +404,26 @@ class DataProp(QtGui.QWidget):
 
         # add all widgets to main vbox
         self.vboxScroll.addWidget(self.generalBox)
-        self.vboxScroll.addWidget(self.imageBox) 
-        self.vboxScroll.addWidget(self.pixelBox)               
+        self.vboxScroll.addWidget(self.imageBox)
+        self.vboxScroll.addWidget(self.pixelBox)
         self.vboxScroll.addWidget(self.displayBox)
         #self.vboxScroll.addWidget(self.pixelStackBox)
         self.vboxScroll.addWidget(self.imageStackBox)
         self.vboxScroll.addWidget(self.sortingBox)
         self.vboxScroll.addWidget(self.filterBox)
-        self.vboxScroll.addWidget(self.plotBox)        
+        self.vboxScroll.addWidget(self.plotBox)
         self.vboxScroll.addStretch()
         self.setLayout(self.vbox)
         # clear all properties
         self.clear()
         # connect signals
-        self.imageStackSubplots.editingFinished.connect(self.emitView2DProp)    
+        self.imageStackSubplots.editingFinished.connect(self.emitView2DProp)
         self.displayMax.editingFinished.connect(self.checkLimits)
         self.displayMin.editingFinished.connect(self.checkLimits)
         self.displayClamp.stateChanged.connect(self.emitView2DProp)
         self.displayAutorange.stateChanged.connect(self.emitView2DProp)
         self.displayAutorange.stateChanged.connect(self.setModMinMax)
-        self.displayLin.toggled.connect(self.emitView2DProp)        
+        self.displayLin.toggled.connect(self.emitView2DProp)
         self.displayLog.toggled.connect(self.emitView2DProp)
         self.displayPow.toggled.connect(self.emitView2DProp)
         self.displayGamma.editingFinished.connect(self.emitView2DProp)
@@ -436,7 +450,7 @@ class DataProp(QtGui.QWidget):
     def onStackSizeChanged(self,newStackSize):
         self.stackSize = newStackSize
         self.updateShape()
-    def updateShape(self):        
+    def updateShape(self):
         if self.data != None:
             # update shape label
             string = "Shape: "
@@ -473,7 +487,7 @@ class DataProp(QtGui.QWidget):
         self.datatype.setText("Data Type: ")
         self.datasize.setText("Data Size: ")
         self.dataform.setText("Data Form: ")
-        self.imageStackBox.hide()	
+        self.imageStackBox.hide()
     # VIEW
     def onPixelClicked(self,info):
         if self.data != None and info != None:
@@ -502,6 +516,13 @@ class DataProp(QtGui.QWidget):
             self.intensityHistogramRegion.sigRegionChangeFinished.connect(self.onHistogramClicked)
             self.intensityHistogram.addItem(self.intensityHistogramRegion)
             self.intensityHistogram.autoRange()
+            # Check if we clicked on a tag
+            if(info["tagClicked"] != -1):
+                # Toggle tag
+                self.data.tagMembers[info["tagClicked"],info["img"]] = (self.data.tagMembers[info["tagClicked"],info["img"]]+1)%2
+            
+            self.showTags(self.data)
+            
             #if self.pixelStackPick:
             #    self.pixelStackPick = False
             #    self.pixelStackXEdit.setText(str(int(info["ix"])))
@@ -574,8 +595,8 @@ class DataProp(QtGui.QWidget):
     def setColormap(self,foovalue=None):
         P = self.view2DProp
         a = self.viewer.colormapActionGroup.checkedAction()
-        self.displayColormap.setText(a.text())        
-        self.displayColormap.setIcon(a.icon())        
+        self.displayColormap.setText(a.text())
+        self.displayColormap.setIcon(a.icon())
         P["colormapText"] = a.text()
 
     def clearColormap(self):
@@ -714,7 +735,7 @@ class DataProp(QtGui.QWidget):
             except:
                 P["img"] = None
         self.currentImg.edited = False
-    # update and emit current diplay properties        
+    # update and emit current diplay properties
     def emitView1DProp(self):
         #self.setPixelStack()
         self.setPlotStyle()
@@ -739,6 +760,55 @@ class DataProp(QtGui.QWidget):
                 self.hide()
             else:
                 self.show()
+    def showTags(self,data):
+        img = self.viewer.view.view2D.selectedImage
+        if(img == None):
+            return
+        # clear layout
+        while True:
+            item = self.tagsBox.takeAt(0)
+            if(item):
+                if(item.widget()):                
+                    item.widget().deleteLater()
+            else:
+                break
+        group = QtGui.QButtonGroup(self)  
+        group.setExclusive(False)
+        for i in range(0,len(data.tags)):
+            pixmap = QtGui.QPixmap(32,32);
+            pixmap.fill(data.tags[i][1])
+            button = QtGui.QPushButton(pixmap,"")    
+            button.setFixedSize(32,32)
+            button.setFlat(True)
+            button.setCheckable(True)
+            button.setToolTip(data.tags[i][0])
+            if(data.tagMembers[i,img]):
+                button.setChecked(True)
+            else:
+                button.setChecked(False)
+            self.tagsBox.addWidget(button)
+            group.addButton(button,i)
+        group.buttonClicked[int].connect(self.tagClicked)
+        self.tagGroup = group
+    def tagClicked(self,id):
+        img = self.viewer.view.view2D.selectedImage
+        if(img == None):
+            return
+        value = self.tagGroup.button(id).isChecked()
+        self.data.setTag(img,id,value)
+        self.viewer.tagsChanged = True
+    def toggleTag(self,id):
+        img = self.viewer.view.view2D.selectedImage
+        if(img == None):
+            return
+        if(self.tagGroup.button(id) == None):
+            return
+        self.tagGroup.button(id).toggle()
+        value = self.tagGroup.button(id).isChecked()
+        self.data.setTag(img,id,value)
+        self.viewer.tagsChanged = True
+
+               
 
 def paintColormapIcons(W,H):
     a = numpy.outer(numpy.ones(shape=(H,)),numpy.linspace(0.,1.,W))
@@ -845,5 +915,3 @@ class FilterWidget(QtGui.QWidget):
         label = "Yield: %.2f%% - %i/%i" % (100*Nsel/(1.*Ntot),Nsel,Ntot)
         self.yieldLabel.setText(label)
         self.limitsChanged.emit(vmin,vmax)
-        
-    
