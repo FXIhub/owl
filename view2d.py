@@ -1062,3 +1062,4 @@ class View2D(View,QtOpenGL.QGLWidget):
         self.updateGL()
     def toggleTagView(self):
         self.tagView = not self.tagView
+        self.updateGL()
