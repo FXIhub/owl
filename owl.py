@@ -131,18 +131,18 @@ class Viewer(QtGui.QMainWindow):
                                              QtGui.QColor(193,125,17),
                                              QtGui.QColor(237,212,0)]);        
 
-#        if(not settings.contains("Shortcuts")):
-        shortcuts = {}
-        shortcuts["Move Selection Right"] = QtGui.QKeySequence("Right").toString()
-        shortcuts["Move Selection Left"] = QtGui.QKeySequence("Left").toString()
-        shortcuts["Move Selection Down"] = QtGui.QKeySequence("Down").toString()
-        shortcuts["Move Selection Up"] = QtGui.QKeySequence("Up").toString()
-        shortcuts["Toggle 1st Tag"] = QtGui.QKeySequence("1").toString()
-        shortcuts["Toggle 2nd Tag"] = QtGui.QKeySequence("2").toString()
-        shortcuts["Toggle 3rd Tag"] = QtGui.QKeySequence("3").toString()
-        for i in range(4,8):
-            shortcuts["Toggle "+str(i)+"th Tag"] = QtGui.QKeySequence(str(i)).toString()
-        settings.setValue("Shortcuts",  shortcuts);
+        if(not settings.contains("Shortcuts")):
+            shortcuts = {}
+            shortcuts["Move Selection Right"] = QtGui.QKeySequence("Right").toString()
+            shortcuts["Move Selection Left"] = QtGui.QKeySequence("Left").toString()
+            shortcuts["Move Selection Down"] = QtGui.QKeySequence("Down").toString()
+            shortcuts["Move Selection Up"] = QtGui.QKeySequence("Up").toString()
+            shortcuts["Toggle 1st Tag"] = QtGui.QKeySequence("1").toString()
+            shortcuts["Toggle 2nd Tag"] = QtGui.QKeySequence("2").toString()
+            shortcuts["Toggle 3rd Tag"] = QtGui.QKeySequence("3").toString()
+            for i in range(4,8):
+                shortcuts["Toggle "+str(i)+"th Tag"] = QtGui.QKeySequence(str(i)).toString()
+            settings.setValue("Shortcuts",  shortcuts);
 
     def init_menus(self):
         self.fileMenu = self.menuBar().addMenu(self.tr("&File"));
@@ -457,6 +457,17 @@ class Viewer(QtGui.QMainWindow):
                 string =  QtGui.QKeySequence.fromString(diag.shortcutsTable.item(r,0).text(),QtGui.QKeySequence.NativeText).toString()
                 shortcuts[name] = string
             settings.setValue("Shortcuts",shortcuts)
+
+            self.editMenu.moveSelectionDown.setShortcut(QtGui.QKeySequence.fromString(shortcuts['Move Selection Down']))
+            self.editMenu.moveSelectionUp.setShortcut(QtGui.QKeySequence.fromString(shortcuts['Move Selection Up']))
+            self.editMenu.moveSelectionLeft.setShortcut(QtGui.QKeySequence.fromString(shortcuts['Move Selection Left']))
+            self.editMenu.moveSelectionRight.setShortcut(QtGui.QKeySequence.fromString(shortcuts['Move Selection Right']))
+            
+            self.editMenu.toggleTag[0].setShortcut(QtGui.QKeySequence.fromString(shortcuts['Toggle 1st Tag']))
+            self.editMenu.toggleTag[1].setShortcut(QtGui.QKeySequence.fromString(shortcuts['Toggle 2nd Tag']))
+            self.editMenu.toggleTag[2].setShortcut(QtGui.QKeySequence.fromString(shortcuts['Toggle 3rd Tag']))
+            for i in range(3,6):
+                self.editMenu.toggleTag[i].setShortcut(QtGui.QKeySequence.fromString(shortcuts['Toggle '+str(i+1)+'th Tag']))
 
     def handleNeedDataImage(self,dataName=None):
         if dataName == "" or dataName == None:
