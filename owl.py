@@ -131,24 +131,29 @@ class Viewer(QtGui.QMainWindow):
                                              QtGui.QColor(193,125,17),
                                              QtGui.QColor(237,212,0)]);        
 
-#        if(not settings.contains("Shortcuts")):
-        shortcuts = {}
-        shortcuts["Move Selection Right"] = QtGui.QKeySequence("Right").toString()
-        shortcuts["Move Selection Left"] = QtGui.QKeySequence("Left").toString()
-        shortcuts["Move Selection Down"] = QtGui.QKeySequence("Down").toString()
-        shortcuts["Move Selection Up"] = QtGui.QKeySequence("Up").toString()
-        shortcuts["Toggle 1st Tag"] = QtGui.QKeySequence("1").toString()
-        shortcuts["Toggle 2nd Tag"] = QtGui.QKeySequence("2").toString()
-        shortcuts["Toggle 3rd Tag"] = QtGui.QKeySequence("3").toString()
-        for i in range(4,8):
-            shortcuts["Toggle "+str(i)+"th Tag"] = QtGui.QKeySequence(str(i)).toString()
-        settings.setValue("Shortcuts",  shortcuts);
+        if(not settings.contains("Shortcuts")):
+            shortcuts = {}
+            shortcuts["Move Selection Right"] = QtGui.QKeySequence("Right").toString()
+            shortcuts["Move Selection Left"] = QtGui.QKeySequence("Left").toString()
+            shortcuts["Move Selection Down"] = QtGui.QKeySequence("Down").toString()
+            shortcuts["Move Selection Up"] = QtGui.QKeySequence("Up").toString()
+            shortcuts["Toggle 1st Tag"] = QtGui.QKeySequence("1").toString()
+            shortcuts["Toggle 2nd Tag"] = QtGui.QKeySequence("2").toString()
+            shortcuts["Toggle 3rd Tag"] = QtGui.QKeySequence("3").toString()
+            for i in range(4,8):
+                shortcuts["Toggle "+str(i)+"th Tag"] = QtGui.QKeySequence(str(i)).toString()
+            settings.setValue("Shortcuts",  shortcuts);
 
     def init_menus(self):
         self.fileMenu = self.menuBar().addMenu(self.tr("&File"));
         self.openFile = QtGui.QAction("Open",self)
         self.fileMenu.addAction(self.openFile)
         self.openFile.triggered.connect(self.openFileClicked)
+
+        self.saveTags = QtGui.QAction("Save Tags",self)
+        self.fileMenu.addAction(self.saveTags)
+        self.saveTags.triggered.connect(self.saveTagsClicked)
+
         self.quitAction = QtGui.QAction("Quit",self)
         self.fileMenu.addAction(self.quitAction)
         self.quitAction.triggered.connect(QtGui.QApplication.instance().quit)
@@ -229,21 +234,28 @@ class Viewer(QtGui.QMainWindow):
         self.viewActions = {"File Tree" : QtGui.QAction("File Tree",self),
                             "View 1D" : QtGui.QAction("View 1D",self),
                             "View 2D" : QtGui.QAction("View 2D",self),
-                            "Display Properties" : QtGui.QAction("Display Properties",self)}
+                            "Display Properties" : QtGui.QAction("Display Properties",self),
+                            "Tags" : QtGui.QAction("Tags",self)
+                        }
 
         viewShortcuts = {"File Tree" : "Ctrl+T",
                          "View 1D" : "Ctrl+1",
                          "View 2D" : "Ctrl+2",
-                         "Display Properties" : "Ctrl+D"}
+                         "Display Properties" : "Ctrl+D",
+                         "Tags" : "Ctrl+G"
+                     }
 
-        viewNames = ["File Tree", "Display Properties","View 1D","View 2D"]
+        viewNames = ["File Tree", "Display Properties","View 1D","View 2D","Tags"]
       
         actions = {}
         for viewName in viewNames:
             actions[viewName] = self.viewActions[viewName]
             actions[viewName].setCheckable(True)
             actions[viewName].setShortcut(QtGui.QKeySequence(viewShortcuts[viewName]))
-            actions[viewName].triggered.connect(self.viewClicked)
+            if(viewName == "Tags"):
+                actions[viewName].triggered.connect(self.view.view2D.toggleTagView)
+            else:
+                actions[viewName].triggered.connect(self.viewClicked)
             if viewName in ["View 1D"]:
                 actions[viewName].setChecked(False)
             else:
@@ -369,6 +381,8 @@ class Viewer(QtGui.QMainWindow):
         fileName = QtGui.QFileDialog.getOpenFileName(self,"Open CXI File", None, "CXI Files (*.cxi)");
         if(fileName[0]):
             self.openCXIFile(fileName[0])
+    def saveTagsClicked(self):
+        self.fileLoader.saveTags()
     def setStyleSheetFromFilename(self,fn="stylesheets/default.stylesheet"):
         styleFile=os.path.join(os.path.split(__file__)[0],fn)
         with open(styleFile,"r") as fh:
@@ -387,7 +401,8 @@ class Viewer(QtGui.QMainWindow):
         viewBoxes = {"File Tree" : [self.CXINavigation],
                      "Display Properties" : [self.dataProp],
                      "View 1D" : [self.view.view1D,self.dataProp.plotBox],
-                     "View 2D" : [self.view.view2DScrollWidget,self.dataProp.imageBox,self.dataProp.displayBox,self.dataProp.imageStackBox, self.dataProp.generalBox, self.dataProp.pixelBox]}
+                     "View 2D" : [self.view.view2DScrollWidget,self.dataProp.imageBox,self.dataProp.displayBox,self.dataProp.imageStackBox, self.dataProp.generalBox, self.dataProp.pixelBox]
+                 }
         boxes = viewBoxes[viewName]
         if(checked):
             self.statusBar.showMessage("Showing %s" % viewName,1000)
@@ -457,6 +472,17 @@ class Viewer(QtGui.QMainWindow):
                 string =  QtGui.QKeySequence.fromString(diag.shortcutsTable.item(r,0).text(),QtGui.QKeySequence.NativeText).toString()
                 shortcuts[name] = string
             settings.setValue("Shortcuts",shortcuts)
+
+            self.editMenu.moveSelectionDown.setShortcut(QtGui.QKeySequence.fromString(shortcuts['Move Selection Down']))
+            self.editMenu.moveSelectionUp.setShortcut(QtGui.QKeySequence.fromString(shortcuts['Move Selection Up']))
+            self.editMenu.moveSelectionLeft.setShortcut(QtGui.QKeySequence.fromString(shortcuts['Move Selection Left']))
+            self.editMenu.moveSelectionRight.setShortcut(QtGui.QKeySequence.fromString(shortcuts['Move Selection Right']))
+            
+            self.editMenu.toggleTag[0].setShortcut(QtGui.QKeySequence.fromString(shortcuts['Toggle 1st Tag']))
+            self.editMenu.toggleTag[1].setShortcut(QtGui.QKeySequence.fromString(shortcuts['Toggle 2nd Tag']))
+            self.editMenu.toggleTag[2].setShortcut(QtGui.QKeySequence.fromString(shortcuts['Toggle 3rd Tag']))
+            for i in range(3,6):
+                self.editMenu.toggleTag[i].setShortcut(QtGui.QKeySequence.fromString(shortcuts['Toggle '+str(i+1)+'th Tag']))
 
     def handleNeedDataImage(self,dataName=None):
         if dataName == "" or dataName == None:
@@ -701,6 +727,8 @@ class TagsDialog(QtGui.QDialog, tagsDialog.Ui_TagsDialog):
         self.colorIndex = 0
 
         for i in range(0,len(tags)):
+            print tags[i][3]
+                         
             self.addTag(tags[i][0],tags[i][1],tags[i][2],tags[i][3])
 
 #        self.tagsTable.setStyleSheet("selection-background-color: white; selection-color: black;")

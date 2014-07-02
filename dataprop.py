@@ -519,7 +519,7 @@ class DataProp(QtGui.QWidget):
             # Check if we clicked on a tag
             if(info["tagClicked"] != -1):
                 # Toggle tag
-                self.data.tagMembers[info["tagClicked"],info["img"]] = (self.data.tagMembers[info["tagClicked"],info["img"]]+1)%2
+                self.data.setTag(info["img"],info["tagClicked"],(self.data.tagMembers[info["tagClicked"],info["img"]]+1)%2)
             
             self.showTags(self.data)
             

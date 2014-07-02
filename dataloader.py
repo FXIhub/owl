@@ -301,6 +301,12 @@ class DataItem:
             self.tagMembers[tag,img] = 1
         else:
             self.tagMembers[tag,img] = 0
+        self.fileLoader.parent.statusBar.showMessage('Tag '+self.tags[tag][0]+' set to '+str(bool(value)))
+        self.updateTagSum()
+    def updateTagSum(self):
+        for i in range(0,len(self.tags)):
+            self.tags[i][3] = self.tagMembers[i,:].sum()
+    
 
 
 class ImageLoader(QtCore.QObject):
