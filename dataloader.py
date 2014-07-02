@@ -313,6 +313,11 @@ class DataItem:
             self.tagMembers[tag,img] = 1
         else:
             self.tagMembers[tag,img] = 0
+        self.updateTagSum()
+    def updateTagSum(self):
+        for i in range(0,len(self.tags)):
+            self.tags[i][3] = self.tagMembers[i,:].sum()
+    
 
 
 class ImageLoader(QtCore.QObject):
