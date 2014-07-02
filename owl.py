@@ -727,8 +727,6 @@ class TagsDialog(QtGui.QDialog, tagsDialog.Ui_TagsDialog):
         self.colorIndex = 0
 
         for i in range(0,len(tags)):
-            print tags[i][3]
-                         
             self.addTag(tags[i][0],tags[i][1],tags[i][2],tags[i][3])
 
 #        self.tagsTable.setStyleSheet("selection-background-color: white; selection-color: black;")
