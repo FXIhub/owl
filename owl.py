@@ -149,6 +149,11 @@ class Viewer(QtGui.QMainWindow):
         self.openFile = QtGui.QAction("Open",self)
         self.fileMenu.addAction(self.openFile)
         self.openFile.triggered.connect(self.openFileClicked)
+
+        self.saveTags = QtGui.QAction("Save Tags",self)
+        self.fileMenu.addAction(self.saveTags)
+        self.saveTags.triggered.connect(self.saveTagsClicked)
+
         self.quitAction = QtGui.QAction("Quit",self)
         self.fileMenu.addAction(self.quitAction)
         self.quitAction.triggered.connect(QtGui.QApplication.instance().quit)
@@ -376,6 +381,8 @@ class Viewer(QtGui.QMainWindow):
         fileName = QtGui.QFileDialog.getOpenFileName(self,"Open CXI File", None, "CXI Files (*.cxi)");
         if(fileName[0]):
             self.openCXIFile(fileName[0])
+    def saveTagsClicked(self):
+        self.fileLoader.saveTags()
     def setStyleSheetFromFilename(self,fn="stylesheets/default.stylesheet"):
         styleFile=os.path.join(os.path.split(__file__)[0],fn)
         with open(styleFile,"r") as fh:
