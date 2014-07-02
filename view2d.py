@@ -85,6 +85,7 @@ class View2D(View,QtOpenGL.QGLWidget):
         self.MarkOutputPath = settings.value("MarkOutputPath")
 	#print self.PNGOutputPath
         self.setFocusPolicy(QtCore.Qt.StrongFocus)
+        self.tagView = True
     def setData(self,dataItem=None):
         if self.data != None:
             self.data.deselectStack()
@@ -489,14 +490,14 @@ class View2D(View,QtOpenGL.QGLWidget):
             glPopMatrix()
         elif(img == self.selectedImage):
             self.paintSelectedImageBorder(img_width,img_height)
-        if(self.data and self.data.tags and self.data.tags != []):
+        if(self.data and self.tagView and self.data.tags and self.data.tags != []):
             tag_size = self.tagSize()
             tag_pad = self.tagPad()
             tag_distance = self.tagDistance()
             for i in range(0,len(self.data.tags)):
                 glPushMatrix()
                 color = self.data.tags[i][1]
-                glColor4f(color.redF(),color.greenF(),color.blueF(),0.5);
+                glColor3f(color.redF(),color.greenF(),color.blueF());
                 glLineWidth(0.5/self.zoom)
                 if(self.data.tagMembers[i][img]):
                     glBegin (GL_QUADS);
@@ -789,10 +790,11 @@ class View2D(View,QtOpenGL.QGLWidget):
         info["imageStd"] = numpy.std(self.loaderThread.imageData[img])
         img_height = self.getImgHeight("scene",False)
         info["tagClicked"] = -1
-        if(ix >= self.tagPad() and ix < self.tagDistance()):
-            if(iy/self.tagDistance() < len(self.data.tags)):
-                if(iy%self.tagDistance() >= self.tagPad()):
-                    info["tagClicked"] = int(iy/self.tagDistance())
+        if(self.tagView):
+            if(ix >= self.tagPad() and ix < self.tagDistance()):
+                if(iy/self.tagDistance() < len(self.data.tags)):
+                    if(iy%self.tagDistance() >= self.tagPad()):
+                        info["tagClicked"] = int(iy/self.tagDistance())
         return info
     def mouseMoveEvent(self, event):
         if(self.dragging):
@@ -1058,3 +1060,5 @@ class View2D(View,QtOpenGL.QGLWidget):
             self.pixelClicked.emit(info)
 
         self.updateGL()
+    def toggleTagView(self):
+        self.tagView = not self.tagView

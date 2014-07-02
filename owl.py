@@ -229,21 +229,28 @@ class Viewer(QtGui.QMainWindow):
         self.viewActions = {"File Tree" : QtGui.QAction("File Tree",self),
                             "View 1D" : QtGui.QAction("View 1D",self),
                             "View 2D" : QtGui.QAction("View 2D",self),
-                            "Display Properties" : QtGui.QAction("Display Properties",self)}
+                            "Display Properties" : QtGui.QAction("Display Properties",self),
+                            "Tags" : QtGui.QAction("Tags",self)
+                        }
 
         viewShortcuts = {"File Tree" : "Ctrl+T",
                          "View 1D" : "Ctrl+1",
                          "View 2D" : "Ctrl+2",
-                         "Display Properties" : "Ctrl+D"}
+                         "Display Properties" : "Ctrl+D",
+                         "Tags" : "Ctrl+G"
+                     }
 
-        viewNames = ["File Tree", "Display Properties","View 1D","View 2D"]
+        viewNames = ["File Tree", "Display Properties","View 1D","View 2D","Tags"]
       
         actions = {}
         for viewName in viewNames:
             actions[viewName] = self.viewActions[viewName]
             actions[viewName].setCheckable(True)
             actions[viewName].setShortcut(QtGui.QKeySequence(viewShortcuts[viewName]))
-            actions[viewName].triggered.connect(self.viewClicked)
+            if(viewName == "Tags"):
+                actions[viewName].triggered.connect(self.view.view2D.toggleTagView)
+            else:
+                actions[viewName].triggered.connect(self.viewClicked)
             if viewName in ["View 1D"]:
                 actions[viewName].setChecked(False)
             else:
@@ -387,7 +394,8 @@ class Viewer(QtGui.QMainWindow):
         viewBoxes = {"File Tree" : [self.CXINavigation],
                      "Display Properties" : [self.dataProp],
                      "View 1D" : [self.view.view1D,self.dataProp.plotBox],
-                     "View 2D" : [self.view.view2DScrollWidget,self.dataProp.imageBox,self.dataProp.displayBox,self.dataProp.imageStackBox, self.dataProp.generalBox, self.dataProp.pixelBox]}
+                     "View 2D" : [self.view.view2DScrollWidget,self.dataProp.imageBox,self.dataProp.displayBox,self.dataProp.imageStackBox, self.dataProp.generalBox, self.dataProp.pixelBox]
+                 }
         boxes = viewBoxes[viewName]
         if(checked):
             self.statusBar.showMessage("Showing %s" % viewName,1000)
