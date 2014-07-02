@@ -136,9 +136,6 @@ class DataItem:
         if self.isStack and self.format == 2:
             img = kwargs.get("img",None)
             filterMask = kwargs.get("filterMask",None)
-            N = kwargs.get("N",None)
-            integrationMode = kwargs.get("integrationMode",None)
-            pickMode = kwargs.get("pickMode","random")
             if img != None:
                 d = numpy.array(self.fileLoader.f[self.fullName][img])
             elif N != None:
@@ -172,15 +169,6 @@ class DataItem:
                 else:
                     d = numpy.array(self.fileLoader.f[self.fullName]).flatten()
 
-            if integrationMode != None:
-                if integrationMode == "mean":
-                    d = numpy.mean(d,0)
-                elif integrationMode == "std":
-                    d = numpy.std(d,0)
-                elif integrationMode == "min":
-                    d = numpy.min(d,0)
-                elif integrationMode == "max":
-                    d = numpy.max(d,0)
         elif self.isStack and self.format == 1:
             if self.fileLoader.stackSize == None:
                 d = numpy.array(self.fileLoader.f[self.fullName])[:,:]
