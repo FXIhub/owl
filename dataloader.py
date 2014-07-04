@@ -187,52 +187,23 @@ class DataItem:
             return None
         if self.isStack and self.format == 2:
             img = kwargs.get("img",None)
-            filterMask = kwargs.get("filterMask",None)
-            if img != None:
-                d = numpy.array(self.fileLoader.f[self.fullName][img])
-            elif N != None:
-                if self.isSelectedStack and self.fileLoader.stackSize != None:
-                    if self.fileloader.stackSize == None:
-                        d = self.fileLoader.f[self.fullName]
-                    else:
-                        d = self.fileLoader.f[self.fullName][:self.fileLoader.stackSize]
-                else:
-                    d = self.fileLoader.f[self.fullName]
-                if filterMask != None:
-                    d = d[filterMask]
-                if pickMode == None or N >= d.shape[0]:
-                    d = numpy.array(d[:N])
-                elif pickMode == "random":
-                    iz = numpy.random.randint(0,d.shape[0],N)
-                    iz.sort()
-                    temp = numpy.zeros(shape=(N,d.shape[1],d.shape[2]))
-                    # for some reason the following line causes hdf5 errors if the dataset is getting very large
-                    #d[:] = d[iz,:,:]
-                    for i in range(self.imageStackN):
-                        temp[i,:,:] = d[iz[i]]
-                    d = temp
-            else:
-                s = numpy.array(list(self.shape(True)))
-                k = 1
-                for si in s: k *= si
-                if k > 100000000:
-                    self.logger.warning("You do not really want to load a dataset of the length of %i into memory." % k)
-                    d = numpy.zeros(1)
-                else:
-                    d = numpy.array(self.fileLoader.f[self.fullName]).flatten()
+            d = numpy.array(self.fileLoader.f[self.fullName][img])
 
         elif self.isStack and self.format == 1:
             if self.fileLoader.stackSize == None:
                 d = numpy.array(self.fileLoader.f[self.fullName])[:,:]
             else:
                 d = numpy.array(self.fileLoader.f[self.fullName])[:self.fileLoader.stackSize,:]
+
         elif self.isStack and self.format == 0:
             if self.fileLoader.stackSize == None:
                 d = numpy.array(self.fileLoader.f[self.fullName])
             else:
                 d = numpy.array(self.fileLoader.f[self.fullName])[:self.fileLoader.stackSize]
+
         else:
             d = numpy.array(self.fileLoader.f[self.fullName])
+
         ix = kwargs.get("ix",None)
         iy = kwargs.get("iy",None)
         if ix != None and iy != None:
@@ -240,6 +211,7 @@ class DataItem:
                 d = d[:,iy,ix]
             else:
                 d = d[iy,ix]
+
         windowSize = kwargs.get("windowSize",None)
         if windowSize != None:
             # Running average by convolution with an exponentially decaying weight kernel in respect to time.
@@ -251,6 +223,7 @@ class DataItem:
             w = tmp/tmp.sum()
             N = len(d)
             d = numpy.convolve(d, w, 'full')[:N]
+
         if self.isComplex:
             if complex_mode == "phase":
                 d = numpy.angle(d)
@@ -259,8 +232,9 @@ class DataItem:
             elif complex_mode == "imag":
                 d = d.imag
             else:
-                # default is the absolute value
+                # default is the absolute value / amplitude
                 d = abs(d)
+
         return d
     def data1D(self,**kwargs):
         if len(self.shape()) == 2:
