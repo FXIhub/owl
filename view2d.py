@@ -86,6 +86,7 @@ class View2D(View,QtOpenGL.QGLWidget):
 	#print self.PNGOutputPath
         self.setFocusPolicy(QtCore.Qt.StrongFocus)
         self.tagView = True
+        self.modelView = False
     def setData(self,dataItem=None):
         if self.data != None:
             self.data.deselectStack()
@@ -178,13 +179,28 @@ class View2D(View,QtOpenGL.QGLWidget):
             uniform int do_clamp;
             uniform sampler2D mask;
             uniform float maskedBits;
+            uniform float modelCenterX;
+            uniform float modelCenterY;
+            uniform float modelSize;
+            uniform float modelScale;
+            uniform int showModel;
             void main()
             {
                 vec2 uv = gl_TexCoord[0].xy;
                 vec4 color = texture2D(data, uv);
                 vec4 mcolor = texture2D(mask, uv);
                 float scale = (vmax-vmin);
-                float offset = vmin;
+                float offset = vmin;               
+
+        
+                // Apply Model
+                if(showModel == 1 && uv[0] > 0.5){
+                        //float s = modelSize*sqrt((uv[0]-modelCenterX)*(uv[0]-modelCenterX)+(uv[1]-modelCenterX)*(uv[1]-modelCenterX));
+                        float s = modelSize*sqrt((uv[0]-modelCenterX)*(uv[0]-modelCenterX)+(uv[1]-modelCenterY)*(uv[1]-modelCenterY));
+                        color.a = (sin(s)-s*cos(s))/(3.0*s*s*s);
+                        color.a *= color.a * modelScale;
+        
+                }else{
 
                 // Apply Mask
 
@@ -201,6 +217,7 @@ class View2D(View,QtOpenGL.QGLWidget):
                         }
                         bit = bit*2.0;
                     }
+                }
                 }
 
                 
@@ -254,6 +271,13 @@ class View2D(View,QtOpenGL.QGLWidget):
         self.normLoc = glGetUniformLocation(self.shader, "norm")
         self.clampLoc = glGetUniformLocation(self.shader, "do_clamp")
         self.maskedBitsLoc = glGetUniformLocation(self.shader, "maskedBits")
+        self.modelCenterXLoc = glGetUniformLocation(self.shader, "modelCenterX")
+        self.modelCenterYLoc = glGetUniformLocation(self.shader, "modelCenterY")
+        self.modelSizeLoc = glGetUniformLocation(self.shader, "modelSize")
+        self.modelScaleLoc = glGetUniformLocation(self.shader, "modelScale")
+        self.showModelLoc = glGetUniformLocation(self.shader, "showModel")
+
+        
 
     def initColormapTextures(self):
         n = 1024
@@ -463,6 +487,15 @@ class View2D(View,QtOpenGL.QGLWidget):
         glUniform1i(self.clampLoc,self.normClamp)
         glUniform1f(self.maskedBitsLoc,self.maskOutBits)
 
+
+        # Model related variables
+        glUniform1i(self.showModelLoc,self.modelView)
+        glUniform1f(self.modelCenterXLoc,float(self.viewer.dataProp.modelProperties.centerX.text()))
+        glUniform1f(self.modelCenterYLoc,float(self.viewer.dataProp.modelProperties.centerY.text()))
+        glUniform1f(self.modelSizeLoc,float(self.viewer.dataProp.modelProperties.radius.text()))
+        glUniform1f(self.modelScaleLoc,float(self.viewer.dataProp.modelProperties.scaling.text()))
+
+
         glBegin (GL_QUADS);
         glTexCoord2f (0.0, 0.0);
         glVertex3f (0, img_height, 0.0);
@@ -510,6 +543,19 @@ class View2D(View,QtOpenGL.QGLWidget):
                 glEnd ();
                 glPopMatrix()
 
+        # if(self.modelView)g:
+        #     glPushMatrix()
+        #     glColor3f(1,1,1)
+        #     glLineWidth(0.5/self.zoom)
+        #     glBegin (GL_QUADS);
+        #     glVertex3f (img_width/2.0, img_height, 0.0);
+        #     glVertex3f (img_width, img_height, 0.0);
+        #     glVertex3f (img_width, 0, 0.0);
+        #     glVertex3f (img_width/2.0, 0, 0.0);
+        #     glEnd ();
+        #     glPopMatrix()
+
+            
         glPopMatrix()
     def paintGL(self):
         '''
@@ -1062,4 +1108,8 @@ class View2D(View,QtOpenGL.QGLWidget):
         self.updateGL()
     def toggleTagView(self):
         self.tagView = not self.tagView
+        self.updateGL()
+    def toggleModelView(self):
+        self.modelView = not self.modelView
+        self.viewer.dataProp.modelProperties.setVisible(not self.viewer.dataProp.modelProperties.isVisible())
         self.updateGL()
