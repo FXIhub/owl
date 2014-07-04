@@ -638,6 +638,7 @@ class DataProp(QtGui.QWidget):
             filterWidget = FilterWidget(self,data)
             filterWidget.dataItem.selectStack()
             filterWidget.limitsChanged.connect(self.emitView2DProp)
+            filterWidget.selectedIndexChanged.connect(self.emitView2DProp)
             self.filterBox.vbox.addWidget(filterWidget)
             self.activeFilters.append(filterWidget)
         else:
@@ -684,43 +685,6 @@ class DataProp(QtGui.QWidget):
         self.filterBox.setTitle("Filters (yield: %.2f%% - %i/%i)" % (p,Nsel,Ntot))
     def refreshFilter(self,data,index):
         self.activeFilters[index].refreshData(data)
-    # pixel stack histogram
-    #def setPixelStack(self):
-    #    P = self.view2DProp
-    #    x = self.pixelStackXEdit.text()
-    #    y = self.pixelStackYEdit.text()
-    #    if x == "" or y == "":
-    #        P["pixelStackX"] = None
-    #        P["pixelStackY"] = None
-    #    else:
-    #        P["pixelStackX"] = int(x)
-    #        P["pixekStackY"] = int(y)
-    #def setImageStackN(self):
-    #    P = self.view2DProp
-    #    if self.imageStackNEdit.text() == "":
-    #        P["N"] = None
-    #    else:
-    #        P["N"] = int(self.imageStackNEdit.text())
-    #def clearPixelStack(self):
-    #    self.pixelStackXEdit.setText("")
-    #    self.pixelStackYEdit.setText("")
-    #    self.pixelStackNEdit.setText("")
-    #def onPixelStackPickButton(self):
-    #    self.pixelStackPick = True
-    #def setPixelStack(self):
-    #    P = self.view1DProp
-    #    if self.pixelStackXEdit.text() == "":
-    #        P["ix"] = None
-    #    else:
-    #        P["ix"] = int(self.pixelStackXEdit.text())
-    #    if self.pixelStackYEdit.text() == "":
-    #        P["iy"] = None
-    #    else:
-    #        P["iy"] = int(self.pixelStackYEdit.text())
-    #    if self.pixelStackNEdit.text() == "":
-    #        P["N"] = None
-    #    else:
-    #        P["N"] = int(self.pixelStackNEdit.text())
     def setPlotStyle(self):
         P = self.view1DProp
         P["lines"] = self.plotLinesCheckBox.isChecked()
@@ -839,6 +803,7 @@ def paintColormapIcons(W,H):
 
 class FilterWidget(QtGui.QWidget):
     limitsChanged = QtCore.Signal(float,float)
+    selectedIndexChanged = QtCore.Signal(int)
     def __init__(self,parent,dataItem):
         QtGui.QWidget.__init__(self,parent)
         vbox = QtGui.QVBoxLayout()
@@ -847,53 +812,119 @@ class FilterWidget(QtGui.QWidget):
         data = dataItem.data()
         vmin = numpy.min(data)
         vmax = numpy.max(data)
-        histogram = pyqtgraph.PlotWidget(self)
-        histogram.hideAxis('left')
-        histogram.hideAxis('bottom')
-        histogram.setFixedHeight(50)
+        self.histogram = pyqtgraph.PlotWidget(self)
+        self.histogram.hideAxis('left')
+        self.histogram.hideAxis('bottom')
+        self.histogram.setFixedHeight(50)
         # Make the histogram fit the available width
-        histogram.setSizePolicy(QtGui.QSizePolicy.Ignored,QtGui.QSizePolicy.Preferred)
+        self.histogram.setSizePolicy(QtGui.QSizePolicy.Ignored,QtGui.QSizePolicy.Preferred)
         region = pyqtgraph.LinearRegionItem(values=[vmin,vmax],brush="#ffffff15")
         region.sigRegionChangeFinished.connect(self.syncLimits)
-        histogram.addItem(region)
-        histogram.autoRange()
-        vbox.addWidget(histogram)
+        self.histogram.addItem(region)
+        self.histogram.autoRange()
+        vbox.addWidget(self.histogram)
         vbox.addWidget(nameLabel)
         vbox.addWidget(yieldLabel)
+
+        # for non-boolean filters
         hbox = QtGui.QHBoxLayout()
-        hbox.addWidget(QtGui.QLabel("Min.:"))
-        hbox.addWidget(QtGui.QLabel("Max.:"))
+        self.vminLabel = QtGui.QLabel("Min.:")
+        hbox.addWidget(self.vminLabel)
+        self.vmaxLabel = QtGui.QLabel("Max.:")
+        hbox.addWidget(self.vmaxLabel)
         vbox.addLayout(hbox)
         hbox = QtGui.QHBoxLayout()
         validator = QtGui.QDoubleValidator()
         validator.setDecimals(3)
         validator.setNotation(QtGui.QDoubleValidator.ScientificNotation)
-        vminLineEdit = QtGui.QLineEdit(self)
-        vminLineEdit.setText("%.7e" % (vmin*0.999))
-        vminLineEdit.setValidator(validator)
-        hbox.addWidget(vminLineEdit)
-        vmaxLineEdit = QtGui.QLineEdit(self)
-        vmaxLineEdit.setText("%.7e" % (vmax*1.001))
-        vmaxLineEdit.setValidator(validator)
-        hbox.addWidget(vmaxLineEdit)
+        self.vminLineEdit = QtGui.QLineEdit(self)
+        self.vminLineEdit.setText("%.7e" % (vmin*0.999))
+        self.vminLineEdit.setValidator(validator)
+        hbox.addWidget(self.vminLineEdit)
+        self.vmaxLineEdit = QtGui.QLineEdit(self)
+        self.vmaxLineEdit.setText("%.7e" % (vmax*1.001))
+        self.vmaxLineEdit.setValidator(validator)
+        hbox.addWidget(self.vmaxLineEdit)
         vbox.addLayout(hbox)
+
+        # for boolean filters
+        hbox = QtGui.QHBoxLayout()
+        self.invertLabel = QtGui.QLabel("Invert")
+        hbox.addWidget(self.invertLabel)
+        self.invertCheckBox = QtGui.QCheckBox("",parent=self)
+        hbox.addWidget(self.invertCheckBox)
+        hbox.addStretch()
+        vbox.addLayout(hbox)
+
+        self.setNonBooleanFilter()
+
+        # for 2-dimensional datasets
+        hbox = QtGui.QHBoxLayout()
+        self.indexLabel = QtGui.QLabel("Index:")
+        hbox.addWidget(self.indexLabel)
+        self.indexCombo = QtGui.QComboBox()
+        hbox.addWidget(self.indexCombo)
+        vbox.addLayout(hbox)
+
+        self.set1DimensionalDataset()
+
         self.setLayout(vbox)
-        self.histogram = histogram
         self.histogram.region = region
         self.histogram.itemPlot = None
         self.nameLabel = nameLabel
         self.yieldLabel = yieldLabel
-        self.vminLineEdit = vminLineEdit
-        self.vmaxLineEdit = vmaxLineEdit
         self.vbox = vbox
         self.refreshData(dataItem)
-        vminLineEdit.editingFinished.connect(self.emitLimitsChanged)
-        vmaxLineEdit.editingFinished.connect(self.emitLimitsChanged)
+        self.vminLineEdit.editingFinished.connect(self.emitLimitsChanged)
+        self.vmaxLineEdit.editingFinished.connect(self.emitLimitsChanged)
+        self.indexCombo.currentIndexChanged.connect(self.emitSelectedIndexChanged)
+        self.invertCheckBox.toggled.connect(self.syncLimits)
+    def setBooleanFilter(self):
+        self.histogram.hide()
+        self.vminLabel.hide()
+        self.vmaxLabel.hide()
+        self.vminLineEdit.hide()
+        self.vmaxLineEdit.hide()
+        self.invertLabel.show()
+        self.invertCheckBox.show()
+        self.isBooleanFilter = True
+    def setNonBooleanFilter(self):
+        self.histogram.show()
+        self.vminLabel.show()
+        self.vmaxLabel.show()
+        self.vminLineEdit.show()
+        self.vmaxLineEdit.show()
+        self.invertLabel.hide()
+        self.invertCheckBox.hide()
+        self.isBooleanFilter = False
+    def set1DimensionalDataset(self):
+        self.indexLabel.hide()
+        self.indexCombo.hide()
+        self.numberOfDimensionsDataset = 1
+    def set2DimensionalDataset(self):
+        self.indexLabel.show()
+        self.indexCombo.show()
+        self.indexCombo.setCurrentIndex(self.dataItem.selectedIndex)
+        self.numberOfDimensionsDataset = 2
+    def populateIndexCombo(self):
+        if not self.isTags:
+            nDims = self.dataItem.shape()[1]
+        else:
+            nDims = len(self.dataItem.attr("headings"))
+        labels = []
+        for i in range(nDims):
+            labels.append("%i" % i)
+        if self.isTags:
+            for i,tag in zip(range(nDims),self.dataItem.tags):
+                title = tag[0]
+                labels[i] += " " + title
+        self.indexCombo.addItems(labels)
     def refreshData(self,dataItem):
         self.nameLabel.setText(dataItem.fullName)
         self.dataItem = dataItem
-        self.data = dataItem.data()
-        Ntot = self.data.shape[0]
+        self.data = dataItem.data1D()
+        self.isTags = (self.dataItem.fullName[self.dataItem.fullName.rindex("/")+1:] == "tags")
+        Ntot = self.dataItem.fileLoader.stackSize
         vmin = numpy.min(self.data)
         vmax = numpy.max(self.data)
         yieldLabelString = "Yield: %.2f%% - %i/%i" % (100.,Ntot,Ntot)
@@ -908,8 +939,26 @@ class FilterWidget(QtGui.QWidget):
         self.histogram.itemPlot = item
         self.histogram.region.setRegion([vmin,vmax])
         self.histogram.autoRange()
+        if self.dataItem.selectedIndex == None:
+            self.set1DimensionalDataset()
+        else:
+            self.populateIndexCombo()
+            self.set2DimensionalDataset()
+        if self.isTags:
+            self.setBooleanFilter()
+        else:
+            self.setNonBooleanFilter()
+        self.syncLimits()
     def syncLimits(self):
-        (vmin,vmax) = self.histogram.region.getRegion()
+        if self.isBooleanFilter:
+            if self.invertCheckBox.isChecked():
+                vmin = -0.5
+                vmax = 0.5
+            else:
+                vmin = 0.5
+                vmax = 1.5
+        else:
+            (vmin,vmax) = self.histogram.region.getRegion()
         self.vminLineEdit.setText("%.3e" % (vmin*0.999))
         self.vmaxLineEdit.setText("%.3e" % (vmax*1.001))
         self.emitLimitsChanged()
@@ -921,6 +970,12 @@ class FilterWidget(QtGui.QWidget):
         label = "Yield: %.2f%% - %i/%i" % (100*Nsel/(1.*Ntot),Nsel,Ntot)
         self.yieldLabel.setText(label)
         self.limitsChanged.emit(vmin,vmax)
+
+    def emitSelectedIndexChanged(self):
+        i = self.indexCombo.currentIndex()
+        self.dataItem.selectedIndex = i
+        self.selectedIndexChanged.emit(i)
+        self.refreshData(self.dataItem)
 
 
 class ModelProperties(QtGui.QGroupBox, modelProperties.Ui_ModelProperties):

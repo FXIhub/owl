@@ -25,7 +25,7 @@ import gc
 import time
 import tagsDialog
 import preferencesDialog
-
+import selectIndexDialog
 
 """
 Wishes:
@@ -546,19 +546,35 @@ class Viewer(QtGui.QMainWindow):
         self.view.view2D.updateGL()
     def handleNeedDataFilter(self,dataName):
         senderBox = self.sender().dataBox
+        # add or replace first filter
         if self.CXINavigation.dataBoxes["filter0"] == senderBox:
             dataItem = self.CXINavigation.CXITree.fileLoader.dataItems[dataName]
             if not dataItem.isPresentable:
                 self.statusBar.showMessage("Data not presentable.")
                 return
-            if dataItem.format == 0:
-                targetBox = self.CXINavigation.addFilterBox()
-                self.dataProp.addFilter(dataItem)
-                self.dataProp.view2DPropChanged.emit(self.dataProp.view2DProp)
-                targetBox.button.setName(dataName)
-                targetBox.button.needData.connect(self.handleNeedDataFilter)
+            if not dataItem.isStack:
+                self.statusBar.showMessage("Data item is not a stack and therefore it can not be used as a filter.")
             else:
-                self.statusBar.showMessage("Data item has incorrect format for becoming a filter.")
+                nDims = len(dataItem.shape())
+                if (nDims == 1) or (nDims == 2):
+                    if nDims == 1:
+                        targetBox = self.CXINavigation.addFilterBox()
+                        self.dataProp.addFilter(dataItem)
+                        self.dataProp.view2DPropChanged.emit(self.dataProp.view2DProp)
+                        targetBox.button.setName(dataName)
+                        targetBox.button.needData.connect(self.handleNeedDataFilter)
+                    else:
+                        selIndDialog = SelectIndexDialog(self,dataItem)
+                        if(selIndDialog.exec_() == QtGui.QDialog.Accepted):
+                            while dataItem.selectedIndex == None: time.sleep(0.1)
+                            targetBox = self.CXINavigation.addFilterBox()
+                            self.dataProp.addFilter(dataItem)
+                            self.dataProp.view2DPropChanged.emit(self.dataProp.view2DProp)
+                            targetBox.button.setName(dataName)
+                            targetBox.button.needData.connect(self.handleNeedDataFilter)
+                else:
+                    self.statusBar.showMessage("Data item has incorrect format for becoming a filter.")
+        # add, replace or remove secondary filter
         else:
             i = self.CXINavigation.dataBoxes["filters"].index(senderBox)
             if dataName == "" or dataName == None:
@@ -818,7 +834,35 @@ class TagsDialog(QtGui.QDialog, tagsDialog.Ui_TagsDialog):
 
     def deleteTag(self):
         self.tagsTable.removeColumn(self.tagsTable.currentColumn())
-        
+
+class SelectIndexDialog(QtGui.QDialog, selectIndexDialog.Ui_SelectIndexDialog):
+    def __init__(self,parent,dataItem):
+        QtGui.QDialog.__init__(self,parent,QtCore.Qt.WindowTitleHint)
+        self.setupUi(self)
+        self.dataItem = dataItem
+        self.populateComboBox()
+        self.buttonBox.accepted.connect(self.onOkButtonClicked)
+        #self.connect(buttonBox, SIGNAL("rejected()"), self.reject)
+
+    def populateComboBox(self):
+        isTags = (self.dataItem.fullName[self.dataItem.fullName.rindex("/")+1:] == "tags")
+        if not isTags:
+            nDims = self.dataItem.shape()[1]
+        else:
+            nDims = len(self.dataItem.attr("headings"))
+        self.labels = []
+        for i in range(nDims):
+            self.labels.append("%i" % i)
+        if isTags:
+            for i,tag in zip(range(nDims),self.dataItem.tags):
+                title = tag[0]
+                self.labels[i] += " " + title
+        self.comboBox.addItems(self.labels)
+
+    def onOkButtonClicked(self):
+        self.dataItem.selectedIndex = self.comboBox.currentIndex()
+        self.accept()
+                
 
 class PreferencesDialog(QtGui.QDialog, preferencesDialog.Ui_PreferencesDialog):
     def __init__(self,parent):
