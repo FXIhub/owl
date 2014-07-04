@@ -636,31 +636,37 @@ class View2D(View,QtOpenGL.QGLWidget):
             return
 
         # If we already have the texture we just return
-        if(img in self.imageTextures):
-            return
-        self.logger.debug("Generating texture %d"  % (img))
-        imageData = self.loaderThread.imageData[img]
-        maskData = self.loaderThread.maskData[img]
-        texture = glGenTextures(1)
-        glBindTexture(GL_TEXTURE_2D, texture)
-        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
-        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
-        glPixelStorei(GL_UNPACK_ALIGNMENT, 1)
-        glTexImage2D(GL_TEXTURE_2D, 0, OpenGL.GL.ARB.texture_float.GL_ALPHA32F_ARB, imageData.shape[1], imageData.shape[0], 0, GL_ALPHA, GL_FLOAT, imageData);
-        self.imageTextures[img] = texture
-
-        if(maskData is not None):
+        if not (img in self.imageTextures):
+            self.logger.debug("Generating image texture %d"  % (img))
+            imageData = self.loaderThread.imageData[img]
+            maskData = self.loaderThread.maskData[img]
             texture = glGenTextures(1)
             glBindTexture(GL_TEXTURE_2D, texture)
             glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
             glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
             glPixelStorei(GL_UNPACK_ALIGNMENT, 1)
-            glTexImage2D(GL_TEXTURE_2D, 0, OpenGL.GL.ARB.texture_float.GL_ALPHA32F_ARB, imageData.shape[1], imageData.shape[0], 0, GL_ALPHA, GL_FLOAT, maskData);
-            self.maskTextures[img] = texture
-        self.remainSet = set.difference(self.remainSet, [img])
-        if len(self.remainSet) == 0:
-            self.updateGL()
+            glTexImage2D(GL_TEXTURE_2D, 0, OpenGL.GL.ARB.texture_float.GL_ALPHA32F_ARB, imageData.shape[1], imageData.shape[0], 0, GL_ALPHA, GL_FLOAT, imageData);
+            self.imageTextures[img] = texture
+
+            if(maskData is not None):
+                self.logger.debug("Generating mask texture %d"  % (img))
+                texture = glGenTextures(1)
+                glBindTexture(GL_TEXTURE_2D, texture)
+                glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
+                glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
+                glPixelStorei(GL_UNPACK_ALIGNMENT, 1)
+                glTexImage2D(GL_TEXTURE_2D, 0, OpenGL.GL.ARB.texture_float.GL_ALPHA32F_ARB, imageData.shape[1], imageData.shape[0], 0, GL_ALPHA, GL_FLOAT, maskData);
+                self.maskTextures[img] = texture
+
+            self.remainSet = set.difference(self.remainSet, [img])
+            if len(self.remainSet) == 0:
+                self.updateGL()
+
+        if (img in self.activePattersons) and (img not in self.pattersonTextures):
+            self.logger.debug("Generating patterson texture %d"  % (img))
+            pattersonData = self.loaderThread.imageData[img]
             
+
     def updateTextures(self,images):
         for img in images:
             if(img not in set.intersection(set(self.imageTextures.keys()),set(self.loaderThread.loadedImages()))):
