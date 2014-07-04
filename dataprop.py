@@ -679,43 +679,6 @@ class DataProp(QtGui.QWidget):
         self.filterBox.setTitle("Filters (yield: %.2f%% - %i/%i)" % (p,Nsel,Ntot))
     def refreshFilter(self,data,index):
         self.activeFilters[index].refreshData(data)
-    # pixel stack histogram
-    #def setPixelStack(self):
-    #    P = self.view2DProp
-    #    x = self.pixelStackXEdit.text()
-    #    y = self.pixelStackYEdit.text()
-    #    if x == "" or y == "":
-    #        P["pixelStackX"] = None
-    #        P["pixelStackY"] = None
-    #    else:
-    #        P["pixelStackX"] = int(x)
-    #        P["pixekStackY"] = int(y)
-    #def setImageStackN(self):
-    #    P = self.view2DProp
-    #    if self.imageStackNEdit.text() == "":
-    #        P["N"] = None
-    #    else:
-    #        P["N"] = int(self.imageStackNEdit.text())
-    #def clearPixelStack(self):
-    #    self.pixelStackXEdit.setText("")
-    #    self.pixelStackYEdit.setText("")
-    #    self.pixelStackNEdit.setText("")
-    #def onPixelStackPickButton(self):
-    #    self.pixelStackPick = True
-    #def setPixelStack(self):
-    #    P = self.view1DProp
-    #    if self.pixelStackXEdit.text() == "":
-    #        P["ix"] = None
-    #    else:
-    #        P["ix"] = int(self.pixelStackXEdit.text())
-    #    if self.pixelStackYEdit.text() == "":
-    #        P["iy"] = None
-    #    else:
-    #        P["iy"] = int(self.pixelStackYEdit.text())
-    #    if self.pixelStackNEdit.text() == "":
-    #        P["N"] = None
-    #    else:
-    #        P["N"] = int(self.pixelStackNEdit.text())
     def setPlotStyle(self):
         P = self.view1DProp
         P["lines"] = self.plotLinesCheckBox.isChecked()
@@ -843,17 +806,17 @@ class FilterWidget(QtGui.QWidget):
         data = dataItem.data()
         vmin = numpy.min(data)
         vmax = numpy.max(data)
-        histogram = pyqtgraph.PlotWidget(self)
-        histogram.hideAxis('left')
-        histogram.hideAxis('bottom')
-        histogram.setFixedHeight(50)
+        self.histogram = pyqtgraph.PlotWidget(self)
+        self.histogram.hideAxis('left')
+        self.histogram.hideAxis('bottom')
+        self.histogram.setFixedHeight(50)
         # Make the histogram fit the available width
-        histogram.setSizePolicy(QtGui.QSizePolicy.Ignored,QtGui.QSizePolicy.Preferred)
+        self.histogram.setSizePolicy(QtGui.QSizePolicy.Ignored,QtGui.QSizePolicy.Preferred)
         region = pyqtgraph.LinearRegionItem(values=[vmin,vmax],brush="#ffffff15")
         region.sigRegionChangeFinished.connect(self.syncLimits)
-        histogram.addItem(region)
-        histogram.autoRange()
-        vbox.addWidget(histogram)
+        self.histogram.addItem(region)
+        self.histogram.autoRange()
+        vbox.addWidget(self.histogram)
         vbox.addWidget(nameLabel)
         vbox.addWidget(yieldLabel)
 
@@ -900,7 +863,6 @@ class FilterWidget(QtGui.QWidget):
         self.set1DimensionalDataset()
 
         self.setLayout(vbox)
-        self.histogram = histogram
         self.histogram.region = region
         self.histogram.itemPlot = None
         self.nameLabel = nameLabel
@@ -912,6 +874,7 @@ class FilterWidget(QtGui.QWidget):
         self.indexCombo.currentIndexChanged.connect(self.emitSelectedIndexChanged)
         self.invertCheckBox.toggled.connect(self.syncLimits)
     def setBooleanFilter(self):
+        self.histogram.hide()
         self.vminLabel.hide()
         self.vmaxLabel.hide()
         self.vminLineEdit.hide()
@@ -920,6 +883,7 @@ class FilterWidget(QtGui.QWidget):
         self.invertCheckBox.show()
         self.isBooleanFilter = True
     def setNonBooleanFilter(self):
+        self.histogram.show()
         self.vminLabel.show()
         self.vmaxLabel.show()
         self.vminLineEdit.show()
@@ -937,18 +901,23 @@ class FilterWidget(QtGui.QWidget):
         self.indexCombo.setCurrentIndex(self.dataItem.selectedIndex)
         self.numberOfDimensionsDataset = 2
     def populateIndexCombo(self):
-        nDims = self.dataItem.shape()[1]
+        if not self.isTags:
+            nDims = self.dataItem.shape()[1]
+        else:
+            nDims = len(self.dataItem.attr("headings"))
         labels = []
         for i in range(nDims):
             labels.append("%i" % i)
-        for i,tag in zip(range(len(self.dataItem.tags)),self.dataItem.tags):
-            title = tag[0]
-            labels[i] += " " + title
+        if self.isTags:
+            for i,tag in zip(range(nDims),self.dataItem.tags):
+                title = tag[0]
+                labels[i] += " " + title
         self.indexCombo.addItems(labels)
     def refreshData(self,dataItem):
         self.nameLabel.setText(dataItem.fullName)
         self.dataItem = dataItem
         self.data = dataItem.data1D()
+        self.isTags = (self.dataItem.fullName[self.dataItem.fullName.rindex("/")+1:] == "tags")
         Ntot = self.dataItem.fileLoader.stackSize
         vmin = numpy.min(self.data)
         vmax = numpy.max(self.data)
@@ -969,7 +938,7 @@ class FilterWidget(QtGui.QWidget):
         else:
             self.populateIndexCombo()
             self.set2DimensionalDataset()
-        if self.dataItem.fullName[dataItem.fullName.rindex("/")+1:] == "tags":
+        if self.isTags:
             self.setBooleanFilter()
         else:
             self.setNonBooleanFilter()

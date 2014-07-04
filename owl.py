@@ -841,13 +841,18 @@ class SelectIndexDialog(QtGui.QDialog, selectIndexDialog.Ui_SelectIndexDialog):
         #self.connect(buttonBox, SIGNAL("rejected()"), self.reject)
 
     def populateComboBox(self):
-        nDims = self.dataItem.shape()[1]
+        isTags = (self.dataItem.fullName[self.dataItem.fullName.rindex("/")+1:] == "tags")
+        if not isTags:
+            nDims = self.dataItem.shape()[1]
+        else:
+            nDims = len(self.dataItem.attr("headings"))
         self.labels = []
         for i in range(nDims):
             self.labels.append("%i" % i)
-        for i,tag in zip(range(len(self.dataItem.tags)),self.dataItem.tags):
-            title = tag[0]
-            self.labels[i] += " " + title
+        if isTags:
+            for i,tag in zip(range(nDims),self.dataItem.tags):
+                title = tag[0]
+                self.labels[i] += " " + title
         self.comboBox.addItems(self.labels)
 
     def onOkButtonClicked(self):

@@ -174,6 +174,8 @@ class DataItem:
         if self.isStack:
             self.isSelectedStack = True
             self.fileLoader.updateStackSize()
+    def attr(self,name):
+        return self.fileLoader.f[self.fullName].attrs[name]
     def data(self,**kwargs):
         try:
             self.fileLoader.f[self.fullName].refresh()
