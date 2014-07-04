@@ -55,7 +55,10 @@ class FileLoader(QtCore.QObject):
                 #print d.fullName,d.H5Dataset,d.H5Dataset.attrs.get("numEvents")
                 #except:
                 #    self.logger.debug("Failed to refresh dataset. Probably the h5py version that is installed does not support SWMR.")
-                N.append(self.f[n].attrs.get("numEvents", self.f[n].shape)[0])
+                if "numEvents" in self.f[n].attrs.keys():
+                    N.append(self.f[n].attrs.get("numEvents")[0])
+                else:
+                    N.append(self.f[n].shape[d.stackDim])
         if len(N) > 0:
             N = numpy.array(N).min()
         else:
@@ -98,18 +101,20 @@ class DataItem:
         # check whether or not it is a stack
         if len(self.fileLoader.f[self.fullName].attrs.items()) > 0 and "axes" in self.fileLoader.f[self.fullName].attrs.keys():
             self.isStack = True
+            self.stackDim = self.fileLoader.f[self.fullName].attrs.get("axes")[0].split(":").index("experiment_identifier")
         else:
             self.isStack = False
+            self.stackDim = None
         # check whether or not it is text
         self.isText = (str(self.fileLoader.f[self.fullName].dtype.name).find("string") != -1)
         # presentable as values
         self.isPresentable = (self.isText == False)
         # shape?
         self.format = len(self.shape())
-        # complex?
-        self.isComplex = (str(self.fileLoader.f[self.fullName].dtype.name).lower().find("complex") != -1)
         # image stack?
         if self.isStack: self.format -= 1
+        # complex?
+        self.isComplex = (str(self.fileLoader.f[self.fullName].dtype.name).lower().find("complex") != -1)
 
         # Check for tags
         self.tags = []
@@ -119,7 +124,6 @@ class DataItem:
 
         settings = QtCore.QSettings()
         defaultColors = settings.value('TagColors')
-#        print self.fileLoader.f[path].keys()
         if('tags' in self.fileLoader.f[self.path].keys()):
             self.tagMembers = numpy.array(self.fileLoader.f[self.path+'tags'])
             has_headings = False
@@ -143,6 +147,9 @@ class DataItem:
                     color = defaultColors[i]
                 self.tags.append([title,color,QtCore.Qt.Unchecked,self.tagMembers[i,:].sum()])
 
+        # Selected dimension for filetering etc. where stack has to have only one dimension
+        # Set to none by default
+        self.selectedIndex = None
 
     def shape(self,forceRefresh=False):
         shape = self.fileLoader.f[self.fullName].shape
@@ -253,6 +260,14 @@ class DataItem:
                 # default is the absolute value
                 d = abs(d)
         return d
+    def data1D(self,**kwargs):
+        if len(self.shape()) == 2:
+            if self.stackDim == 0:
+                return self.data(**kwargs)[:,self.selectedIndex]
+            else:
+                return self.data(**kwargs)[self.selectedIndex,:]
+        else:
+            return f.data(**kwargs)
     def setTags(self,tags):
         self.tagsDirty = True
         newMembers = numpy.zeros((len(tags),self.shape()[0]),dtype=numpy.int8)
@@ -281,6 +296,8 @@ class DataItem:
         if(self.tags == []):
             return
         self.fileLoader.f[self.path].create_dataset('tags',self.tagMembers.shape,maxshape=(None,None),chunks=(1,10000),data=self.tagMembers)
+        self.fileLoader.f[self.path+"tags"].attrs.modify("axes",["tag:experiment_identifier"])
+
         # Save tag names
         headings = []
         for i in range(0,len(self.tags)):
@@ -306,8 +323,6 @@ class DataItem:
     def updateTagSum(self):
         for i in range(0,len(self.tags)):
             self.tags[i][3] = self.tagMembers[i,:].sum()
-    
-
 
 class ImageLoader(QtCore.QObject):
     imageLoaded = QtCore.Signal(int)
