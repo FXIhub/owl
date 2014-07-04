@@ -6,6 +6,7 @@ import h5py
 from matplotlib import colors
 from matplotlib import cm
 import pyqtgraph
+import modelProperties
 
 def sizeof_fmt(num):
     for x in ['bytes','kB','MB','GB']:
@@ -402,6 +403,10 @@ class DataProp(QtGui.QWidget):
         self.plotBox.setLayout(self.plotBox.vbox)
         self.plotBox.hide()
 
+
+        self.modelProperties = ModelProperties(self)
+        self.modelProperties.hide()
+        
         # add all widgets to main vbox
         self.vboxScroll.addWidget(self.generalBox)
         self.vboxScroll.addWidget(self.imageBox)
@@ -412,6 +417,7 @@ class DataProp(QtGui.QWidget):
         self.vboxScroll.addWidget(self.sortingBox)
         self.vboxScroll.addWidget(self.filterBox)
         self.vboxScroll.addWidget(self.plotBox)
+        self.vboxScroll.addWidget(self.modelProperties)
         self.vboxScroll.addStretch()
         self.setLayout(self.vbox)
         # clear all properties
@@ -964,8 +970,19 @@ class FilterWidget(QtGui.QWidget):
         label = "Yield: %.2f%% - %i/%i" % (100*Nsel/(1.*Ntot),Nsel,Ntot)
         self.yieldLabel.setText(label)
         self.limitsChanged.emit(vmin,vmax)
+
     def emitSelectedIndexChanged(self):
         i = self.indexCombo.currentIndex()
         self.dataItem.selectedIndex = i
         self.selectedIndexChanged.emit(i)
         self.refreshData(self.dataItem)
+
+
+class ModelProperties(QtGui.QGroupBox, modelProperties.Ui_ModelProperties):
+    def __init__(self,parent):
+        QtGui.QGroupBox.__init__(self,parent)
+        self.setupUi(self)
+        self.centerX.setText(str(0.5))
+        self.centerY.setText(str(0.5))
+        self.radius.setText(str(20.0))
+        self.scaling.setText(str(1.0e7))

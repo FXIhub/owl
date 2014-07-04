@@ -235,17 +235,19 @@ class Viewer(QtGui.QMainWindow):
                             "View 1D" : QtGui.QAction("View 1D",self),
                             "View 2D" : QtGui.QAction("View 2D",self),
                             "Display Properties" : QtGui.QAction("Display Properties",self),
-                            "Tags" : QtGui.QAction("Tags",self)
+                            "Tags" : QtGui.QAction("Tags",self),
+                            "Model" : QtGui.QAction("Model",self)
                         }
 
         viewShortcuts = {"File Tree" : "Ctrl+T",
                          "View 1D" : "Ctrl+1",
                          "View 2D" : "Ctrl+2",
                          "Display Properties" : "Ctrl+D",
-                         "Tags" : "Ctrl+G"
+                         "Tags" : "Ctrl+G",
+                         "Model" : "Ctrl+M"
                      }
 
-        viewNames = ["File Tree", "Display Properties","View 1D","View 2D","Tags"]
+        viewNames = ["File Tree", "Display Properties","View 1D","View 2D","Tags","Model"]
       
         actions = {}
         for viewName in viewNames:
@@ -254,9 +256,11 @@ class Viewer(QtGui.QMainWindow):
             actions[viewName].setShortcut(QtGui.QKeySequence(viewShortcuts[viewName]))
             if(viewName == "Tags"):
                 actions[viewName].triggered.connect(self.view.view2D.toggleTagView)
+            elif(viewName == "Model"):
+                actions[viewName].triggered.connect(self.view.view2D.toggleModelView)
             else:
                 actions[viewName].triggered.connect(self.viewClicked)
-            if viewName in ["View 1D"]:
+            if viewName in ["View 1D"] or viewName == "Model":
                 actions[viewName].setChecked(False)
             else:
                 actions[viewName].setChecked(True)
