@@ -717,11 +717,11 @@ class Viewer(QtGui.QMainWindow):
             self.updateTimer.start()
     def tagsClicked(self):
         if(self.view.view2D.data):
-            tagsDialog = TagsDialog(self,self.view.view2D.data.tags);
+            tagsDialog = TagsDialog(self,self.view.view2D.data.tagsItem.tags);
             if(tagsDialog.exec_() == QtGui.QDialog.Accepted):
                 tags = tagsDialog.getTags()
-                if(tags != self.view.view2D.data.tags):
-                    self.view.view2D.data.setTags(tags)
+                if(tags != self.view.view2D.data.tagsItem.tags):
+                    self.view.view2D.data.tagsItem.setTags(tags)
                     self.dataProp.showTags(self.view.view2D.data)
                     self.tagsChanged = True
                     

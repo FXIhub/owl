@@ -525,7 +525,7 @@ class DataProp(QtGui.QWidget):
             # Check if we clicked on a tag
             if(info["tagClicked"] != -1):
                 # Toggle tag
-                self.data.setTag(info["img"],info["tagClicked"],(self.data.tagMembers[info["tagClicked"],info["img"]]+1)%2)
+                self.data.tagsItem.setTag(info["img"],info["tagClicked"],(self.data.tagsItem.tagMembers[info["tagClicked"],info["img"]]+1)%2)
             
             self.showTags(self.data)
             
@@ -744,15 +744,15 @@ class DataProp(QtGui.QWidget):
                 break
         group = QtGui.QButtonGroup(self)  
         group.setExclusive(False)
-        for i in range(0,len(data.tags)):
+        for i in range(0,len(data.tagsItem.tags)):
             pixmap = QtGui.QPixmap(32,32);
-            pixmap.fill(data.tags[i][1])
+            pixmap.fill(data.tagsItem.tags[i][1])
             button = QtGui.QPushButton(pixmap,"")    
             button.setFixedSize(32,32)
             button.setFlat(True)
             button.setCheckable(True)
-            button.setToolTip(data.tags[i][0])
-            if(data.tagMembers[i,img]):
+            button.setToolTip(data.tagsItem.tags[i][0])
+            if(data.tagsItem.tagMembers[i,img]):
                 button.setChecked(True)
             else:
                 button.setChecked(False)
@@ -765,7 +765,7 @@ class DataProp(QtGui.QWidget):
         if(img == None):
             return
         value = self.tagGroup.button(id).isChecked()
-        self.data.setTag(img,id,value)
+        self.data.tagItem.setTag(img,id,value)
         self.viewer.tagsChanged = True
     def toggleTag(self,id):
         img = self.viewer.view.view2D.selectedImage
@@ -775,7 +775,7 @@ class DataProp(QtGui.QWidget):
             return
         self.tagGroup.button(id).toggle()
         value = self.tagGroup.button(id).isChecked()
-        self.data.setTag(img,id,value)
+        self.data.tagItem.setTag(img,id,value)
         self.viewer.tagsChanged = True
 
                
@@ -986,3 +986,10 @@ class ModelProperties(QtGui.QGroupBox, modelProperties.Ui_ModelProperties):
         self.centerY.setText(str(0.5))
         self.radius.setText(str(20.0))
         self.scaling.setText(str(1.0e7))
+        self.conf = {}
+    def onConfigurationChanged(self):
+        img = self.parent.viewer.view.view2D.selectedImage
+        C = self.conf.get(img,{})
+        C["centerX"] = self.centerX.text()
+        C["centerY"] = self.centerY.text()
+        C[""]

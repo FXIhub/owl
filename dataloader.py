@@ -23,6 +23,8 @@ class FileLoader(QtCore.QObject):
         self.filename = QtCore.QFileInfo(fullFilename).fileName()
         self.fullName = self.name = "/"
         self.H5Group = self.f["/"]
+        self.tagsItem = None
+        self.modelItem = None
         self.children = {}
         for k in self.H5Group.keys():
             item = self.H5Group[k]
@@ -31,30 +33,27 @@ class FileLoader(QtCore.QObject):
             elif isinstance(item,h5py.Group):
                 self.children[k] = GroupItem(self,self,"/"+k)
         self.dataItems = {}
-        self.collectDataItems(self.children)
+        self.groupItems = {}
+        self.tagsItems = {}
+        self.modelItems = {}
+        self.collectItems(self.children)
         self.stackSize = None
-    def collectDataItems(self,item):
+    def collectItems(self,item):
         for k in item.keys():
             child = item[k]
             if isinstance(child,DataItem):
                 self.dataItems[child.fullName] = child
             elif isinstance(child,GroupItem):
-                self.collectDataItems(child.children)
+                self.groupItems[child.fullName] = child
+                self.tagsItems[child.fullName] = child.tagsItem
+                self.modelItems[child.fullName] = child.modelItem
+                self.collectItems(child.children)
             else:
                 print "no valid item."
     def updateStackSize(self):
         N = []
         for n,d in self.dataItems.items():
             if d.isSelectedStack:
-                #try:
-                #print "About to refresh dataset:"
-                #print dataItem.H5Dataset.dtype.name
-                #print d.fullName,d.H5Dataset,d.H5Dataset.attrs.get("numEvents"),d.H5Dataset.id.id
-                #self.f[n].refresh()
-                #print "Dataset refreshed:"
-                #print d.fullName,d.H5Dataset,d.H5Dataset.attrs.get("numEvents")
-                #except:
-                #    self.logger.debug("Failed to refresh dataset. Probably the h5py version that is installed does not support SWMR.")
                 if "numEvents" in self.f[n].attrs.keys():
                     N.append(self.f[n].attrs.get("numEvents")[0])
                 else:
@@ -67,8 +66,8 @@ class FileLoader(QtCore.QObject):
             self.stackSize = N
             self.stackSizeChanged.emit(N)
     def saveTags(self):
-        for n,d in self.dataItems.items():
-            d.saveTags()
+        for n,t in self.tagsItems.items():
+            t.saveTags()
 
 
 class GroupItem:
@@ -78,6 +77,8 @@ class GroupItem:
         self.fullName = fullName
         self.name = fullName.split("/")[-1]
         self.H5Group = parent.H5Group[self.name]
+        self.modelItem = ModelItem(self,fileLoader,fullName+"/")
+        self.tagsItem = TagsItem(self,fileLoader,fullName+"/")
         self.children = {}
         for k in self.H5Group.keys():
             item = self.H5Group[k]
@@ -85,6 +86,117 @@ class GroupItem:
                 self.children[k] = DataItem(self,self.fileLoader,self.fullName+"/"+k)
             elif isinstance(item,h5py.Group):
                 self.children[k] = GroupItem(self,self.fileLoader,self.fullName+"/"+k)
+
+class TagsItem:
+    def __init__(self,parent,fileLoader,path):
+        self.parent = parent
+        self.fileLoader = fileLoader
+        self.path = path
+        # Check for tags
+        self.tags = []
+        self.tagMembers = None
+        self.tagsDirty = False
+        #self.path = fullName[0:fullName.rindex('/')+1]
+
+        settings = QtCore.QSettings()
+        defaultColors = settings.value('TagColors')
+        if('tags' in self.fileLoader.f[self.path].keys()):
+            self.tagMembers = numpy.array(self.fileLoader.f[self.path+'tags'])
+            has_headings = False
+            has_colors = False
+            if('headings' in self.fileLoader.f[self.path+'tags'].attrs.keys()):
+                has_headings = True
+            if('colors' in self.fileLoader.f[self.path+'tags'].attrs.keys()):
+                has_colors = True
+            
+            for i in range(0,self.tagMembers.shape[0]):
+                if(has_headings):
+                    title = self.fileLoader.f[self.path+'tags'].attrs['headings'][i]
+                else:
+                    title = 'Tag '+(i+1)
+                if(has_colors):
+                    r =  self.fileLoader.f[self.path+'tags'].attrs['colors'][i][0]
+                    g =  self.fileLoader.f[self.path+'tags'].attrs['colors'][i][1]
+                    b =  self.fileLoader.f[self.path+'tags'].attrs['colors'][i][2]
+                    color = QtGui.QColor(r,g,b)
+                else:
+                    color = defaultColors[i]
+                self.tags.append([title,color,QtCore.Qt.Unchecked,self.tagMembers[i,:].sum()])
+    def setTags(self,tags):
+        self.tagsDirty = True
+        newMembers = numpy.zeros((len(tags),self.fileLoader.stackSize),dtype=numpy.int8)
+        if(self.tagMembers != None):
+            newMembers = numpy.zeros((len(tags),self.fileLoader.stackSize),dtype=numpy.int8)
+            # Copy old members to new members
+            for i in range(0,len(tags)):
+                # Check if the new tag is an old tag
+                newTag = True
+                for j in range(0,len(self.tags)):
+                    if tags[i][0] == self.tags[j][0]:
+                        newMembers[i][:] = self.tagMembers[j][:]
+                        newTag = False
+                        break
+                if(newTag):
+                    newMembers[i][:] = 0
+
+        self.tagMembers = newMembers
+        self.tags = tags
+    def saveTags(self):
+        # Do we really have to write anything? If not just return.
+        if (self.tags == []) or (self.tagsDirty == False):
+            return
+        # Is a tag dataset already existing
+        if('tags' in self.fileLoader.f[self.path]):
+            ds = self.fileLoader.f[self.path+"tags"]
+            # MFH: I suspect that this corrupts the file somethimes. Therefore I just do a resize of the dataset instead if it already exists
+            #del self.fileLoader.f[self.path+'tags']
+            oldShape = ds.shape
+            newShape = self.tagMembers.shape
+            if (oldShape[0] == newShape[0]) and (oldShape[1] == newShape[1]):
+                ds.resize(newShape)
+                ds[:,:] = self.tagMembers[:,:]
+        else:
+            ds = self.fileLoader.f[self.path].create_dataset('tags',self.tagMembers.shape,maxshape=(None,None),chunks=(1,10000),data=self.tagMembers)
+            ds.attrs.modify("axes",["tag:experiment_identifier"])
+        # Save tag names
+        headings = []
+        for i in range(0,len(self.tags)):
+            headings.append(str(self.tags[i][0]))
+        ds.attrs['headings'] = headings
+        # Save tag colors
+        colors = numpy.zeros((len(self.tags),3),dtype=numpy.uint8)
+        for i in range(0,len(self.tags)):
+            colors[i,0] = self.tags[i][1].red()
+            colors[i,1] = self.tags[i][1].green()
+            colors[i,2] = self.tags[i][1].blue()
+        ds.attrs['colors'] = colors
+    def setTag(self,img,tag,value):
+        if(tag >= self.tagMembers.shape[0]):
+            return
+        self.tagsDirty = True
+        if(value):
+            self.tagMembers[tag,img] = 1
+        else:
+            self.tagMembers[tag,img] = 0
+        self.fileLoader.parent.statusBar.showMessage('Tag '+self.tags[tag][0]+' set to '+str(bool(value)))
+        self.updateTagSum()
+    def updateTagSum(self):
+        for i in range(0,len(self.tags)):
+            self.tags[i][3] = self.tagMembers[i,:].sum()
+
+class ModelItem:
+    def __init__(self,parent,fileLoader,path):
+        self.parent = parent
+        self.fileLoader = fileLoader
+        self.path = path
+        self.params = {}
+        if("model_parameters" in self.fileLoader.f[self.path].keys()):
+            if "names" in self.fileLoader.f[self.path+"model_parameters"].attrs.keys():
+                names = self.fileLoader.f[self.path+"model_parameters"].attrs["names"]
+                for i,name in zip(range(len(names)),names):
+                    self.params[name] = self.fileLoader.f[self.path+"model_parameters"][i,:]
+
+
 
 class DataItem:
     def __init__(self,parent,fileLoader,fullName):
@@ -116,36 +228,11 @@ class DataItem:
         # complex?
         self.isComplex = (str(self.fileLoader.f[self.fullName].dtype.name).lower().find("complex") != -1)
 
-        # Check for tags
-        self.tags = []
-        self.tagMembers = None
-        self.tagsDirty = False
-        self.path = fullName[0:fullName.rindex('/')+1]
+        # link tags
+        self.tagsItem = self.parent.tagsItem
 
-        settings = QtCore.QSettings()
-        defaultColors = settings.value('TagColors')
-        if('tags' in self.fileLoader.f[self.path].keys()):
-            self.tagMembers = numpy.array(self.fileLoader.f[self.path+'tags'])
-            has_headings = False
-            has_colors = False
-            if('headings' in self.fileLoader.f[self.path+'tags'].attrs.keys()):
-                has_headings = True
-            if('colors' in self.fileLoader.f[self.path+'tags'].attrs.keys()):
-                has_colors = True
-            
-            for i in range(0,self.tagMembers.shape[0]):
-                if(has_headings):
-                    title = self.fileLoader.f[self.path+'tags'].attrs['headings'][i]
-                else:
-                    title = 'Tag '+(i+1)
-                if(has_colors):
-                    r =  self.fileLoader.f[self.path+'tags'].attrs['colors'][i][0]
-                    g =  self.fileLoader.f[self.path+'tags'].attrs['colors'][i][1]
-                    b =  self.fileLoader.f[self.path+'tags'].attrs['colors'][i][2]
-                    color = QtGui.QColor(r,g,b)
-                else:
-                    color = defaultColors[i]
-                self.tags.append([title,color,QtCore.Qt.Unchecked,self.tagMembers[i,:].sum()])
+        # link model parameters
+        self.modelItem = self.parent.modelItem
 
         # Selected dimension for filetering etc. where stack has to have only one dimension
         # Set to none by default
@@ -154,6 +241,8 @@ class DataItem:
     def shape(self,forceRefresh=False):
         shape = self.fileLoader.f[self.fullName].shape
         if self.isSelectedStack and self.fileLoader.stackSize != None:
+        # MFH: Isnn't the following line be more logical than what we have currently?
+        #if self.isStack and self.fileLoader.stackSize != None:
             shape = list(shape)
             shape.pop(0)
             shape.insert(0,self.fileLoader.stackSize)
@@ -176,6 +265,9 @@ class DataItem:
             self.fileLoader.updateStackSize()
     def attr(self,name):
         return self.fileLoader.f[self.fullName].attrs[name]
+    #def patterson(self,**kwargs):
+    #    data = self.data(**kwargs)
+        
     def data(self,**kwargs):
         try:
             self.fileLoader.f[self.fullName].refresh()
@@ -244,61 +336,6 @@ class DataItem:
                 return self.data(**kwargs)[self.selectedIndex,:]
         else:
             return f.data(**kwargs)
-    def setTags(self,tags):
-        self.tagsDirty = True
-        newMembers = numpy.zeros((len(tags),self.shape()[0]),dtype=numpy.int8)
-        if(self.tagMembers != None):
-            newMembers = numpy.zeros((len(tags),self.shape()[0]),dtype=numpy.int8)
-            # Copy old members to new members
-            for i in range(0,len(tags)):
-                # Check if the new tag is an old tag
-                newTag = True
-                for j in range(0,len(self.tags)):
-                    if tags[i][0] == self.tags[j][0]:
-                        newMembers[i][:] = self.tagMembers[j][:]
-                        newTag = False
-                        break
-                if(newTag):
-                    newMembers[i][:] = 0
-
-        self.tagMembers = newMembers
-        self.tags = tags
-                
-    def saveTags(self):
-        if(self.tagsDirty == False):
-            return
-        if('tags' in self.fileLoader.f[self.path]):
-            del self.fileLoader.f[self.path+'tags']
-        if(self.tags == []):
-            return
-        self.fileLoader.f[self.path].create_dataset('tags',self.tagMembers.shape,maxshape=(None,None),chunks=(1,10000),data=self.tagMembers)
-        self.fileLoader.f[self.path+"tags"].attrs.modify("axes",["tag:experiment_identifier"])
-
-        # Save tag names
-        headings = []
-        for i in range(0,len(self.tags)):
-            headings.append(str(self.tags[i][0]))
-        self.fileLoader.f[self.path+'tags'].attrs['headings'] = headings
-        # Save tag colors
-        colors = numpy.zeros((len(self.tags),3),dtype=numpy.uint8)
-        for i in range(0,len(self.tags)):
-            colors[i,0] = self.tags[i][1].red()
-            colors[i,1] = self.tags[i][1].green()
-            colors[i,2] = self.tags[i][1].blue()
-        self.fileLoader.f[self.path+'tags'].attrs['colors'] = colors
-    def setTag(self,img,tag,value):
-        if(tag >= self.tagMembers.shape[0]):
-            return
-        self.tagsDirty = True
-        if(value):
-            self.tagMembers[tag,img] = 1
-        else:
-            self.tagMembers[tag,img] = 0
-        self.fileLoader.parent.statusBar.showMessage('Tag '+self.tags[tag][0]+' set to '+str(bool(value)))
-        self.updateTagSum()
-    def updateTagSum(self):
-        for i in range(0,len(self.tags)):
-            self.tags[i][3] = self.tagMembers[i,:].sum()
 
 class ImageLoader(QtCore.QObject):
     imageLoaded = QtCore.Signal(int)
@@ -329,6 +366,7 @@ class ImageLoader(QtCore.QObject):
         data = self.view.getData(img)
         phase = self.view.getPhase(img)
         mask = self.view.getMask(img)
+        #patterson = self.view.getPatterson(img)
         self.imageData[img] = numpy.ones((self.view.data.height(),self.view.data.width()),dtype=numpy.float32)
         self.imageData[img][:] = data[:]
         if phase != None:

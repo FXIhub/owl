@@ -523,16 +523,16 @@ class View2D(View,QtOpenGL.QGLWidget):
             glPopMatrix()
         elif(img == self.selectedImage):
             self.paintSelectedImageBorder(img_width,img_height)
-        if(self.data and self.tagView and self.data.tags and self.data.tags != []):
+        if(self.data and self.tagView and self.data.tagsItem.tags and self.data.tagsItem.tags != []):
             tag_size = self.tagSize()
             tag_pad = self.tagPad()
             tag_distance = self.tagDistance()
-            for i in range(0,len(self.data.tags)):
+            for i in range(0,len(self.data.tagsItem.tags)):
                 glPushMatrix()
-                color = self.data.tags[i][1]
+                color = self.data.tagsItem.tags[i][1]
                 glColor3f(color.redF(),color.greenF(),color.blueF());
                 glLineWidth(0.5/self.zoom)
-                if(self.data.tagMembers[i][img]):
+                if(self.data.tagsItem.tagMembers[i][img]):
                     glBegin (GL_QUADS);
                 else:
                     glBegin(GL_LINE_LOOP)
@@ -708,9 +708,9 @@ class View2D(View,QtOpenGL.QGLWidget):
             if len(self.remainSet) == 0:
                 self.updateGL()
 
-        if (img in self.activePattersons) and (img not in self.pattersonTextures):
-            self.logger.debug("Generating patterson texture %d"  % (img))
-            pattersonData = self.loaderThread.imageData[img]
+        #if (img in self.activePattersons) and (img not in self.pattersonTextures):
+        #    self.logger.debug("Generating patterson texture %d"  % (img))
+        #    pattersonData = self.loaderThread.imageData[img]
             
 
     def updateTextures(self,images):
@@ -844,7 +844,7 @@ class View2D(View,QtOpenGL.QGLWidget):
         info["tagClicked"] = -1
         if(self.tagView):
             if(ix >= self.tagPad() and ix < self.tagDistance()):
-                if(iy/self.tagDistance() < len(self.data.tags)):
+                if(iy/self.tagDistance() < len(self.data.tagsItem.tags)):
                     if(iy%self.tagDistance() >= self.tagPad()):
                         info["tagClicked"] = int(iy/self.tagDistance())
         return info
