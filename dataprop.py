@@ -442,6 +442,8 @@ class DataProp(QtGui.QWidget):
         self.plotPointsCheckBox.toggled.connect(self.emitView1DProp)
         self.plotNBinsEdit.editingFinished.connect(self.emitView1DProp)
         self.currentImg.editingFinished.connect(self.onCurrentImg)
+        self.modelProperties.paramsChanged.connect(self.emitView2DProp)
+        #self.modelProperties.fitNeeded.connect(self.emitView2DProp)
     def clear(self):
         self.clearView2DProp()
         self.clearData()
@@ -529,6 +531,7 @@ class DataProp(QtGui.QWidget):
             
             self.showTags(self.data)
             
+            self.modelProperties.showParams()
             #if self.pixelStackPick:
             #    self.pixelStackPick = False
             #    self.pixelStackXEdit.setText(str(int(info["ix"])))
@@ -979,17 +982,64 @@ class FilterWidget(QtGui.QWidget):
 
 
 class ModelProperties(QtGui.QGroupBox, modelProperties.Ui_ModelProperties):
+    paramsChanged = QtCore.Signal()
     def __init__(self,parent):
+        self.parent = parent
         QtGui.QGroupBox.__init__(self,parent)
         self.setupUi(self)
-        self.centerX.setText(str(0.5))
-        self.centerY.setText(str(0.5))
-        self.radius.setText(str(20.0))
-        self.scaling.setText(str(1.0e7))
-        self.conf = {}
-    def onConfigurationChanged(self):
+        self.params = {}
+        self.setModelItem(None)
+        self.centerX.editingFinished.connect(self.emitParams)
+        self.centerY.editingFinished.connect(self.emitParams)
+        self.diameter.editingFinished.connect(self.emitParams)
+        self.scaling.editingFinished.connect(self.emitParams)
+        self.fitPushButton.released.connect(self.calculateFit)
+    def setModelItem(self,modelItem=None):
+        self.modelItem = modelItem
+        if modelItem == None:
+            paramsImg = None
+        else:
+            img = self.parent.viewer.view.view2D.selectedImage
+            if img == None:
+                paramsImg = None
+                self.showParams(paramsImg)
+            else:
+                paramsImg = self.modelItem.getParams(img)
+                self.showParams(paramsImg)
+                self.emitParams()
+    def showParams(self,params=None):
         img = self.parent.viewer.view.view2D.selectedImage
-        C = self.conf.get(img,{})
-        C["centerX"] = self.centerX.text()
-        C["centerY"] = self.centerY.text()
-        C[""]
+        if self.modelItem == None or img == None:
+            self.centerX.setText("")
+            self.centerX.setReadOnly(True)
+            self.centerY.setText("")
+            self.centerY.setReadOnly(True)
+            self.diameter.setText("")
+            self.diameter.setReadOnly(True)
+            self.scaling.setText("")
+            self.scaling.setReadOnly(True)
+        else:
+            params = self.modelItem.getParams(img)
+            self.centerX.setText(str(params["centerX"]))
+            self.centerX.setReadOnly(False)
+            self.centerY.setText(str(params["centerY"]))
+            self.centerY.setReadOnly(False)
+            self.diameter.setText(str(params["diameterNM"]))
+            self.diameter.setReadOnly(False)
+            self.scaling.setText(str(params["intensityPhUM2"]))
+            self.scaling.setReadOnly(False)
+    def emitParams(self):
+        params = {}
+        img = self.parent.viewer.view.view2D.selectedImage
+        params["centerX"] = float(self.centerX.text())
+        params["centerY"] = float(self.centerY.text())
+        params["diameterNM"] = float(self.diameter.text())
+        params["intensityPhUM2"] = float(self.scaling.text())
+        self.modelItem.setParams(img,params)
+        self.paramsChanged.emit()
+    def calculateFit(self):
+        img = self.parent.viewer.view.view2D.selectedImage
+        self.modelItem.centerAndFit(img)
+        self.showParams()
+    def toggleVisible(self):
+        self.setVisible(not self.isVisible())

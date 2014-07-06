@@ -196,7 +196,7 @@ class CXITree(QtGui.QTreeWidget):
         self.item.setToolTip(0,fileLoader.fullFilename)
         self.root.addChild(self.item)
         self.buildBranch(fileLoader,self.item)
-        self.loadData1()
+        self.loadData()
     def buildBranch(self,group,branch):
         self.columnPath = 1
         keys = group.children.keys()
@@ -205,6 +205,7 @@ class CXITree(QtGui.QTreeWidget):
             child = group.children[k]
             lst = [k]
             if(isinstance(child,GroupItem)):
+                lst.append(child.fullName)
                 item = QtGui.QTreeWidgetItem(lst)
                 self.buildBranch(child,item)
             else:
@@ -265,25 +266,31 @@ class CXITree(QtGui.QTreeWidget):
                     font.setBold(True)
                     item.setFont(0,font)
             branch.addChild(item)
-    def loadData1(self):
+    def loadData(self,path=None):
+        found,child = self.expandTree(path)
+        if found:
+            self.handleClick(child,1)
+            return 1
+        return 0
+    def expandTree(self,path=None):
         root = self.item
         root.setExpanded(True)
-        path = ("entry_1","data_1","data")
-        for section in path:
+        if path == None:
+            path = "entry_1/image_1/data"
+        for j,section in zip(range(len(path.split("/"))),path.split("/")):
+            if section == "":
+                continue
             found = False
             for i in range(0,root.childCount()):
                 child = root.child(i)
-                if(child.text(0) == section):
+                if(child.text(self.columnPath).split("/")[-1] == section):
                     child.setExpanded(True)
                     root = child
                     found = True
                     break
-            if(not found):
+            if not found:
                 break
-        if(found):
-            self.handleClick(root,1)
-            return 1
-        return 0
+        return found,child
     def startDrag(self, event):
         # create mime data object
         mime = QtCore.QMimeData()

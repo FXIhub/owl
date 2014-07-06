@@ -117,9 +117,9 @@ class View2D(View,QtOpenGL.QGLWidget):
         else:
             return self.mask.data()
     def getData(self,img=None):
-        return self.data.data(img=img,filterMask=self.indexProjector.filterMask())
+        return self.data.data(img=img)
     def getPhase(self,img=None):
-        return self.data.data(img=img,filterMask=self.indexProjector.filterMask(),complex_mode="phase")
+        return self.data.data(img=img,complex_mode="phase")
     def stopThreads(self):
         while(self.imageLoader.isRunning()):
             self.imageLoader.quit()
@@ -490,10 +490,11 @@ class View2D(View,QtOpenGL.QGLWidget):
 
         # Model related variables
         glUniform1i(self.showModelLoc,self.modelView)
-        glUniform1f(self.modelCenterXLoc,float(self.viewer.dataProp.modelProperties.centerX.text()))
-        glUniform1f(self.modelCenterYLoc,float(self.viewer.dataProp.modelProperties.centerY.text()))
-        glUniform1f(self.modelSizeLoc,float(self.viewer.dataProp.modelProperties.radius.text()))
-        glUniform1f(self.modelScaleLoc,float(self.viewer.dataProp.modelProperties.scaling.text()))
+        params = self.data.modelItem.getParams(img)
+        glUniform1f(self.modelCenterXLoc,params["centerX"])
+        glUniform1f(self.modelCenterYLoc,params["centerY"])
+        glUniform1f(self.modelSizeLoc,params["diameterNM"])
+        glUniform1f(self.modelScaleLoc,params["intensityPhUM2"])
 
 
         glBegin (GL_QUADS);
@@ -1117,5 +1118,4 @@ class View2D(View,QtOpenGL.QGLWidget):
         self.updateGL()
     def toggleModelView(self):
         self.modelView = not self.modelView
-        self.viewer.dataProp.modelProperties.setVisible(not self.viewer.dataProp.modelProperties.isVisible())
         self.updateGL()
