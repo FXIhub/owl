@@ -991,10 +991,11 @@ class ModelProperties(QtGui.QGroupBox, modelProperties.Ui_ModelProperties):
         self.setupUi(self)
         self.params = {}
         self.setModelItem(None)
-        self.centerX.editingFinished.connect(self.emitParams)
-        self.centerY.editingFinished.connect(self.emitParams)
-        self.diameter.editingFinished.connect(self.emitParams)
-        self.scaling.editingFinished.connect(self.emitParams)
+        self.centerX.valueChanged.connect(self.emitParams)
+        self.centerY.valueChanged.connect(self.emitParams)
+        self.diameter.valueChanged.connect(self.emitParams)
+        self.scaling.valueChanged.connect(self.emitParams)
+        self.maskRadius.valueChanged.connect(self.emitParams)
         self.experiment.released.connect(self.onExperiment)
         self.fitPushButton.released.connect(self.calculateFit)
         self.visibilitySlider.sliderMoved.connect(self.emitParams)
@@ -1022,6 +1023,8 @@ class ModelProperties(QtGui.QGroupBox, modelProperties.Ui_ModelProperties):
             self.diameter.setReadOnly(True)
             self.scaling.setValue(0)
             self.scaling.setReadOnly(True)
+            self.maskRadius.setValue(0)
+            self.maskRadius.setReadOnly(True)
             self.visibilitySlider.setValue(50)
             self.visibilitySlider.setEnabled(False)
         else:
@@ -1034,6 +1037,8 @@ class ModelProperties(QtGui.QGroupBox, modelProperties.Ui_ModelProperties):
             self.diameter.setReadOnly(False)
             self.scaling.setValue(params["intensityMJUM2"])
             self.scaling.setReadOnly(False)
+            self.maskRadius.setValue(params["maskRadius"])
+            self.maskRadius.setReadOnly(False)
             self.visibilitySlider.setValue(params["_visibility"]*100)
             self.visibilitySlider.setEnabled(True)
     def emitParams(self):
@@ -1043,6 +1048,7 @@ class ModelProperties(QtGui.QGroupBox, modelProperties.Ui_ModelProperties):
         params["offCenterY"] = self.centerY.value()
         params["diameterNM"] = self.diameter.value()
         params["intensityMJUM2"] = self.scaling.value()
+        params["maskRadius"] = self.maskRadius.value()
         params["_visibility"] = float(self.visibilitySlider.value()/100.)
         self.modelItem.setParams(img,params)
         self.paramsChanged.emit()
@@ -1051,7 +1057,7 @@ class ModelProperties(QtGui.QGroupBox, modelProperties.Ui_ModelProperties):
         expDialog.exec_()
     def calculateFit(self):
         img = self.parent.viewer.view.view2D.selectedImage
-        self.modelItem.centerAndFit(img)
+        self.modelItem.centerAndFit(img,fitConf)
         self.showParams()
     def toggleVisible(self):
         self.setVisible(not self.isVisible())

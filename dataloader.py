@@ -392,7 +392,7 @@ class ModelItem:
         self.dataItemMask = None
         self.indParams = {}
         self.genParams = {}
-        self.paramsIndDef = {"offCenterX":0.,"offCenterY":0.,"intensityMJUM2":1.,"diameterNM":100.}
+        self.paramsIndDef = {"offCenterX":0.,"offCenterY":0.,"intensityMJUM2":1.,"diameterNM":100.,"maskRadius":100}
         self.paramsGenDef = {"photonWavelengthNM":1.,"detectorDistanceMM":1000.,"detectorPixelSizeUM":75.,"materialType":"water","_visibility":0.5}
         self.dataItems = {}
         if "model" in groupChildren:

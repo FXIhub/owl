@@ -381,6 +381,27 @@ class View2D(View,QtOpenGL.QGLWidget):
             v += 10.0/self.zoom 
         glEnd ();
         glPopMatrix()
+        
+    def paintCircleFitMask(self):
+        glPushMatrix()
+        glShadeModel(GL_FLAT)
+        glColor3f(1.0,1.0,1.0);
+        glLineWidth(0.5/self.zoom)
+        imgWidth = self.getImgWidth("window",False)
+        imgHeight = self.getImgHeight("window",False)
+        cx = self.centerX/self.zoom
+        cy = self.centerY/self.zoom
+        sides = 200    
+        radius = self.maskRadius
+        glBegin(GL_LINE_LOOP)    
+        for i in range(sides):    
+            x = radius * numpy.cos(i*2*numpy.pi/sides) + cx*imgWidth   
+            y = radius * numpy.sin(i*2*numpy.pi/sides) + cy*imgHeight
+            glVertex2f(x,y)
+        glEnd ();
+        glPopMatrix()
+
+
     @QtCore.Slot()
     def incrementLoadingImageAnimationFrame(self):
         self.loadingImageAnimationFrame += 1
@@ -497,8 +518,10 @@ class View2D(View,QtOpenGL.QGLWidget):
         glUniform1i(self.showModelLoc,self.modelView)
         params = self.data.modelItem.getParams(img)
         s = self.loaderThread.imageData[img].shape
-        glUniform1f(self.modelCenterXLoc,((s[1]-1)/2.+params["offCenterX"])/(s[1]-1))
-        glUniform1f(self.modelCenterYLoc,((s[0]-1)/2.+params["offCenterY"])/(s[0]-1))
+        self.centerX = ((s[1]-1)/2.+params["offCenterX"])/(s[1]-1)
+        self.centerY = ((s[0]-1)/2.+params["offCenterY"])/(s[0]-1)
+        glUniform1f(self.modelCenterXLoc,self.centerX)
+        glUniform1f(self.modelCenterYLoc,self.centerY)
         p = params["detectorPixelSizeUM"]*1.E-6
         D = params["detectorDistanceMM"]*1.E-3
         wl = params["photonWavelengthNM"]*1.E-9
@@ -523,6 +546,7 @@ class View2D(View,QtOpenGL.QGLWidget):
         glUniform1f(self.imageShapeXLoc,self.loaderThread.imageData[img].shape[1])
         glUniform1f(self.imageShapeYLoc,self.loaderThread.imageData[img].shape[0])
         glUniform1f(self.modelVisibilityLoc,params["_visibility"])
+        self.maskRadius = params["maskRadius"]
 
         glBegin (GL_QUADS);
         glTexCoord2f (0.0, 0.0);
@@ -551,6 +575,8 @@ class View2D(View,QtOpenGL.QGLWidget):
             glPopMatrix()
         elif(img == self.selectedImage):
             self.paintSelectedImageBorder(img_width,img_height)
+        if(self.modelView):
+            self.paintCircleFitMask()
         if(self.data and self.tagView and self.data.tagsItem.tags and self.data.tagsItem.tags != []):
             tag_size = self.tagSize()
             tag_pad = self.tagPad()

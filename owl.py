@@ -690,7 +690,6 @@ class Viewer(QtGui.QMainWindow):
                 n = dataItem.fullName
         self.CXINavigation.dataBoxes["plot Y"].button.setName(n)
     def handleData2DChanged(self,dataItemImage,dataItemMask):
-        print dataItemImage,dataItemMask
         if dataItemImage == None:
             self.dataProp.modelProperties.setModelItem(None)
         else:

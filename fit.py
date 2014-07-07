@@ -9,23 +9,23 @@ class FitModel:
     def __init__(self,dataItemImage,dataItemMask):
         self.dataItemImage = dataItemImage
         self.dataItemMask = dataItemMask
-    def center_and_fit(self,img,dc_max=5,r_max=100):
+    def center_and_fit(self,img):
         params = self.dataItemImage.modelItem.getParams(img)
-        params = self.center(img,params,dc_max,r_max)
+        params = self.center(img,params,dc_max)
         params = self.fit(img,params)
         return params
-    def center(self,img,params,dc_max=5,r_max=100):
+    def center(self,img,params):
         I = self.dataItemImage.data(img=img)
         M = self.dataItemMask.data(img=img,binaryMask=True)
-        params = center(I,M,params,dc_max,r_max)
+        params = center(I,M,params,5,params["maskRadius"])
         return params
     def fit(self,img,params):
         I = self.dataItemImage.data(img=img)
         M = self.dataItemMask.data(img=img,binaryMask=True)
-        fit(I,M,params)
+        fit(I,M,params,params["maskRadius"])
         return params
 
-def center(img,msk,params,dc_max,r_max=None):
+def center(img,msk,params,dc_max,r_max):
     s = img.shape
     cx_g = (s[1]-1)/2.+params["offCenterX"]
     cy_g = (s[0]-1)/2.+params["offCenterY"]
@@ -131,11 +131,13 @@ def gaussian_smooth_2d1d(I,sm,precision=1.):
         print "Error input"
         return []
 
-def fit(image,mask,params):
+def fit(image,mask,params,r_max):
     X,Y = numpy.meshgrid(numpy.arange(0.,image.shape[1],1.),numpy.arange(0.,image.shape[0],1.))
-    Xm = X[mask]
-    Ym = Y[mask]
-    fitimg = image[mask]
+    Rsq = (X-cx)**2+(Y-cy)**2
+    Mr = (r_max**2)<=Rsq
+    Xm = X[mask*Mr]
+    Ym = Y[mask*Mr]
+    fitimg = image[mask*Mr]
     s = image.shape
     cx = (s[1]-1)/2.+params["offCenterX"]
     cy = (s[0]-1)/2.+params["offCenterY"]
