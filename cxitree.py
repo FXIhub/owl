@@ -61,18 +61,18 @@ class DataMaskMenu(DataMenu):
     def __init__(self,parent=None):
         DataMenu.__init__(self,parent)
         self.addSeparator()
-        self.PIXELMASK_BITS = {'perfect' : 0,# PIXEL_IS_PERFECT
-                               'invalid' : 1,# PIXEL_IS_INVALID
-                               'saturated' : 2,# PIXEL_IS_SATURATED
-                               'hot' : 4,# PIXEL_IS_HOT
-                               'dead' : 8,# PIXEL_IS_DEAD
-                               'shadowed' : 16, # PIXEL_IS_SHADOWED
-                               'peakmask' : 32, # PIXEL_IS_IN_PEAKMASK
-                               'ignore' : 64, # PIXEL_IS_TO_BE_IGNORED
-                               'bad' : 128, # PIXEL_IS_BAD
-                               'resolution' : 256, # PIXEL_IS_OUT_OF_RESOLUTION_LIMITS
-                               'missing' : 512, # PIXEL_IS_MISSING
-                               'halo' : 1024} # PIXEL_IS_IN_HALO
+        self.PIXELMASK_BITS = {'perfect' : PIXEL_IS_PERFECT,
+                               'invalid' : PIXEL_IS_INVALID,
+                               'saturated' : PIXEL_IS_SATURATED,
+                               'hot' : PIXEL_IS_HOT,
+                               'dead' : PIXEL_IS_DEAD,
+                               'shadowed' : PIXEL_IS_SHADOWED,
+                               'peakmask' : PIXEL_IS_IN_PEAKMASK,
+                               'ignore' : PIXEL_IS_TO_BE_IGNORED,
+                               'bad' : PIXEL_IS_BAD,
+                               'resolution' : PIXEL_IS_OUT_OF_RESOLUTION_LIMITS,
+                               'missing' : PIXEL_IS_MISSING,
+                               'halo' : PIXEL_IS_IN_HALO}
         self.maskActions = {}
         for key in self.PIXELMASK_BITS.keys():
             self.maskActions[key] = self.addAction(key)

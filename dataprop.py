@@ -7,6 +7,8 @@ from matplotlib import colors
 from matplotlib import cm
 import pyqtgraph
 import modelProperties
+import fit
+import experimentDialog
 
 def sizeof_fmt(num):
     for x in ['bytes','kB','MB','GB']:
@@ -993,7 +995,9 @@ class ModelProperties(QtGui.QGroupBox, modelProperties.Ui_ModelProperties):
         self.centerY.editingFinished.connect(self.emitParams)
         self.diameter.editingFinished.connect(self.emitParams)
         self.scaling.editingFinished.connect(self.emitParams)
+        self.experiment.released.connect(self.onExperiment)
         self.fitPushButton.released.connect(self.calculateFit)
+        self.visibilitySlider.sliderMoved.connect(self.emitParams)
     def setModelItem(self,modelItem=None):
         self.modelItem = modelItem
         if modelItem == None:
@@ -1018,28 +1022,77 @@ class ModelProperties(QtGui.QGroupBox, modelProperties.Ui_ModelProperties):
             self.diameter.setReadOnly(True)
             self.scaling.setText("")
             self.scaling.setReadOnly(True)
+            self.visibilitySlider.setValue(50)
+            self.visibilitySlider.setEnabled(False)
         else:
             params = self.modelItem.getParams(img)
-            self.centerX.setText(str(params["centerX"]))
+            self.centerX.setText(str(params["offCenterX"]))
             self.centerX.setReadOnly(False)
-            self.centerY.setText(str(params["centerY"]))
+            self.centerY.setText(str(params["offCenterY"]))
             self.centerY.setReadOnly(False)
             self.diameter.setText(str(params["diameterNM"]))
             self.diameter.setReadOnly(False)
-            self.scaling.setText(str(params["intensityPhUM2"]))
+            self.scaling.setText(str(params["intensityMJUM2"]))
             self.scaling.setReadOnly(False)
+            self.visibilitySlider.setValue(params["_visibility"]*100)
+            self.visibilitySlider.setEnabled(True)
     def emitParams(self):
         params = {}
         img = self.parent.viewer.view.view2D.selectedImage
-        params["centerX"] = float(self.centerX.text())
-        params["centerY"] = float(self.centerY.text())
+        params["offCenterX"] = float(self.centerX.text())
+        params["offCenterY"] = float(self.centerY.text())
         params["diameterNM"] = float(self.diameter.text())
-        params["intensityPhUM2"] = float(self.scaling.text())
+        params["intensityMJUM2"] = float(self.scaling.text())
+        params["_visibility"] = float(self.visibilitySlider.value()/100.)
         self.modelItem.setParams(img,params)
         self.paramsChanged.emit()
+    def onExperiment(self):
+        expDialog = ExperimentDialog(self)
+        expDialog.exec_()
     def calculateFit(self):
         img = self.parent.viewer.view.view2D.selectedImage
         self.modelItem.centerAndFit(img)
         self.showParams()
     def toggleVisible(self):
         self.setVisible(not self.isVisible())
+
+
+class ExperimentDialog(QtGui.QDialog, experimentDialog.Ui_ExperimentDialog):
+    def __init__(self,modelProperties):
+        QtGui.QDialog.__init__(self,modelProperties,QtCore.Qt.WindowTitleHint)
+        self.setupUi(self)
+        self.modelProperties = modelProperties
+        self.materialType.addItems(fit.DICT_atomic_composition.keys())
+        params = self.modelProperties.modelItem.getParams(0)
+        self.wavelength.setValue(params["photonWavelengthNM"])
+        self.syncEnergy()
+        self.distance.setValue(params["detectorDistanceMM"])
+        self.pixelSize.setValue(params["detectorPixelSizeUM"])
+        allItems = [self.materialType.itemText(i) for i in range(self.materialType.count())]
+        self.materialType.setCurrentIndex(allItems.index(params["materialType"]))
+        self.wavelength.editingFinished.connect(self.syncEnergy)
+        self.energy.editingFinished.connect(self.syncWavelength)
+        self.buttonBox.accepted.connect(self.onOkButtonClicked)
+    def syncEnergy(self):
+        wl = self.wavelength.value()
+        h = fit.DICT_physical_constants['h']
+        c = fit.DICT_physical_constants['c']
+        qe = fit.DICT_physical_constants['e']
+        ey = h*c/wl/1.E-9/qe
+        self.energy.setValue(ey)
+    def syncWavelength(self):
+        ey = self.energy.value()
+        h = fit.DICT_physical_constants['h']
+        c = fit.DICT_physical_constants['c']
+        qe = fit.DICT_physical_constants['e']
+        wl = h*c/ey/1.E-9/qe
+        self.wavelength.setValue(wl)
+    def onOkButtonClicked(self):
+        print "Here we are!"
+        params = {}
+        params["photonWavelengthNM"] = self.wavelength.value()
+        params["photonEnergyEV"] = self.energy.value()
+        params["detectorDistanceMM"] = self.distance.value()
+        params["detectorPixelSizeUM"] = self.pixelSize.value()
+        params["materialType"] = self.materialType.currentText()
+        self.modelProperties.modelItem.setParams(None,params)

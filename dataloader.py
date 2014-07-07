@@ -127,6 +127,21 @@ class GroupItem:
             if isinstance(item,h5py.Dataset):
                 self.children[k] = DataItem(self,self.fileLoader,self.fullName+"/"+k)
 
+# CXI pixelmask bits
+PIXEL_IS_PERFECT = 0
+PIXEL_IS_INVALID = 1
+PIXEL_IS_SATURATED = 2
+PIXEL_IS_HOT = 4
+PIXEL_IS_DEAD = 8
+PIXEL_IS_SHADOWED = 16
+PIXEL_IS_IN_PEAKMASK = 32
+PIXEL_IS_TO_BE_IGNORED = 64
+PIXEL_IS_BAD = 128
+PIXEL_IS_OUT_OF_RESOLUTION_LIMITS = 256
+PIXEL_IS_MISSING = 512
+PIXEL_IS_IN_HALO = 1024
+PIXEL_IS_ARTIFACT_CORRECTED = 2048
+PIXEL_IS_IN_MASK = PIXEL_IS_INVALID |  PIXEL_IS_SATURATED | PIXEL_IS_HOT | PIXEL_IS_DEAD | PIXEL_IS_SHADOWED | PIXEL_IS_IN_PEAKMASK | PIXEL_IS_TO_BE_IGNORED | PIXEL_IS_BAD | PIXEL_IS_MISSING
 
 class DataItem:
     def __init__(self,parent,fileLoader,fullName):
@@ -233,6 +248,9 @@ class DataItem:
                 d = d[:,iy,ix]
             else:
                 d = d[iy,ix]
+
+        if kwargs.get("binaryMask",False):
+            d = (d & PIXEL_IS_IN_MASK) == 0
 
         windowSize = kwargs.get("windowSize",None)
         if windowSize != None:
@@ -377,8 +395,8 @@ class ModelItem:
         self.dataItemMask = None
         self.indParams = {}
         self.genParams = {}
-        self.paramsIndDef = {"centerX":0.5,"centerY":0.5,"intensityPhUM2":1.E7,"diameterNM":100.}
-        self.paramsGenDef = {"wavelengthNM":1.,"detectorDistanceMM":100.,"detectorPixelSizeUM":75.,"materialType":None}
+        self.paramsIndDef = {"offCenterX":0.,"offCenterY":0.,"intensityMJUM2":1.,"diameterNM":100.}
+        self.paramsGenDef = {"photonWavelengthNM":1.,"detectorDistanceMM":1000.,"detectorPixelSizeUM":75.,"materialType":"water","_visibility":0.5}
         self.dataItems = {}
         if "model" in groupChildren:
             for n in self.paramsDef:
@@ -416,8 +434,10 @@ class ModelItem:
         for n,p in params.items():
             if n in self.indParams:
                 self.indParams[n][img] = p
+                print n,p,0
             elif n in self.genParams:
                 self.genParams[n] = p  
+                print n,p,1
     def saveParams(self):
         treeDirty = False
         if self.paramsDirty:
@@ -449,6 +469,7 @@ class ModelItem:
         if treeDirty:
             self.fileLoader.datasetTreeChanged.emit()
     def centerAndFit(self,img):
+        print self.dataItemImage,self.dataItemMask
         M = fit.FitModel(self.dataItemImage,self.dataItemMask)
         newParams = M.center_and_fit(img)
         self.setParams(img,newParams)

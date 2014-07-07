@@ -13,6 +13,7 @@ from shaderprogram import compileProgram, compileShader
 import logging
 import time
 from cache import GLCache
+import fit
         
 class View2D(View,QtOpenGL.QGLWidget):
     needDataImage = QtCore.Signal(int)
@@ -184,6 +185,9 @@ class View2D(View,QtOpenGL.QGLWidget):
             uniform float modelSize;
             uniform float modelScale;
             uniform int showModel;
+            uniform float imageShapeX;
+            uniform float imageShapeY;
+            uniform float modelVisibility;
             void main()
             {
                 vec2 uv = gl_TexCoord[0].xy;
@@ -194,10 +198,10 @@ class View2D(View,QtOpenGL.QGLWidget):
 
         
                 // Apply Model
-                if(showModel == 1 && uv[0] > 0.5){
+                if((showModel == 1) && (uv[0] > modelVisibility)){
                         //float s = modelSize*sqrt((uv[0]-modelCenterX)*(uv[0]-modelCenterX)+(uv[1]-modelCenterX)*(uv[1]-modelCenterX));
-                        float s = modelSize*sqrt((uv[0]-modelCenterX)*(uv[0]-modelCenterX)+(uv[1]-modelCenterY)*(uv[1]-modelCenterY));
-                        color.a = (sin(s)-s*cos(s))/(3.0*s*s*s);
+                        float s = modelSize*sqrt((uv[0]-modelCenterX)*(uv[0]-modelCenterX)*(imageShapeX-1.)*(imageShapeX-1.)+(uv[1]-modelCenterY)*(uv[1]-modelCenterY)*(imageShapeY-1.)*(imageShapeY-1.));
+                        color.a = 3.0*(sin(s)-s*cos(s))/(s*s*s);
                         color.a *= color.a * modelScale;
         
                 }else{
@@ -276,8 +280,9 @@ class View2D(View,QtOpenGL.QGLWidget):
         self.modelSizeLoc = glGetUniformLocation(self.shader, "modelSize")
         self.modelScaleLoc = glGetUniformLocation(self.shader, "modelScale")
         self.showModelLoc = glGetUniformLocation(self.shader, "showModel")
-
-        
+        self.imageShapeXLoc = glGetUniformLocation(self.shader, "imageShapeX")
+        self.imageShapeYLoc = glGetUniformLocation(self.shader, "imageShapeY")
+        self.modelVisibilityLoc = glGetUniformLocation(self.shader, "modelVisibility")
 
     def initColormapTextures(self):
         n = 1024
@@ -491,11 +496,33 @@ class View2D(View,QtOpenGL.QGLWidget):
         # Model related variables
         glUniform1i(self.showModelLoc,self.modelView)
         params = self.data.modelItem.getParams(img)
-        glUniform1f(self.modelCenterXLoc,params["centerX"])
-        glUniform1f(self.modelCenterYLoc,params["centerY"])
-        glUniform1f(self.modelSizeLoc,params["diameterNM"])
-        glUniform1f(self.modelScaleLoc,params["intensityPhUM2"])
-
+        s = self.loaderThread.imageData[img].shape
+        glUniform1f(self.modelCenterXLoc,((s[1]-1)/2.+params["offCenterX"])/(s[1]-1))
+        glUniform1f(self.modelCenterYLoc,((s[0]-1)/2.+params["offCenterY"])/(s[0]-1))
+        p = params["detectorPixelSizeUM"]*1.E-6
+        D = params["detectorDistanceMM"]*1.E-3
+        wl = params["photonWavelengthNM"]*1.E-9
+        h = fit.DICT_physical_constants['h']
+        c = fit.DICT_physical_constants['c']
+        qe = fit.DICT_physical_constants['e']
+        ey_J = h*c/wl
+        r = params["diameterNM"]*1.E-9/2.
+        V = 4/3.*numpy.pi*r**3
+        I_0 = params["intensityMJUM2"]*1.E-3/ey_J*1.E12
+        rho_e = fit.Material(material_type=params["materialType"]).get_electron_density()
+        # k = 2 pi / wavelength
+        # q = coordinate * (k p / D)
+        # s = q modelRadius = coordinate * modelSize
+        # modelSize = q modelRadius / coordinate = modelRadius * k p / D
+        k = 2*numpy.pi/wl
+        modelSize = r*k*p/D
+        glUniform1f(self.modelSizeLoc,modelSize)
+        # scale = K = I_0 (rho_e p/D r_0 V)^2
+        K = I_0*(rho_e*p/D*fit.DICT_physical_constants["re"]*V)**2
+        glUniform1f(self.modelScaleLoc,K)
+        glUniform1f(self.imageShapeXLoc,self.loaderThread.imageData[img].shape[1])
+        glUniform1f(self.imageShapeYLoc,self.loaderThread.imageData[img].shape[0])
+        glUniform1f(self.modelVisibilityLoc,params["_visibility"])
 
         glBegin (GL_QUADS);
         glTexCoord2f (0.0, 0.0);

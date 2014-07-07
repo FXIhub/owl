@@ -10,30 +10,27 @@ class FitModel:
         self.dataItemImage = dataItemImage
         self.dataItemMask = dataItemMask
     def center_and_fit(self,img,dc_max=5,r_max=100):
-        D1 = self.center(img,dc_max,r_max)
-        params = self.dataItemImage.modelProperties.getParams(img)
-        params["centerX"] = D1["centerX"]
-        params["centerY"] = D1["centerY"]
-        D2 = self.fit(img)
-        return D2
-    def center(self,img,dc_max=5,r_max=100):
-        I = self.dataItemImage.data(img=img)
-        M = self.dataItemMask.data(img=img)
         params = self.dataItemImage.modelItem.getParams(img)
-        [cx,cy] = center(I,M,params["centerX"],params["centerY"],dc_max,r_max)
-        D = {"centerX":cx,"centerY":cy}
-        return D
-    def fit(self,img):
+        params = self.center(img,params,dc_max,r_max)
+        params = self.fit(img,params)
+        return params
+    def center(self,img,params,dc_max=5,r_max=100):
         I = self.dataItemImage.data(img=img)
-        M = self.dataItemMask.data(img=img)
-        params = self.dataItemImage.modelItem.getParams(img)
-        D = fit(I,M,params)
-        return D
+        M = self.dataItemMask.data(img=img,binaryMask=True)
+        params = center(I,M,params,dc_max,r_max)
+        return params
+    def fit(self,img,params):
+        I = self.dataItemImage.data(img=img)
+        M = self.dataItemMask.data(img=img,binaryMask=True)
+        fit(I,M,params)
+        return params
 
-def center(img,msk,cx_guess,cy_guess,dc_max,r_max=None,full_output=False):
-    cx_g = numpy.round(cx_guess*2)/2.
-    cy_g = numpy.round(cy_guess*2)/2.
-    #print cx_g,cy_g
+def center(img,msk,params,dc_max,r_max=None):
+    s = img.shape
+    cx_g = (s[1]-1)/2.+params["offCenterX"]
+    cy_g = (s[0]-1)/2.+params["offCenterY"]
+    cx_g = numpy.round(cx_g*2)/2.
+    cy_g = numpy.round(cy_g*2)/2.
     ddc = 0.5
     N_sam1= int(numpy.round(2*dc_max/ddc))+1
     cx_sam1 = numpy.linspace(cx_g-dc_max,cx_g+dc_max,N_sam1)
@@ -74,19 +71,22 @@ def center(img,msk,cx_guess,cy_guess,dc_max,r_max=None,full_output=False):
     i_min = errs.flatten().argmin()
     cxi_min = i_min % N_sam1
     cyi_min = i_min/N_sam1
-    if full_output:
-        D = {}
-        D["msk_ext"] = msk_ext
-        D["img_turned_msk_ext"] = img_turned*msk_ext
-        D["img_msk_ext"] = img*msk_ext
-        D["errmap"] = errs/errs.max()
-        D["errmap_sm"] = gaussian_smooth_2d1d(errs,3.)
-        D["errmap_sm"] /= D["errmap_sm"].max() 
-        D["errmap_min"] = errs.min()
-        return cx_sam1[cxi_min],cy_sam1[cyi_min],D
-    else:
-        return cx_sam1[cxi_min],cy_sam1[cyi_min]
-
+    #if full_output:
+    #    D = {}
+    #    D["msk_ext"] = msk_ext
+    #    D["img_turned_msk_ext"] = img_turned*msk_ext
+    #    D["img_msk_ext"] = img*msk_ext
+    #    D["errmap"] = errs/errs.max()
+    #    D["errmap_sm"] = gaussian_smooth_2d1d(errs,3.)
+    #    D["errmap_sm"] /= D["errmap_sm"].max() 
+    #    D["errmap_min"] = errs.min()
+    #    return cx_sam1[cxi_min],cy_sam1[cyi_min],D
+    #else:
+    cx_r = cx_sam1[cxi_min]
+    cy_r = cy_sam1[cyi_min]
+    params["offCenterX"] = cx_r-(s[1]-1)/2.
+    params["offCenterY"] = cy_r-(s[0]-1)/2.
+    return params
 
 def symmetrize(M,cx,cy):
     M_new = M.copy()
@@ -135,18 +135,46 @@ def fit(image,mask,params):
     X,Y = numpy.meshgrid(numpy.arange(0.,image.shape[1],1.),numpy.arange(0.,image.shape[0],1.))
     Xm = X[mask]
     Ym = Y[mask]
-    I_fit_m = get_sphere_diffraction_formula(params["detectorPixelSizeUM"]*1.E-6,params["detectorDistanceMM"]*1.E-3,params["photonWavelengthNM"]*1.E-9,Xm-params["centerX"],Ym-params["centerY"])
-    I_fit = get_sphere_diffraction_formula(params["detectorPixelSizeUM"]*1.E-6,params["detectorDistanceMM"]*1.E-3,params["photonWavelengthNM"]*1.E-9,X-params["centerX"],Y-params["centerY"])
+    fitimg = image[mask]
+    s = image.shape
+    cx = (s[1]-1)/2.+params["offCenterX"]
+    cy = (s[0]-1)/2.+params["offCenterY"]
+
+    p = params["detectorPixelSizeUM"]*1.E-6
+    D = params["detectorDistanceMM"]*1.E-3
+    wavelength = params["photonWavelengthNM"]*1.E-9
+    h = DICT_physical_constants['h']
+    c = DICT_physical_constants['c']
+    qe = DICT_physical_constants['e']
+    ey_J = h*c/wavelength
+    d = params["diameterNM"]*1.E-9
+    I0 = params["intensityMJUM2"]*1.E-3/ey_J*10E12
+    Mat = Material(material_type=params["materialType"])
+    rho_e = Mat.get_electron_density()
+    r = d/2.*1.E-9
+    V = 4/3.*numpy.pi*r**3
+
+    #q = generate_absqmap(X-cx,Y-cy,p,D,wavelength)
+    #I_fit = lambda K,r: I_sphere_diffraction(K,q,r)
+    qm = generate_absqmap(Xm-cx,Ym-cy,p,D,wavelength)
+    I_fit_m = lambda K,r: I_sphere_diffraction(K,qm,r)
+
     # v[0]: K, v[1]: r (in nm)
-    i_fit = lambda v: I_fit(v[0],v[1])
+    #i_fit = lambda v: I_fit(v[0],v[1])
     i_fit_m = lambda v: I_fit_m(v[0],v[1])
-    v0 = [v0fit["K"],v0fit["r"]]
-    get_vres = lambda v: {"K":v[0],"r":abs(v[1])}
+
+    S = I0*rho_e**2
+    K = S * ( p/D*DICT_physical_constants["re"]*V )**2
+
+    v0 = [K,r]
+
     err = lambda v: abs(i_fit_m(v)-fitimg).sum()
     maxfev=1000 
     # non-linear leastsq, v0: starting point
-    v1, success = leastsq(lambda v: ones(len(v))*err(v),v0, maxfev=maxfev)
-    return get_vres(v1)
+    v1, success = leastsq(lambda v: numpy.ones(len(v))*err(v),v0, maxfev=maxfev)
+    params["diameterNM"] = v1[1]*2/1.E-9
+    params["intensityPhUM2"] = v1[0] / (rho_e*(params["detectorPixelSizeUM"]*1.E-6)/(params["detectorDistanceMM"]*1.E-3)*DICT_physical_constants["re"]*4/3.*numpy.pi*v1[1]**3)**2
+    return params
 
 # scattering amplitude from homogeneous sphere:
 # -----------------------------------------------
@@ -167,29 +195,13 @@ _F_sphere_diffraction = lambda K,q,r: numpy.sqrt(abs(K))*3*(numpy.sin(q*r)-q*r*n
 F_sphere_diffraction = lambda K,q,r: ((q*r)**6 < numpy.finfo("float64").resolution)*numpy.sqrt(abs(K)) + ((q*r)**6 >= numpy.finfo("float64").resolution)*_F_sphere_diffraction(K,q,r)
 _I_sphere_diffraction = lambda K,q,r: abs(K)*(3*(numpy.sin(q*r)-q*r*numpy.cos(q*r))/((q*r)**3+numpy.finfo("float64").eps))**2
 I_sphere_diffraction = lambda K,q,r: ((q*r)**6 < numpy.finfo("float64").resolution)*abs(K) + ((q*r)**6 >= numpy.finfo("float64").resolution)*_I_sphere_diffraction(K,q,r)
-Fringe_sphere_diffraction = None
-def get_sphere_diffraction_formula(p,D,wavelength,X=None,Y=None):
-    if X != None and Y != None:
-        q = generate_absqmap(X,Y,p,D,wavelength)
-        I = lambda K,r: proptools.I_sphere_diffraction(K,q,r)
-    else:
-        q = lambda X,Y: generate_absqmap(X,Y,p,D,wavelength)
-        I = lambda X,Y,K,r: proptools.I_sphere_diffraction(K,q(X,Y),r)
-    return I
 
 def generate_absqmap(X,Y,p,D,wavelength):
-    [qx,qy,qz] = generate_qmap(X,Y,p,D,wavelength)
-    q_map = sqrt(qx**2+qy**2+qz**2)
+    R_Ewald = 2*numpy.pi/(1.*wavelength)
+    qx = R_Ewald*(p*X/D)
+    qy = R_Ewald*(p*Y/D)
+    q_map = numpy.sqrt(qx**2+qy**2)
     return q_map
-
-def generate_qmap(X,Y,p,D,wavelength):
-    phi = arctan2(p*sqrt(X**2+Y**2),D)
-    R_Ewald = 2*pi/(1.*wavelength)
-    qx = R_Ewald*2*sin(arctan2(p*X,D)/2.)
-    qy = R_Ewald*2*sin(arctan2(p*Y,D)/2.)
-    qz = R_Ewald*(1-cos(phi))
-    return [qx,qy,qz]
-
         
 
 class Material:
