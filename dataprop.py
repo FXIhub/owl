@@ -1014,35 +1014,35 @@ class ModelProperties(QtGui.QGroupBox, modelProperties.Ui_ModelProperties):
     def showParams(self,params=None):
         img = self.parent.viewer.view.view2D.selectedImage
         if self.modelItem == None or img == None:
-            self.centerX.setText("")
+            self.centerX.setValue(0)
             self.centerX.setReadOnly(True)
-            self.centerY.setText("")
+            self.centerY.setValue(0)
             self.centerY.setReadOnly(True)
-            self.diameter.setText("")
+            self.diameter.setValue(0)
             self.diameter.setReadOnly(True)
-            self.scaling.setText("")
+            self.scaling.setValue(0)
             self.scaling.setReadOnly(True)
             self.visibilitySlider.setValue(50)
             self.visibilitySlider.setEnabled(False)
         else:
             params = self.modelItem.getParams(img)
-            self.centerX.setText(str(params["offCenterX"]))
+            self.centerX.setValue(params["offCenterX"])
             self.centerX.setReadOnly(False)
-            self.centerY.setText(str(params["offCenterY"]))
+            self.centerY.setValue(params["offCenterY"])
             self.centerY.setReadOnly(False)
-            self.diameter.setText(str(params["diameterNM"]))
+            self.diameter.setValue(params["diameterNM"])
             self.diameter.setReadOnly(False)
-            self.scaling.setText(str(params["intensityMJUM2"]))
+            self.scaling.setValue(params["intensityMJUM2"])
             self.scaling.setReadOnly(False)
             self.visibilitySlider.setValue(params["_visibility"]*100)
             self.visibilitySlider.setEnabled(True)
     def emitParams(self):
         params = {}
         img = self.parent.viewer.view.view2D.selectedImage
-        params["offCenterX"] = float(self.centerX.text())
-        params["offCenterY"] = float(self.centerY.text())
-        params["diameterNM"] = float(self.diameter.text())
-        params["intensityMJUM2"] = float(self.scaling.text())
+        params["offCenterX"] = self.centerX.value()
+        params["offCenterY"] = self.centerY.value()
+        params["diameterNM"] = self.diameter.value()
+        params["intensityMJUM2"] = self.scaling.value()
         params["_visibility"] = float(self.visibilitySlider.value()/100.)
         self.modelItem.setParams(img,params)
         self.paramsChanged.emit()
@@ -1088,7 +1088,6 @@ class ExperimentDialog(QtGui.QDialog, experimentDialog.Ui_ExperimentDialog):
         wl = h*c/ey/1.E-9/qe
         self.wavelength.setValue(wl)
     def onOkButtonClicked(self):
-        print "Here we are!"
         params = {}
         params["photonWavelengthNM"] = self.wavelength.value()
         params["photonEnergyEV"] = self.energy.value()

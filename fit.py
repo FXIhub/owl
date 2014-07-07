@@ -151,7 +151,7 @@ def fit(image,mask,params):
     I0 = params["intensityMJUM2"]*1.E-3/ey_J*10E12
     Mat = Material(material_type=params["materialType"])
     rho_e = Mat.get_electron_density()
-    r = d/2.*1.E-9
+    r = d/2.
     V = 4/3.*numpy.pi*r**3
 
     #q = generate_absqmap(X-cx,Y-cy,p,D,wavelength)
@@ -173,7 +173,7 @@ def fit(image,mask,params):
     # non-linear leastsq, v0: starting point
     v1, success = leastsq(lambda v: numpy.ones(len(v))*err(v),v0, maxfev=maxfev)
     params["diameterNM"] = v1[1]*2/1.E-9
-    params["intensityPhUM2"] = v1[0] / (rho_e*(params["detectorPixelSizeUM"]*1.E-6)/(params["detectorDistanceMM"]*1.E-3)*DICT_physical_constants["re"]*4/3.*numpy.pi*v1[1]**3)**2
+    params["intensityMJUM2"] = v1[0]*ey_J/1.E-3/1.E12 / (rho_e*(params["detectorPixelSizeUM"]*1.E-6)/(params["detectorDistanceMM"]*1.E-3)*DICT_physical_constants["re"]*4/3.*numpy.pi*v1[1]**3)**2
     return params
 
 # scattering amplitude from homogeneous sphere:

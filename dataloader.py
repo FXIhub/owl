@@ -65,7 +65,6 @@ class FileLoader(QtCore.QObject):
                     g = GroupItem(group,self,"/"+name)
                     c.children[name[name.rindex('/')+1:]] = g
                     self.groupItems[name] = g
-                    print "create group item"
                 elif isinstance(c,GroupItem):                  
                     addGroupRecursively(c,c.children)
 
@@ -78,12 +77,10 @@ class FileLoader(QtCore.QObject):
 
         def addDatasetRecursively(group,children):
             for n,c in children.items():
-                print n,path
                 if c.fullName == path:
                     d = DataItem(group,self,"/"+name)
                     c.children[name[name.rindex('/')+1:]] = d
                     self.dataItems[name] = d
-                    print "create data item"
                 elif isinstance(c,GroupItem):                  
                     addDatasetRecursively(c,c.children)
 
@@ -434,10 +431,8 @@ class ModelItem:
         for n,p in params.items():
             if n in self.indParams:
                 self.indParams[n][img] = p
-                print n,p,0
             elif n in self.genParams:
                 self.genParams[n] = p  
-                print n,p,1
     def saveParams(self):
         treeDirty = False
         if self.paramsDirty:
@@ -469,7 +464,6 @@ class ModelItem:
         if treeDirty:
             self.fileLoader.datasetTreeChanged.emit()
     def centerAndFit(self,img):
-        print self.dataItemImage,self.dataItemMask
         M = fit.FitModel(self.dataItemImage,self.dataItemMask)
         newParams = M.center_and_fit(img)
         self.setParams(img,newParams)

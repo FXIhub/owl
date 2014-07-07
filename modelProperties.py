@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'modelProperties.ui'
 #
-# Created: Mon Jul  7 18:36:41 2014
+# Created: Mon Jul  7 19:44:11 2014
 #      by: pyside-uic 0.2.14 running on PySide 1.1.2
 #
 # WARNING! All changes made in this file will be lost!
@@ -12,7 +12,7 @@ from PySide import QtCore, QtGui
 class Ui_ModelProperties(object):
     def setupUi(self, ModelProperties):
         ModelProperties.setObjectName("ModelProperties")
-        ModelProperties.resize(256, 245)
+        ModelProperties.resize(259, 257)
         self.gridLayout = QtGui.QGridLayout(ModelProperties)
         self.gridLayout.setObjectName("gridLayout")
         self.label_3 = QtGui.QLabel(ModelProperties)
@@ -24,21 +24,9 @@ class Ui_ModelProperties(object):
         self.label_4 = QtGui.QLabel(ModelProperties)
         self.label_4.setObjectName("label_4")
         self.gridLayout.addWidget(self.label_4, 3, 0, 1, 1)
-        self.centerX = QtGui.QLineEdit(ModelProperties)
-        self.centerX.setObjectName("centerX")
-        self.gridLayout.addWidget(self.centerX, 0, 1, 1, 1)
         self.label_2 = QtGui.QLabel(ModelProperties)
         self.label_2.setObjectName("label_2")
         self.gridLayout.addWidget(self.label_2, 1, 0, 1, 1)
-        self.centerY = QtGui.QLineEdit(ModelProperties)
-        self.centerY.setObjectName("centerY")
-        self.gridLayout.addWidget(self.centerY, 1, 1, 1, 1)
-        self.diameter = QtGui.QLineEdit(ModelProperties)
-        self.diameter.setObjectName("diameter")
-        self.gridLayout.addWidget(self.diameter, 2, 1, 1, 1)
-        self.scaling = QtGui.QLineEdit(ModelProperties)
-        self.scaling.setObjectName("scaling")
-        self.gridLayout.addWidget(self.scaling, 3, 1, 1, 1)
         self.verticalLayout = QtGui.QVBoxLayout()
         self.verticalLayout.setObjectName("verticalLayout")
         self.visibilitySlider = QtGui.QSlider(ModelProperties)
@@ -58,6 +46,27 @@ class Ui_ModelProperties(object):
         self.horizontalLayout.addWidget(self.fitPushButton)
         self.verticalLayout.addLayout(self.horizontalLayout)
         self.gridLayout.addLayout(self.verticalLayout, 4, 0, 1, 2)
+        self.centerX = QtGui.QDoubleSpinBox(ModelProperties)
+        self.centerX.setMaximum(10000.0)
+        self.centerX.setObjectName("centerX")
+        self.gridLayout.addWidget(self.centerX, 0, 1, 1, 1)
+        self.centerY = QtGui.QDoubleSpinBox(ModelProperties)
+        self.centerY.setMaximum(10000.0)
+        self.centerY.setObjectName("centerY")
+        self.gridLayout.addWidget(self.centerY, 1, 1, 1, 1)
+        self.diameter = QtGui.QDoubleSpinBox(ModelProperties)
+        self.diameter.setMaximum(10000.0)
+        self.diameter.setSingleStep(5.0)
+        self.diameter.setProperty("value", 100.0)
+        self.diameter.setObjectName("diameter")
+        self.gridLayout.addWidget(self.diameter, 2, 1, 1, 1)
+        self.scaling = QtGui.QDoubleSpinBox(ModelProperties)
+        self.scaling.setDecimals(5)
+        self.scaling.setMaximum(100.0)
+        self.scaling.setSingleStep(0.1)
+        self.scaling.setProperty("value", 1.0)
+        self.scaling.setObjectName("scaling")
+        self.gridLayout.addWidget(self.scaling, 3, 1, 1, 1)
 
         self.retranslateUi(ModelProperties)
         QtCore.QMetaObject.connectSlotsByName(ModelProperties)
