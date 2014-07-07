@@ -11,7 +11,7 @@ class FitModel:
         self.dataItemMask = dataItemMask
     def center_and_fit(self,img):
         params = self.dataItemImage.modelItem.getParams(img)
-        params = self.center(img,params,dc_max)
+        params = self.center(img,params)
         params = self.fit(img,params)
         return params
     def center(self,img,params):
@@ -22,7 +22,7 @@ class FitModel:
     def fit(self,img,params):
         I = self.dataItemImage.data(img=img)
         M = self.dataItemMask.data(img=img,binaryMask=True)
-        fit(I,M,params,params["maskRadius"])
+        params = fit(I,M,params,params["maskRadius"])
         return params
 
 def center(img,msk,params,dc_max,r_max):
@@ -131,51 +131,61 @@ def gaussian_smooth_2d1d(I,sm,precision=1.):
         print "Error input"
         return []
 
+from pylab import *
 def fit(image,mask,params,r_max):
     X,Y = numpy.meshgrid(numpy.arange(0.,image.shape[1],1.),numpy.arange(0.,image.shape[0],1.))
-    Rsq = (X-cx)**2+(Y-cy)**2
-    Mr = (r_max**2)<=Rsq
-    Xm = X[mask*Mr]
-    Ym = Y[mask*Mr]
-    fitimg = image[mask*Mr]
     s = image.shape
     cx = (s[1]-1)/2.+params["offCenterX"]
     cy = (s[0]-1)/2.+params["offCenterY"]
+    Rsq = (X-cx)**2+(Y-cy)**2
+    Mr = (r_max**2)>=Rsq
+    Xm = X[mask*Mr]
+    Ym = Y[mask*Mr]
+
+
+    imsave("img.png",log10(image))
+    imsave("mask.png",mask)
+    imsave("Mr.png",Mr)
 
     p = params["detectorPixelSizeUM"]*1.E-6
     D = params["detectorDistanceMM"]*1.E-3
     wavelength = params["photonWavelengthNM"]*1.E-9
     h = DICT_physical_constants['h']
     c = DICT_physical_constants['c']
-    qe = DICT_physical_constants['e']
     ey_J = h*c/wavelength
     d = params["diameterNM"]*1.E-9
-    I0 = params["intensityMJUM2"]*1.E-3/ey_J*10E12
+    I0 = params["intensityMJUM2"]*1.E-3*10E12/ey_J
     Mat = Material(material_type=params["materialType"])
     rho_e = Mat.get_electron_density()
     r = d/2.
     V = 4/3.*numpy.pi*r**3
+
+    fitimg = image[mask*Mr]
 
     #q = generate_absqmap(X-cx,Y-cy,p,D,wavelength)
     #I_fit = lambda K,r: I_sphere_diffraction(K,q,r)
     qm = generate_absqmap(Xm-cx,Ym-cy,p,D,wavelength)
     I_fit_m = lambda K,r: I_sphere_diffraction(K,qm,r)
 
-    # v[0]: K, v[1]: r (in nm)
+    # v[0]: K, v[1]: r
     #i_fit = lambda v: I_fit(v[0],v[1])
     i_fit_m = lambda v: I_fit_m(v[0],v[1])
 
-    S = I0*rho_e**2
-    K = S * ( p/D*DICT_physical_constants["re"]*V )**2
+    K = I0 * ( rho_e*p/D*DICT_physical_constants["re"]*V )**2
 
     v0 = [K,r]
 
-    err = lambda v: abs(i_fit_m(v)-fitimg).sum()
+    #print params
+
+    err = lambda v: ((i_fit_m(v)-fitimg)**2).sum()
     maxfev=1000 
     # non-linear leastsq, v0: starting point
     v1, success = leastsq(lambda v: numpy.ones(len(v))*err(v),v0, maxfev=maxfev)
+    Vnew = 4/3.*numpy.pi*v1[1]**3
+    I0 = v1[0] / (rho_e*p/D*DICT_physical_constants["re"]*Vnew)**2
+    params["intensityMJUM2"] = I0/1.E-3/1.E12*ey_J
     params["diameterNM"] = v1[1]*2/1.E-9
-    params["intensityMJUM2"] = v1[0]*ey_J/1.E-3/1.E12 / (rho_e*(params["detectorPixelSizeUM"]*1.E-6)/(params["detectorDistanceMM"]*1.E-3)*DICT_physical_constants["re"]*4/3.*numpy.pi*v1[1]**3)**2
+    #print params
     return params
 
 # scattering amplitude from homogeneous sphere:
@@ -200,8 +210,8 @@ I_sphere_diffraction = lambda K,q,r: ((q*r)**6 < numpy.finfo("float64").resoluti
 
 def generate_absqmap(X,Y,p,D,wavelength):
     R_Ewald = 2*numpy.pi/(1.*wavelength)
-    qx = R_Ewald*(p*X/D)
-    qy = R_Ewald*(p*Y/D)
+    qx = R_Ewald*p*X/D
+    qy = R_Ewald*p*Y/D
     q_map = numpy.sqrt(qx**2+qy**2)
     return q_map
         

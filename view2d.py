@@ -389,14 +389,14 @@ class View2D(View,QtOpenGL.QGLWidget):
         glLineWidth(0.5/self.zoom)
         imgWidth = self.getImgWidth("window",False)
         imgHeight = self.getImgHeight("window",False)
-        cx = self.centerX/self.zoom
-        cy = self.centerY/self.zoom
+        cx = self.centerX
+        cy = self.centerY
         sides = 200    
         radius = self.maskRadius
         glBegin(GL_LINE_LOOP)    
         for i in range(sides):    
-            x = radius * numpy.cos(i*2*numpy.pi/sides) + cx*imgWidth   
-            y = radius * numpy.sin(i*2*numpy.pi/sides) + cy*imgHeight
+            x = radius * numpy.cos(i*2*numpy.pi/sides) + cx*imgWidth/self.zoom
+            y = radius * numpy.sin(i*2*numpy.pi/sides) + (1-cy)*imgHeight/self.zoom
             glVertex2f(x,y)
         glEnd ();
         glPopMatrix()

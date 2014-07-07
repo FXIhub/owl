@@ -997,7 +997,8 @@ class ModelProperties(QtGui.QGroupBox, modelProperties.Ui_ModelProperties):
         self.scaling.valueChanged.connect(self.emitParams)
         self.maskRadius.valueChanged.connect(self.emitParams)
         self.experiment.released.connect(self.onExperiment)
-        self.fitPushButton.released.connect(self.calculateFit)
+        self.fitCenterPushButton.released.connect(self.calculateFitCenter)
+        self.fitModelPushButton.released.connect(self.calculateFitModel)
         self.visibilitySlider.sliderMoved.connect(self.emitParams)
     def setModelItem(self,modelItem=None):
         self.modelItem = modelItem
@@ -1055,9 +1056,13 @@ class ModelProperties(QtGui.QGroupBox, modelProperties.Ui_ModelProperties):
     def onExperiment(self):
         expDialog = ExperimentDialog(self)
         expDialog.exec_()
-    def calculateFit(self):
+    def calculateFitCenter(self):
         img = self.parent.viewer.view.view2D.selectedImage
-        self.modelItem.centerAndFit(img,fitConf)
+        self.modelItem.center(img)
+        self.showParams()
+    def calculateFitModel(self):
+        img = self.parent.viewer.view.view2D.selectedImage
+        self.modelItem.fit(img)
         self.showParams()
     def toggleVisible(self):
         self.setVisible(not self.isVisible())

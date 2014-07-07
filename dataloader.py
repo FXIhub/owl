@@ -467,6 +467,15 @@ class ModelItem:
         M = fit.FitModel(self.dataItemImage,self.dataItemMask)
         newParams = M.center_and_fit(img)
         self.setParams(img,newParams)
+    def center(self,img):
+        M = fit.FitModel(self.dataItemImage,self.dataItemMask)
+        newParams = M.center(img,self.getParams(img))
+        self.setParams(img,newParams)
+    def fit(self,img):
+        M = fit.FitModel(self.dataItemImage,self.dataItemMask)
+        newParams = M.fit(img,self.getParams(img))
+        self.setParams(img,newParams)
+
         
 
 class ImageLoader(QtCore.QObject):

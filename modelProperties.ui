@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>266</width>
-    <height>292</height>
+    <width>262</width>
+    <height>328</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -19,6 +19,9 @@
   <layout class="QGridLayout" name="gridLayout">
    <item row="1" column="1">
     <widget class="QDoubleSpinBox" name="centerY">
+     <property name="minimum">
+      <double>-10000.000000000000000</double>
+     </property>
      <property name="maximum">
       <double>10000.000000000000000</double>
      </property>
@@ -26,6 +29,9 @@
    </item>
    <item row="0" column="1">
     <widget class="QDoubleSpinBox" name="centerX">
+     <property name="minimum">
+      <double>-10000.000000000000000</double>
+     </property>
      <property name="maximum">
       <double>10000.000000000000000</double>
      </property>
@@ -107,18 +113,25 @@
       </widget>
      </item>
      <item>
+      <widget class="QPushButton" name="experiment">
+       <property name="text">
+        <string>Experiment...</string>
+       </property>
+      </widget>
+     </item>
+     <item>
       <layout class="QHBoxLayout" name="horizontalLayout">
        <item>
-        <widget class="QPushButton" name="experiment">
+        <widget class="QPushButton" name="fitCenterPushButton">
          <property name="text">
-          <string>Experiment...</string>
+          <string>Fit center</string>
          </property>
         </widget>
        </item>
        <item>
-        <widget class="QPushButton" name="fitPushButton">
+        <widget class="QPushButton" name="fitModelPushButton">
          <property name="text">
-          <string>Fit</string>
+          <string>Fit model</string>
          </property>
         </widget>
        </item>
