@@ -654,10 +654,18 @@ class ImageLoader(QtCore.QObject):
         #        print "Debug b min %f max %f %s %s" % (numpy.amin(self.imageData[img]), numpy.amax(self.imageData[img]), self.imageData[img].shape, self.imageData[img].dtype)
         #print "Emitting draw request %d " % (img)
         self.imageLoaded.emit(img)
+    def loadPatterson(self,img):
+        patterson = self.view.getPatterson()
+        self.pattersonData[img] = numpy.ones((self.view.data.height(),self.view.data.width()),dtype=numpy.float32)
+        self.pattersonData[img][:] = abs(patterson)[:]
+        self.imageLoaded.emit(img)
+    def loadedImages(self):
+        return self.imageData.keys()
+    def loadedPatterson(self):
+        return self.pattersonData.keys()
     def clear(self):
         # Unlimited cache
         self.imageData = ArrayCache(1024*1024*int(QtCore.QSettings().value("imageCacheSize")))
         self.phaseData = ArrayCache(1024*1024*int(QtCore.QSettings().value("phaseCacheSize")))
         self.maskData = ArrayCache(1024*1024*int(QtCore.QSettings().value("maskCacheSize")))
-    def loadedImages(self):
-        return self.imageData.keys()
+        self.pattersonData = ArrayCache(1024*1024*int(QtCore.QSettings().value("imageCacheSize")))

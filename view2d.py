@@ -17,6 +17,7 @@ import fit
         
 class View2D(View,QtOpenGL.QGLWidget):
     needDataImage = QtCore.Signal(int)
+    needDataPatterson = QtCore.Signal(int)
     #imageSelected = QtCore.Signal(int)
     centralImgChanged = QtCore.Signal(int,int,int,int)
     translationChanged = QtCore.Signal(int,int)
@@ -60,7 +61,9 @@ class View2D(View,QtOpenGL.QGLWidget):
 
         self.loaderThread = ImageLoader(None,self)
         self.needDataImage.connect(self.loaderThread.loadImage)
+        self.needDataPatterson.connect(self.loaderThread.loadPatterson)
         self.loaderThread.imageLoaded.connect(self.generateTexture)
+
 #        self.clearLoaderThread.connect(self.loaderThread.clear)
 
         self.imageLoader = QtCore.QThread()
@@ -123,6 +126,8 @@ class View2D(View,QtOpenGL.QGLWidget):
         return self.data.data(img=img)
     def getPhase(self,img=None):
         return self.data.data(img=img,complex_mode="phase")
+    def getPatterson(self):
+        return self.data.pattersonItem.patterson
     def stopThreads(self):
         while(self.imageLoader.isRunning()):
             self.imageLoader.quit()
@@ -495,7 +500,7 @@ class View2D(View,QtOpenGL.QGLWidget):
             imageData = self.loaderThread.imageData
         else:
             imageTexture = self.pattersonTextures[img]
-            imageData = self.data.pattersonItem.patterson
+            imageData = self.loaderThread.pattersonData
         glBindTexture (GL_TEXTURE_2D,imageTexture);
 
         glActiveTexture(GL_TEXTURE0+2)
@@ -506,15 +511,15 @@ class View2D(View,QtOpenGL.QGLWidget):
         glActiveTexture(GL_TEXTURE0+3)
         loc = glGetUniformLocation(self.shader, "mask")
         glUniform1i(loc,3)
-        if (img in self.maskTextures.keys()):# and not pattersonEnabled:
+        if (img in self.maskTextures.keys()) and not pattersonEnabled:
             glBindTexture (GL_TEXTURE_2D, self.maskTextures[img]);
         else:
             # If not mask is available load the default mask
             glBindTexture (GL_TEXTURE_2D, self.defaultMaskTexture);
 
-        if self.autorange:
-            glUniform1f(self.vminLoc,imageData.min())
-            glUniform1f(self.vmaxLoc,imageData.max())
+        if self.autorange or pattersonEnabled:
+            glUniform1f(self.vminLoc,imageData[img].min())
+            glUniform1f(self.vmaxLoc,imageData[img].max())
         else:
             glUniform1f(self.vminLoc,self.normVmin)
             glUniform1f(self.vmaxLoc,self.normVmax)
@@ -651,9 +656,9 @@ class View2D(View,QtOpenGL.QGLWidget):
                 img_height = self.getImgHeight("scene",False)
                 visible = self.visibleImages()
                 self.updateTextures(visible)
-                for i,img in enumerate(set.intersection(set(self.imageTextures.keys()),set(visible),set(self.loaderThread.loadedImages()))-set(self.pattersonTextures.keys())):
+                for i,img in enumerate(set.intersection(set(self.imageTextures.keys()),set(visible),set(self.loaderThread.loadedImages()))):
                     self.paintImage(img)
-                remainset = (set(visible) - set(self.imageTextures.keys()) - set(self.pattersonTextures.keys()))
+                remainset = (set(visible) - set(self.imageTextures.keys()) )
                 self.remainSet = remainset
                 if len(remainset) > 0:
                     for img in remainset:
@@ -779,11 +784,11 @@ class View2D(View,QtOpenGL.QGLWidget):
         if self.pattersonView:
             pattersonParams = self.data.pattersonItem.getParams(img)
             if self.pattersonView and (img == self.selectedImage) and (pattersonParams["pattersonImg"] == img) and not self.data.pattersonItem.textureLoaded:
-                glDeleteTextures(self.pattersonTextures.values())
-                self.pattersonTextures = GLCache(1024*1024*int(QtCore.QSettings().value("textureCacheSize")))
-                temp = abs(self.data.pattersonItem.patterson)
+                #glDeleteTextures(self.pattersonTextures.values())
+                #self.pattersonTextures = GLCache(1024*1024*int(QtCore.QSettings().value("textureCacheSize")))
+                temp = abs(self.loaderThread.pattersonData[img])
                 P = numpy.ones(temp.shape,dtype=numpy.float32)
-                P[:] = temp[:]                
+                P[:] = temp[:]
                 texture = glGenTextures(1)
                 glBindTexture(GL_TEXTURE_2D, texture)
                 glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
@@ -792,6 +797,7 @@ class View2D(View,QtOpenGL.QGLWidget):
                 glTexImage2D(GL_TEXTURE_2D, 0, OpenGL.GL.ARB.texture_float.GL_ALPHA32F_ARB, P.shape[1], P.shape[0], 0, GL_ALPHA, GL_FLOAT, P);
                 self.pattersonTextures[img] = texture
                 self.data.pattersonItem.textureLoaded = True
+                self.updateGL()
 
     def updateTextures(self,images):
         for img in images:
@@ -803,8 +809,7 @@ class View2D(View,QtOpenGL.QGLWidget):
             if self.pattersonView:
                 pattersonParams = self.data.pattersonItem.getParams(img)
                 if (pattersonParams["pattersonImg"] == img) and (self.selectedImage == img) and not self.data.pattersonItem.textureLoaded:
-                    self.generateTexture(img)
-                
+                    self.needDataPatterson.emit(img)
     
     # positive counts correspond to upwards movement of window / downwards movement of images
     def scrollBy(self,count=1,wrap=False):
@@ -1069,7 +1074,7 @@ class View2D(View,QtOpenGL.QGLWidget):
         self.setMask()
         self.setMaskOutBits()
         #self.setSortingIndices()
-        self.loaderThread.clear()
+        #self.loaderThread.clear()
 #        self.clearLoaderThread.emit(0)
         self.clearTextures()
         self.updateGL()
