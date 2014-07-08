@@ -131,7 +131,7 @@ def gaussian_smooth_2d1d(I,sm,precision=1.):
         print "Error input"
         return []
 
-from pylab import *
+#from pylab import *
 def fit(image,mask,params,r_max):
     X,Y = numpy.meshgrid(numpy.arange(0.,image.shape[1],1.),numpy.arange(0.,image.shape[0],1.))
     s = image.shape
@@ -143,9 +143,9 @@ def fit(image,mask,params,r_max):
     Ym = Y[mask*Mr]
 
 
-    imsave("img.png",log10(image))
-    imsave("mask.png",mask)
-    imsave("Mr.png",Mr)
+    #imsave("img.png",log10(image))
+    #imsave("mask.png",mask)
+    #imsave("Mr.png",Mr)
 
     p = params["detectorPixelSizeUM"]*1.E-6
     D = params["detectorDistanceMM"]*1.E-3
