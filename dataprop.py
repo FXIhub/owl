@@ -7,6 +7,7 @@ from matplotlib import colors
 from matplotlib import cm
 import pyqtgraph
 import modelProperties
+import pattersonProperties
 import fit
 import experimentDialog
 
@@ -408,6 +409,9 @@ class DataProp(QtGui.QWidget):
 
         self.modelProperties = ModelProperties(self)
         self.modelProperties.hide()
+
+        self.pattersonProperties = PattersonProperties(self)
+        self.pattersonProperties.hide()
         
         # add all widgets to main vbox
         self.vboxScroll.addWidget(self.generalBox)
@@ -420,6 +424,7 @@ class DataProp(QtGui.QWidget):
         self.vboxScroll.addWidget(self.filterBox)
         self.vboxScroll.addWidget(self.plotBox)
         self.vboxScroll.addWidget(self.modelProperties)
+        self.vboxScroll.addWidget(self.pattersonProperties)
         self.vboxScroll.addStretch()
         self.setLayout(self.vbox)
         # clear all properties
@@ -444,8 +449,6 @@ class DataProp(QtGui.QWidget):
         self.plotPointsCheckBox.toggled.connect(self.emitView1DProp)
         self.plotNBinsEdit.editingFinished.connect(self.emitView1DProp)
         self.currentImg.editingFinished.connect(self.onCurrentImg)
-        self.modelProperties.paramsChanged.connect(self.emitView2DProp)
-        #self.modelProperties.fitNeeded.connect(self.emitView2DProp)
     def clear(self):
         self.clearView2DProp()
         self.clearData()
@@ -539,6 +542,7 @@ class DataProp(QtGui.QWidget):
             #    self.pixelStackXEdit.setText(str(int(info["ix"])))
             #    self.pixelStackYEdit.setText(str(int(info["iy"])))
             #    self.pixelStackNEdit.setText(str(self.data.shape()[0]))
+            self.pattersonProperties.showParams()
         else:
             self.imageBox.hide()
             self.pixelBox.hide()
@@ -984,22 +988,21 @@ class FilterWidget(QtGui.QWidget):
 
 
 class ModelProperties(QtGui.QGroupBox, modelProperties.Ui_ModelProperties):
-    paramsChanged = QtCore.Signal()
     def __init__(self,parent):
         self.parent = parent
         QtGui.QGroupBox.__init__(self,parent)
         self.setupUi(self)
         self.params = {}
         self.setModelItem(None)
-        self.centerX.valueChanged.connect(self.emitParams)
-        self.centerY.valueChanged.connect(self.emitParams)
-        self.diameter.valueChanged.connect(self.emitParams)
-        self.scaling.valueChanged.connect(self.emitParams)
-        self.maskRadius.valueChanged.connect(self.emitParams)
+        self.centerX.valueChanged.connect(self.setParams)
+        self.centerY.valueChanged.connect(self.setParams)
+        self.diameter.valueChanged.connect(self.setParams)
+        self.scaling.valueChanged.connect(self.setParams)
+        self.maskRadius.valueChanged.connect(self.setParams)
         self.experiment.released.connect(self.onExperiment)
         self.fitCenterPushButton.released.connect(self.calculateFitCenter)
         self.fitModelPushButton.released.connect(self.calculateFitModel)
-        self.visibilitySlider.sliderMoved.connect(self.emitParams)
+        self.visibilitySlider.sliderMoved.connect(self.setParams)
     def setModelItem(self,modelItem=None):
         self.modelItem = modelItem
         if modelItem == None:
@@ -1012,7 +1015,7 @@ class ModelProperties(QtGui.QGroupBox, modelProperties.Ui_ModelProperties):
             else:
                 paramsImg = self.modelItem.getParams(img)
                 self.showParams(paramsImg)
-                self.emitParams()
+                self.setParams()
     def showParams(self,params=None):
         img = self.parent.viewer.view.view2D.selectedImage
         if self.modelItem == None or img == None:
@@ -1042,7 +1045,7 @@ class ModelProperties(QtGui.QGroupBox, modelProperties.Ui_ModelProperties):
             self.maskRadius.setReadOnly(False)
             self.visibilitySlider.setValue(params["_visibility"]*100)
             self.visibilitySlider.setEnabled(True)
-    def emitParams(self):
+    def setParams(self):
         params = {}
         img = self.parent.viewer.view.view2D.selectedImage
         params["offCenterX"] = self.centerX.value()
@@ -1052,7 +1055,6 @@ class ModelProperties(QtGui.QGroupBox, modelProperties.Ui_ModelProperties):
         params["maskRadius"] = self.maskRadius.value()
         params["_visibility"] = float(self.visibilitySlider.value()/100.)
         self.modelItem.setParams(img,params)
-        self.paramsChanged.emit()
     def onExperiment(self):
         expDialog = ExperimentDialog(self)
         expDialog.exec_()
@@ -1079,6 +1081,8 @@ class ExperimentDialog(QtGui.QDialog, experimentDialog.Ui_ExperimentDialog):
         self.syncEnergy()
         self.distance.setValue(params["detectorDistanceMM"])
         self.pixelSize.setValue(params["detectorPixelSizeUM"])
+        self.quantumEfficiency.setValue(params["detectorQuantumEfficiency"])
+        self.ADUPhoton.setValue(params["detectorADUPhoton"])
         allItems = [self.materialType.itemText(i) for i in range(self.materialType.count())]
         self.materialType.setCurrentIndex(allItems.index(params["materialType"]))
         self.wavelength.editingFinished.connect(self.syncEnergy)
@@ -1104,5 +1108,54 @@ class ExperimentDialog(QtGui.QDialog, experimentDialog.Ui_ExperimentDialog):
         params["photonEnergyEV"] = self.energy.value()
         params["detectorDistanceMM"] = self.distance.value()
         params["detectorPixelSizeUM"] = self.pixelSize.value()
+        params["detectorQuantumEfficiency"] = self.quantumEfficiency.value()
+        params["detectorADUPhoton"] = self.ADUPhoton.value()
         params["materialType"] = self.materialType.currentText()
         self.modelProperties.modelItem.setParams(None,params)
+
+
+class PattersonProperties(QtGui.QGroupBox, pattersonProperties.Ui_PattersonProperties):
+    def __init__(self,parent):
+        self.parent = parent
+        QtGui.QGroupBox.__init__(self,parent)
+        self.setupUi(self)
+        self.params = {}
+        self.setPattersonItem(None)
+        self.smooth.valueChanged.connect(self.setParams)
+        self.pattersonPushButton.released.connect(self.calculatePatterson)
+    def setPattersonItem(self,pattersonItem=None):
+        self.pattersonItem = pattersonItem
+        if pattersonItem == None:
+            paramsImg = None
+        else:
+            img = self.parent.viewer.view.view2D.selectedImage
+            if img == None:
+                paramsImg = None
+                self.showParams(paramsImg)
+            else:
+                paramsImg = self.pattersonItem.getParams(img)
+                self.showParams(paramsImg)
+                self.setParams()
+    def showParams(self,params=None):
+        img = self.parent.viewer.view.view2D.selectedImage
+        if self.pattersonItem == None or img == None:
+            self.smooth.setValue(0)
+            self.smooth.setReadOnly(True)
+        else:
+            params = self.pattersonItem.getParams(img)
+            self.smooth.setValue(params["smooth"])
+            self.smooth.setReadOnly(False)
+            if img != params["pattersonImg"]:
+                self.pattersonItem.patterson = None
+                self.pattersonItem.setParams(None,{"pattersonImg":-1})
+    def setParams(self):
+        params = {}
+        img = self.parent.viewer.view.view2D.selectedImage
+        params["smooth"] = self.smooth.value()
+        self.pattersonItem.setParams(img,params)
+    def calculatePatterson(self):
+        img = self.parent.viewer.view.view2D.selectedImage
+        if img != None:
+            self.pattersonItem.calculatePatterson(img)
+    def toggleVisible(self):
+        self.setVisible(not self.isVisible())

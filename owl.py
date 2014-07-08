@@ -153,6 +153,14 @@ class Viewer(QtGui.QMainWindow):
         self.fileMenu.addAction(self.saveTags)
         self.saveTags.triggered.connect(self.saveTagsClicked)
 
+        self.saveModels = QtGui.QAction("Save Models",self)
+        self.fileMenu.addAction(self.saveModels)
+        self.saveModels.triggered.connect(self.saveModelsClicked)
+
+        self.savePattersons = QtGui.QAction("Save Pattersons",self)
+        self.fileMenu.addAction(self.savePattersons)
+        self.savePattersons.triggered.connect(self.savePattersonsClicked)
+
         self.quitAction = QtGui.QAction("Quit",self)
         self.fileMenu.addAction(self.quitAction)
         self.quitAction.triggered.connect(QtGui.QApplication.instance().quit)
@@ -235,7 +243,8 @@ class Viewer(QtGui.QMainWindow):
                             "View 2D" : QtGui.QAction("View 2D",self),
                             "Display Properties" : QtGui.QAction("Display Properties",self),
                             "Tags" : QtGui.QAction("Tags",self),
-                            "Model" : QtGui.QAction("Model",self)
+                            "Model" : QtGui.QAction("Model",self),
+                            "Patterson" : QtGui.QAction("Patterson",self),
                         }
 
         viewShortcuts = {"File Tree" : "Ctrl+T",
@@ -243,10 +252,11 @@ class Viewer(QtGui.QMainWindow):
                          "View 2D" : "Ctrl+2",
                          "Display Properties" : "Ctrl+D",
                          "Tags" : "Ctrl+G",
-                         "Model" : "Ctrl+M"
+                         "Model" : "Ctrl+M",
+                         "Patterson" : "Ctrl+P",
                      }
 
-        viewNames = ["File Tree", "Display Properties","View 1D","View 2D","Tags","Model"]
+        viewNames = ["File Tree", "Display Properties","View 1D","View 2D","Tags","Model","Patterson"]
       
         actions = {}
         for viewName in viewNames:
@@ -257,9 +267,11 @@ class Viewer(QtGui.QMainWindow):
                 actions[viewName].triggered.connect(self.view.view2D.toggleTagView)
             elif(viewName == "Model"):
                 actions[viewName].triggered.connect(self.toggleModelView)
+            elif(viewName == "Patterson"):
+                actions[viewName].triggered.connect(self.togglePattersonView)
             else:
                 actions[viewName].triggered.connect(self.viewClicked)
-            if viewName in ["View 1D"] or viewName == "Model":
+            if viewName in ["View 1D"] or viewName == "Model" or viewName == "Patterson":
                 actions[viewName].setChecked(False)
             else:
                 actions[viewName].setChecked(True)
@@ -387,6 +399,10 @@ class Viewer(QtGui.QMainWindow):
             self.openCXIFile(fileName[0])
     def saveTagsClicked(self):
         self.fileLoader.saveTags()
+    def saveModelsClicked(self):
+        self.fileLoader.saveModels()
+    def savePattersonsClicked(self):
+        self.fileLoader.savePattersons()
     def setStyleSheetFromFilename(self,fn="stylesheets/default.stylesheet"):
         styleFile=os.path.join(os.path.split(__file__)[0],fn)
         with open(styleFile,"r") as fh:
@@ -422,11 +438,21 @@ class Viewer(QtGui.QMainWindow):
         else:
             self.showFullScreen()
     def closeEvent(self,event):
-        if(self.tagsChanged and 
-           QtGui.QMessageBox.question(self,"Save tag changes?",
-                                      "Would you like to save changes to the tags?",
-                                      QtGui.QMessageBox.Save,QtGui.QMessageBox.Discard) == QtGui.QMessageBox.Save):
-            self.fileLoader.saveTags()
+        if self.tagsChanged:
+            if QtGui.QMessageBox.question(self,"Save tag changes?",
+                                          "Would you like to save changes to the tags?",
+                                          QtGui.QMessageBox.Save,QtGui.QMessageBox.Discard) == QtGui.QMessageBox.Save:
+                self.fileLoader.saveTags()
+        if self.fileLoader.modelsChanged():
+            if QtGui.QMessageBox.question(self,"Save model changes?",
+                                          "Would you like to save changes to the models?",
+                                          QtGui.QMessageBox.Save,QtGui.QMessageBox.Discard) == QtGui.QMessageBox.Save:
+                self.fileLoader.saveModels()
+        if self.fileLoader.modelsChanged():
+            if QtGui.QMessageBox.question(self,"Save Patterson configurations?",
+                                          "Would you like to save changes to the Patterson configurations?",
+                                          QtGui.QMessageBox.Save,QtGui.QMessageBox.Discard) == QtGui.QMessageBox.Save:
+                self.fileLoader.savePattersons()
         settings = QtCore.QSettings()
         settings.setValue("geometry", self.saveGeometry())
         settings.setValue("windowState", self.saveState())
@@ -692,10 +718,14 @@ class Viewer(QtGui.QMainWindow):
     def handleData2DChanged(self,dataItemImage,dataItemMask):
         if dataItemImage == None:
             self.dataProp.modelProperties.setModelItem(None)
+            self.dataProp.pattersonProperties.setPattersonItem(None)
         else:
             self.dataProp.modelProperties.setModelItem(dataItemImage.modelItem)
+            self.dataProp.pattersonProperties.setPattersonItem(dataItemImage.pattersonItem)
             dataItemImage.modelItem.dataItemImage = dataItemImage
             dataItemImage.modelItem.dataItemMask = dataItemMask
+            dataItemImage.pattersonItem.dataItemImage = dataItemImage
+            dataItemImage.pattersonItem.dataItemMask = dataItemMask
         dataItems = {"image":dataItemImage,"mask":dataItemMask}
         for k,item in dataItems.items():
             n = None
@@ -724,6 +754,9 @@ class Viewer(QtGui.QMainWindow):
     def toggleModelView(self):
         self.view.view2D.toggleModelView()
         self.dataProp.modelProperties.toggleVisible()
+    def togglePattersonView(self):
+        self.view.view2D.togglePattersonView()
+        self.dataProp.pattersonProperties.toggleVisible()
     def tagsClicked(self):
         if(self.view.view2D.data):
             tagsDialog = dialogs.TagsDialog(self,self.view.view2D.data.tagsItem.tags);

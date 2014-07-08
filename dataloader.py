@@ -5,6 +5,7 @@ from cache import ArrayCache
 import h5py
 import settingsOwl
 import fit
+import patterson
 
 class FileLoader(QtCore.QObject):
     stackSizeChanged = QtCore.Signal(int)
@@ -28,6 +29,12 @@ class FileLoader(QtCore.QObject):
         self.H5Group = self.f["/"]
         self.tagsItem = None
         self.modelItem = None
+        self.pattersonItem = None
+        self.dataItems = {}
+        self.groupItems = {}
+        self.tagsItems = {}
+        self.modelItems = {}
+        self.pattersonItems = {}
         self.children = {}
         for k in self.H5Group.keys():
             item = self.H5Group[k]
@@ -35,10 +42,6 @@ class FileLoader(QtCore.QObject):
                 self.children[k] = DataItem(self,self,"/"+k)
             elif isinstance(item,h5py.Group):
                 self.children[k] = GroupItem(self,self,"/"+k)
-        self.dataItems = {}
-        self.groupItems = {}
-        self.tagsItems = {}
-        self.modelItems = {}
         self.collectItems(self.children)
         self.stackSize = None
     def collectItems(self,item):
@@ -50,13 +53,14 @@ class FileLoader(QtCore.QObject):
                 self.groupItems[child.fullName] = child
                 self.tagsItems[child.fullName] = child.tagsItem
                 self.modelItems[child.fullName] = child.modelItem
+                self.pattersonItems[child.fullName] = child.pattersonItem
                 self.collectItems(child.children)
             else:
                 print "no valid item."
     def addGroupPosterior(self,name0):
         name = name0
-        if name[0] == "/": name[1:]
-        if name[-1] == "/": name[:-1]
+        if name[0] == "/": name = name[1:]
+        if name[-1] == "/": name = name[:-1]
         path = name[0:name.rindex('/')]
 
         def addGroupRecursively(group,children):
@@ -71,8 +75,8 @@ class FileLoader(QtCore.QObject):
         addGroupRecursively(self,self.children)
     def addDatasetPosterior(self,name0):
         name = name0
-        if name[0] == "/": name[1:]
-        if name[-1] == "/": name[:-1]
+        if name[0] == "/": name = name[1:]
+        if name[-1] == "/": name = name[:-1]
         path = name[0:name.rindex('/')]
 
         def addDatasetRecursively(group,children):
@@ -103,7 +107,14 @@ class FileLoader(QtCore.QObject):
     def saveTags(self):
         for n,t in self.tagsItems.items():
             t.saveTags()
-
+    def modelsChanged(self):
+        for n,m in self.modelItems.items():
+            if m.paramsDirty:
+                return True
+        return False
+    def saveModels(self):
+        for n,m in self.modelItems.items():
+            m.saveParams()
 
 class GroupItem:
     def __init__(self,parent,fileLoader,fullName):
@@ -119,6 +130,7 @@ class GroupItem:
             if isinstance(item,h5py.Group):
                 self.children[k] = GroupItem(self,self.fileLoader,self.fullName+"/"+k)
         self.modelItem = ModelItem(self,fileLoader,fullName+"/",self.children)
+        self.pattersonItem = PattersonItem(self,fileLoader,fullName+"/",self.children)
         for k in self.H5Group.keys():
             item = self.H5Group[k]
             if isinstance(item,h5py.Dataset):
@@ -176,6 +188,9 @@ class DataItem:
         # link model parameters
         self.modelItem = self.parent.modelItem
 
+        # link patterson parameters
+        self.pattersonItem = self.parent.pattersonItem
+
         # Selected dimension for filetering etc. where stack has to have only one dimension
         # Set to none by default
         self.selectedIndex = None
@@ -207,8 +222,6 @@ class DataItem:
             self.fileLoader.updateStackSize()
     def attr(self,name):
         return self.fileLoader.f[self.fullName].attrs[name]
-    #def patterson(self,**kwargs):
-    #    data = self.data(**kwargs)
         
     def data(self,**kwargs):
         try:
@@ -393,10 +406,12 @@ class ModelItem:
         self.indParams = {}
         self.genParams = {}
         self.paramsIndDef = {"offCenterX":0.,"offCenterY":0.,"intensityMJUM2":1.,"diameterNM":100.,"maskRadius":100}
-        self.paramsGenDef = {"photonWavelengthNM":1.,"detectorDistanceMM":1000.,"detectorPixelSizeUM":75.,"materialType":"water","_visibility":0.5}
+        self.paramsGenDef = {"photonWavelengthNM":1.,"detectorDistanceMM":1000.,"detectorPixelSizeUM":75.,"detectorQuantumEfficiency":1.,"detectorADUPhoton":10.,"materialType":"water","_visibility":0.5}
         self.dataItems = {}
         if "model" in groupChildren:
-            for n in self.paramsDef:
+            for n in self.paramsIndDef:
+                self.dataItems[n] = groupChildren["model"].children[n]
+            for n in self.paramsGenDef:
                 self.dataItems[n] = groupChildren["model"].children[n]
         self.initParams()
     def initParams(self):
@@ -411,45 +426,53 @@ class ModelItem:
             for n,v in self.paramsIndDef.items():
                 self.indParams[n] = numpy.ones(N)*v
             # read data from file if available
-            for n,d in self.dataItems:
+            for n,d in self.dataItems.items():
                 data = d.data()
                 if n in self.genParams:
                     self.genParams[n] = data[0]
                 elif n in self.indParams:
                     self.indParams[n][:len(data)] = data[:]
-    def getParams(self,img):
+    def getParams(self,img0):
         if (self.genParams == {}) or (self.indParams == {}):
             self.initParams()
+        if img0 == None:
+            img = 0
+        else:
+            img = img0
         ps = {}
         for n,p in self.genParams.items():
             ps[n] = p
         for n,p in self.indParams.items():
             ps[n] = p[img]
         return ps
-    def setParams(self,img,params):
-        self.paramsDirty = True
-        for n,p in params.items():
+    def setParams(self,img,paramsNew):
+        paramsOld = self.getParams(img)
+        for n,pNew in paramsNew.items():
             if n in self.indParams:
-                self.indParams[n][img] = p
+                if pNew != paramsOld[n]:
+                    self.paramsDirty = True
+                    self.indParams[n][img] = pNew
             elif n in self.genParams:
-                self.genParams[n] = p  
+                if pNew != paramsOld[n]:
+                    self.paramsDirty = True
+                    self.genParams[n] = pNew
     def saveParams(self):
         treeDirty = False
         if self.paramsDirty:
-            if "model" in self.fileLoader[self.path]:
-                grp = self.fileLoader[self.path+"model"]
+            if "model" in self.fileLoader.f[self.path]:
+                grp = self.fileLoader.f[self.path+"model"]
             else:
-                grp = self.fileLoader[self.path].create_group("model")
-                self.fileLoader.addGroupPosteriori(self.path+"model")
+                grp = self.fileLoader.f.create_group(self.path+"model")
+                self.fileLoader.addGroupPosterior(self.path+"model")
                 treeDirty = True
             for n,p in self.indParams.items():
                 if n in grp:
                     ds = grp[n]
-                    if grp.shape[0] != p.shape:
+                    if ds.shape[0] != p.shape:
                         ds.resize(p.shape)
                     ds[:len(p)] = p[:]
                 else:
-                    ds = grp.create_dataset(n,p.shape,maxshape=(None,None),chunks=(1,10000),data=p)
+                    ds = self.fileLoader.f.create_dataset(self.path+"model/"+n,p.shape,maxshape=(None,),chunks=(10000,),data=p)
                     ds.attrs.modify("axes",["experiment_identifier"])
                     self.fileLoader.addDatasetPosterior(self.path+"model/"+n)
                     treeDirty = True
@@ -458,11 +481,13 @@ class ModelItem:
                     ds = grp[n]
                     ds[0] = p
                 else:
-                    ds = grp.create_dataset(n,(1),data=p)
+                    ds = self.fileLoader.f.create_dataset(self.path+"model/"+n,(1,),data=p)
                     self.fileLoader.addDatasetPosterior(self.path+"model/"+n)
                     treeDirty = True
-        if treeDirty:
-            self.fileLoader.datasetTreeChanged.emit()
+            self.paramsDirty = False
+        # the following two lines lead to a crash and a corrupt file, I have no clue why
+        #if treeDirty:
+        #    self.fileLoader.datasetTreeChanged.emit()
     def centerAndFit(self,img):
         M = fit.FitModel(self.dataItemImage,self.dataItemMask)
         newParams = M.center_and_fit(img)
@@ -476,7 +501,107 @@ class ModelItem:
         newParams = M.fit(img,self.getParams(img))
         self.setParams(img,newParams)
 
-        
+
+class PattersonItem:
+    def __init__(self,parent,fileLoader,path,groupChildren):
+        self.parent = parent
+        self.fileLoader = fileLoader
+        self.path = path
+        self.paramsDirty = False
+        self.dataItemImage = None
+        self.dataItemMask = None
+        self.indParams = {}
+        self.genParams = {}
+        self.paramsIndDef = {"smooth":5.}
+        self.paramsGenDef = {"pattersonImg":-1}
+        self.dataItems = {}
+        self.patterson = None
+        self.textureLoaded = False
+        if "patterson" in groupChildren:
+            for n in self.paramsIndDef:
+                self.dataItems[n] = groupChildren["patterson"].children[n]
+            for n in self.paramsGenDef:
+                self.dataItems[n] = groupChildren["patterson"].children[n]
+        self.initParams()
+    def initParams(self):
+        if self.fileLoader.stackSize == None:
+            return
+        else:
+            N = self.fileLoader.stackSize
+            # set all general params to default values
+            for n,v in self.paramsGenDef.items():
+                self.genParams[n] = v
+            #  set all individual params to default values
+            for n,v in self.paramsIndDef.items():
+                self.indParams[n] = numpy.ones(N)*v
+            # read data from file if available
+            for n,d in self.dataItems.items():
+                data = d.data()
+                if n in self.genParams:
+                    self.genParams[n] = data[0]
+                elif n in self.indParams:
+                    self.indParams[n][:len(data)] = data[:]
+    def getParams(self,img0):
+        if (self.genParams == {}) or (self.indParams == {}):
+            self.initParams()
+        if img0 == None:
+            img = 0
+        else:
+            img = img0
+        ps = {}
+        for n,p in self.genParams.items():
+            ps[n] = p
+        for n,p in self.indParams.items():
+            ps[n] = p[img]
+        return ps
+    def setParams(self,img,paramsNew):
+        paramsOld = self.getParams(img)
+        for n,pNew in paramsNew.items():
+            if n in self.indParams:
+                if pNew != paramsOld[n]:
+                    self.paramsDirty = True
+                    self.indParams[n][img] = pNew
+            elif n in self.genParams:
+                if pNew != paramsOld[n]:
+                    self.paramsDirty = True
+                    self.genParams[n] = pNew
+    def saveParams(self):
+        treeDirty = False
+        if self.paramsDirty:
+            if "patterson" in self.fileLoader.f[self.path]:
+                grp = self.fileLoader.f[self.path+"patterson"]
+            else:
+                grp = self.fileLoader.f.create_group(self.path+"patterson")
+                self.fileLoader.addGroupPosterior(self.path+"patterson")
+                treeDirty = True
+            for n,p in self.indParams.items():
+                if n in grp:
+                    ds = grp[n]
+                    if ds.shape[0] != p.shape:
+                        ds.resize(p.shape)
+                    ds[:len(p)] = p[:]
+                else:
+                    ds = self.fileLoader.f.create_dataset(self.path+"patterson/"+n,p.shape,maxshape=(None,),chunks=(10000,),data=p)
+                    ds.attrs.modify("axes",["experiment_identifier"])
+                    self.fileLoader.addDatasetPosterior(self.path+"patterson/"+n)
+                    treeDirty = True
+            for n,p in self.genParams.items():
+                if n in grp:
+                    ds = grp[n]
+                    ds[0] = p
+                else:
+                    ds = self.fileLoader.f.create_dataset(self.path+"patterson/"+n,(1,),data=p)
+                    self.fileLoader.addDatasetPosterior(self.path+"patterson/"+n)
+                    treeDirty = True
+            self.paramsDirty = False
+        # the following two lines lead to a crash and a corrupt file, I have no clue why
+        #if treeDirty:
+        #    self.fileLoader.datasetTreeChanged.emit()
+    def calculatePatterson(self,img):
+        PC = patterson.PattersonCreator(self.dataItemImage,self.dataItemMask)
+        self.patterson = PC.patterson(img)
+        self.setParams(img,{"pattersonImg":img})
+        self.textureLoaded = False
 
 class ImageLoader(QtCore.QObject):
     imageLoaded = QtCore.Signal(int)
@@ -507,7 +632,6 @@ class ImageLoader(QtCore.QObject):
         data = self.view.getData(img)
         phase = self.view.getPhase(img)
         mask = self.view.getMask(img)
-        #patterson = self.view.getPatterson(img)
         self.imageData[img] = numpy.ones((self.view.data.height(),self.view.data.width()),dtype=numpy.float32)
         self.imageData[img][:] = data[:]
         if phase != None:

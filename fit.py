@@ -142,7 +142,6 @@ def fit(image,mask,params,r_max):
     Xm = X[mask*Mr]
     Ym = Y[mask*Mr]
 
-
     #imsave("img.png",log10(image))
     #imsave("mask.png",mask)
     #imsave("Mr.png",Mr)
@@ -160,7 +159,7 @@ def fit(image,mask,params,r_max):
     r = d/2.
     V = 4/3.*numpy.pi*r**3
 
-    fitimg = image[mask*Mr]
+    fitimg = image[mask*Mr]/params["detectorADUPhoton"]/params["detectorQuantumEfficiency"]
 
     #q = generate_absqmap(X-cx,Y-cy,p,D,wavelength)
     #I_fit = lambda K,r: I_sphere_diffraction(K,q,r)
@@ -213,8 +212,7 @@ def generate_absqmap(X,Y,p,D,wavelength):
     qx = R_Ewald*p*X/D
     qy = R_Ewald*p*Y/D
     q_map = numpy.sqrt(qx**2+qy**2)
-    return q_map
-        
+    return q_map      
 
 class Material:
     def __init__(self,**kwargs):
