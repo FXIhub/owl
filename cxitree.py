@@ -174,6 +174,8 @@ class CXITree(QtGui.QTreeWidget):
     def __init__(self,parent=None):        
         QtGui.QTreeWidget.__init__(self,parent)
         self.parent = parent
+        self.columnName = 0
+        self.columnPath = 1
         self.itemExpanded.connect(self.treeChanged)
         self.itemCollapsed.connect(self.treeChanged)
         #self.setHeaderLabels(["CXI-file tree"])
@@ -195,77 +197,75 @@ class CXITree(QtGui.QTreeWidget):
         self.item = QtGui.QTreeWidgetItem([fileLoader.filename])
         self.item.setToolTip(0,fileLoader.fullFilename)
         self.root.addChild(self.item)
-        self.buildBranch(fileLoader,self.item)
-        self.loadData()
-    def buildBranch(self,group,branch):
-        self.columnPath = 1
-        keys = group.children.keys()
-        keys.sort()
-        for k in keys:
+        self.updateTree()
+    def updateTree(self):
+        self.updateBranch(self.fileLoader,self.item)
+    def updateBranch(self,group,branch):
+        groupChildrenNames = group.children.keys()
+        groupChildrenNames.sort()
+        branchChildrenNames = [branch.child(i).text(self.columnName) for i in range(branch.childCount())]
+        for i,k in enumerate(groupChildrenNames):
             child = group.children[k]
-            lst = [k]
+            item = QtGui.QTreeWidgetItem([k,child.fullName])
             if(isinstance(child,GroupItem)):
-                lst.append(child.fullName)
-                item = QtGui.QTreeWidgetItem(lst)
-                self.buildBranch(child,item)
-            else:
-                #if(not group[child].shape):# or reduce(mul,group[g].shape) < 10):
-                #    lst.append(str(group[g][()]))
-                #    lst.append("")
-                #    child = QtGui.QTreeWidgetItem(lst)
-                #else:
-                lst.append(child.fullName)
-                item = QtGui.QTreeWidgetItem(lst)
-                ds_dtype = child.dtypeName
-                ds_shape = child.shape()
-                # make tooltip
-                string = "<i>"+ds_dtype+"</i> ("
-                for d in ds_shape:
-                    string += str(d)+","
-                string = string[:-1]
-                string += ")"
-                item.setToolTip(self.columnPath-1,string)
-                numDims = child.format
-                S = 50
-                # 0D blue
-                if numDims == 0:
-                    R = 255-S
-                    G = 255-S
-                    B = 255
-                    prop = "1D"
-                # 1D red
-                elif numDims == 1:
-                    R = 255
-                    G = 255-S
-                    B = 255-S
-                    prop = "3D"
-                # 2D green
-                elif numDims == 2:
-                    R = 255-S
-                    G = 255
-                    B = 255-S 
-                    prop = "2D"
-                # default grey
+                if k not in branchChildrenNames:
+                    item = QtGui.QTreeWidgetItem([k,child.fullName])
                 else:
-                    R = 255-S
-                    G = 255-S
-                    B = 255-S
-                    prop = "default"
-                # datsets which are not stacks lighter
-                isStack = child.isStack
-                if not isStack:
-                    fade = S
-                    R -= fade
-                    G -= fade
-                    B -= fade
-                    prop += "Stack"
-                item.setForeground(0,QtGui.QBrush(QtGui.QColor(R,G,B)))
-                # make bold if it is a data called 'data'
-                if child.name == 'data':
-                    font = QtGui.QFont()
-                    font.setBold(True)
-                    item.setFont(0,font)
-            branch.addChild(item)
+                    item = branch.child(branchChildrenNames.index(k))
+                self.updateBranch(child,item)
+                branch.insertChild(i,item)
+            else:
+                if k not in branchChildrenNames:
+                    ds_dtype = child.dtypeName
+                    ds_shape = child.shape()
+                    # make tooltip
+                    string = "<i>"+ds_dtype+"</i> ("
+                    for d in ds_shape:
+                        string += str(d)+","
+                    string = string[:-1]
+                    string += ")"
+                    item.setToolTip(self.columnPath-1,string)
+                    numDims = child.format
+                    S = 50
+                    # 0D blue
+                    if numDims == 0:
+                        R = 255-S
+                        G = 255-S
+                        B = 255
+                        prop = "1D"
+                    # 1D red
+                    elif numDims == 1:
+                        R = 255
+                        G = 255-S
+                        B = 255-S
+                        prop = "3D"
+                    # 2D green
+                    elif numDims == 2:
+                        R = 255-S
+                        G = 255
+                        B = 255-S 
+                        prop = "2D"
+                    # default grey
+                    else:
+                        R = 255-S
+                        G = 255-S
+                        B = 255-S
+                        prop = "default"
+                    # datsets which are not stacks lighter
+                    isStack = child.isStack
+                    if not isStack:
+                        fade = S
+                        R -= fade
+                        G -= fade
+                        B -= fade
+                        prop += "Stack"
+                    item.setForeground(0,QtGui.QBrush(QtGui.QColor(R,G,B)))
+                    # make bold if it is a data called 'data'
+                    if child.name == 'data':
+                        font = QtGui.QFont()
+                        font.setBold(True)
+                        item.setFont(0,font)
+                    branch.insertChild(i,item)
     def loadData(self,path=None):
         found,child = self.expandTree(path)
         if found:

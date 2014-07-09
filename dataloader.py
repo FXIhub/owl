@@ -9,7 +9,7 @@ import patterson
 
 class FileLoader(QtCore.QObject):
     stackSizeChanged = QtCore.Signal(int)
-    datasetTreeChanged = QtCore.Signal()
+    fileLoaderExtended = QtCore.Signal()
     def __init__(self,parent):
         QtCore.QObject.__init__(self)
         self.parent = parent
@@ -59,7 +59,6 @@ class FileLoader(QtCore.QObject):
                 print "no valid item."
     def addGroupPosterior(self,name0):
         name = name0
-        if name[0] == "/": name = name[1:]
         if name[-1] == "/": name = name[:-1]
         path = name[0:name.rindex('/')]
 
@@ -68,15 +67,17 @@ class FileLoader(QtCore.QObject):
                 if c.fullName == path:
                     g = GroupItem(group,self,"/"+name)
                     c.children[name[name.rindex('/')+1:]] = g
-                    self.groupItems[name] = g
+                    self.groupItems[name0] = g
+                    self.modelItems[name0] = g.modelItem
+                    self.pattersonItems[name0] = g.pattersonItem
+                    #print "add group",self.groupItems.keys(),name0
                 elif isinstance(c,GroupItem):                  
                     addGroupRecursively(c,c.children)
 
         addGroupRecursively(self,self.children)
     def addDatasetPosterior(self,name0):
         name = name0
-        if name[0] == "/": name = name[1:]
-        if name[-1] == "/": name = name[:-1]
+        #if name[-1] == "/": name = name[:-1]
         path = name[0:name.rindex('/')]
 
         def addDatasetRecursively(group,children):
@@ -84,7 +85,8 @@ class FileLoader(QtCore.QObject):
                 if c.fullName == path:
                     d = DataItem(group,self,"/"+name)
                     c.children[name[name.rindex('/')+1:]] = d
-                    self.dataItems[name] = d
+                    self.dataItems[name0] = d
+                    #print "add dataset",self.dataItems.keys(),name0
                 elif isinstance(c,GroupItem):                  
                     addDatasetRecursively(c,c.children)
 
@@ -368,7 +370,7 @@ class TagsItem:
             ds = self.fileLoader.f[self.path].create_dataset('tags',self.tagMembers.shape,maxshape=(None,None),chunks=(1,10000),data=self.tagMembers)
             ds.attrs.modify("axes",["tag:experiment_identifier"])
             self.fileLoader.addDatasetPosterior(self.path+"tags")
-            self.fileLoader.datasetTreeChanged.emit()
+            self.fileLoader.fileLoaderExtended.emit()
         # Save tag names
         headings = []
         for i in range(0,len(self.tags)):
@@ -487,7 +489,7 @@ class ModelItem:
             self.paramsDirty = False
         # the following two lines lead to a crash and a corrupt file, I have no clue why
         #if treeDirty:
-        #    self.fileLoader.datasetTreeChanged.emit()
+        #    self.fileLoader.fileLoaderExtended.emit()
     def centerAndFit(self,img):
         M = fit.FitModel(self.dataItemImage,self.dataItemMask)
         newParams = M.center_and_fit(img)
@@ -572,7 +574,7 @@ class PattersonItem:
                 grp = self.fileLoader.f[self.path+"patterson"]
             else:
                 grp = self.fileLoader.f.create_group(self.path+"patterson")
-                self.fileLoader.addGroupPosterior(self.path+"patterson")
+                #self.fileLoader.addGroupPosterior(self.path+"patterson")
                 treeDirty = True
             for n,p in self.indParams.items():
                 if n in grp:
@@ -583,7 +585,7 @@ class PattersonItem:
                 else:
                     ds = self.fileLoader.f.create_dataset(self.path+"patterson/"+n,p.shape,maxshape=(None,),chunks=(10000,),data=p)
                     ds.attrs.modify("axes",["experiment_identifier"])
-                    self.fileLoader.addDatasetPosterior(self.path+"patterson/"+n)
+                    #self.fileLoader.addDatasetPosterior(self.path+"patterson/"+n)
                     treeDirty = True
             for n,p in self.genParams.items():
                 if n in grp:
@@ -591,12 +593,12 @@ class PattersonItem:
                     ds[0] = p
                 else:
                     ds = self.fileLoader.f.create_dataset(self.path+"patterson/"+n,(1,),data=p)
-                    self.fileLoader.addDatasetPosterior(self.path+"patterson/"+n)
+                    #self.fileLoader.addDatasetPosterior(self.path+"patterson/"+n)
                     treeDirty = True
             self.paramsDirty = False
         # the following two lines lead to a crash and a corrupt file, I have no clue why
         #if treeDirty:
-        #    self.fileLoader.datasetTreeChanged.emit()
+        #    self.fileLoader.fileLoaderExtended.emit()
     def calculatePatterson(self,img):
         PC = patterson.PattersonCreator(self.dataItemImage,self.dataItemMask)
         self.patterson = PC.patterson(img)

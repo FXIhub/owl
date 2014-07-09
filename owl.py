@@ -97,6 +97,7 @@ class Viewer(QtGui.QMainWindow):
 	self.filename = filename
         self.fileLoader.loadFile(filename)
         self.CXINavigation.CXITree.buildTree(self.fileLoader)
+        self.CXINavigation.CXITree.loadData()
     def init_settings(self):
         settings = QtCore.QSettings()
         if(not settings.contains("scrollDirection")):
@@ -391,7 +392,7 @@ class Viewer(QtGui.QMainWindow):
 	#self.dataProp.imageStackMaxButton.released.connect(lambda: self.handleNeedDataIntegratedImage("max"))
 
         self.fileLoader.stackSizeChanged.connect(self.onStackSizeChanged)
-        self.fileLoader.datasetTreeChanged.connect(lambda: self.CXINavigation.CXITree.buildTree(self.fileLoader))
+        self.fileLoader.fileLoaderExtended.connect(self.onFileLoaderExtended)
 
     def openFileClicked(self):
         fileName = QtGui.QFileDialog.getOpenFileName(self,"Open CXI File", None, "CXI Files (*.cxi)");
@@ -768,6 +769,8 @@ class Viewer(QtGui.QMainWindow):
                     self.tagsChanged = True
         else:
             QtGui.QMessageBox.information(self,"Cannot set tags","Cannot set tags if no dataset is open.");
+    def onFileLoaderExtended(self):
+        self.CXINavigation.CXITree.updateTree()
 
 
 def exceptionHandler(type, value, traceback):
