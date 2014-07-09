@@ -386,11 +386,6 @@ class Viewer(QtGui.QMainWindow):
         self.editMenu.moveSelectionUp.triggered.connect(lambda: self.view.view2D.moveSelectionBy(0,-1))
         self.editMenu.moveSelectionDown.triggered.connect(lambda: self.view.view2D.moveSelectionBy(0,1))
 
-	#self.dataProp.imageStackMeanButton.released.connect(lambda: self.handleNeedDataIntegratedImage("mean"))
-	#self.dataProp.imageStackStdButton.released.connect(lambda: self.handleNeedDataIntegratedImage("std"))
-	#self.dataProp.imageStackMinButton.released.connect(lambda: self.handleNeedDataIntegratedImage("min"))
-	#self.dataProp.imageStackMaxButton.released.connect(lambda: self.handleNeedDataIntegratedImage("max"))
-
         self.fileLoader.stackSizeChanged.connect(self.onStackSizeChanged)
         self.fileLoader.fileLoaderExtended.connect(self.onFileLoaderExtended)
 

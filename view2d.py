@@ -46,7 +46,8 @@ class View2D(View,QtOpenGL.QGLWidget):
         
         self.imageTextures = GLCache(0)
         self.maskTextures = GLCache(0)
-        self.pattersonTextures = GLCache(0)
+        self.pattersonTexture = None
+        self.pattersonTextureImg = -1
         self.texture = {}
         self.parent = parent
         self.setMouseTracking(True)
@@ -494,12 +495,12 @@ class View2D(View,QtOpenGL.QGLWidget):
         data_texture_loc = glGetUniformLocation(self.shader, "data")
         glUniform1i(data_texture_loc,1)
         pattersonParams = self.data.pattersonItem.getParams(img)
-        pattersonEnabled = (img == pattersonParams["_pattersonImg"]) and (img == self.selectedImage) and self.pattersonView and (img in self.pattersonTextures)
+        pattersonEnabled = (img == pattersonParams["_pattersonImg"]) and (img == self.selectedImage) and self.pattersonView and (img == self.pattersonTextureImg)
         if not pattersonEnabled:
             imageTexture =  self.imageTextures[img]
-            imageData = self.loaderThread.imageData
+            imageData = self.loaderThread.imageData[img]
         else:
-            imageTexture = self.pattersonTextures[img]
+            imageTexture = self.pattersonTexture
             imageData = self.loaderThread.pattersonData
         glBindTexture (GL_TEXTURE_2D,imageTexture);
 
@@ -518,8 +519,8 @@ class View2D(View,QtOpenGL.QGLWidget):
             glBindTexture (GL_TEXTURE_2D, self.defaultMaskTexture);
 
         if self.autorange or pattersonEnabled:
-            glUniform1f(self.vminLoc,imageData[img].min())
-            glUniform1f(self.vmaxLoc,imageData[img].max())
+            glUniform1f(self.vminLoc,imageData.min())
+            glUniform1f(self.vmaxLoc,imageData.max())
         else:
             glUniform1f(self.vminLoc,self.normVmin)
             glUniform1f(self.vmaxLoc,self.normVmax)
@@ -531,7 +532,7 @@ class View2D(View,QtOpenGL.QGLWidget):
         # Model related variables
         glUniform1i(self.showModelLoc,self.modelView)
         params = self.data.modelItem.getParams(img)
-        s = imageData[img].shape
+        s = imageData.shape
         self.centerX = ((s[1]-1)/2.+params["offCenterX"])/(s[1]-1)
         self.centerY = ((s[0]-1)/2.+params["offCenterY"])/(s[0]-1)
         glUniform1f(self.modelCenterXLoc,self.centerX)
@@ -562,8 +563,8 @@ class View2D(View,QtOpenGL.QGLWidget):
         scale = K * QE * ADUP      
 
         glUniform1f(self.modelScaleLoc,scale)
-        glUniform1f(self.imageShapeXLoc,imageData[img].shape[1])
-        glUniform1f(self.imageShapeYLoc,imageData[img].shape[0])
+        glUniform1f(self.imageShapeXLoc,imageData.shape[1])
+        glUniform1f(self.imageShapeYLoc,imageData.shape[0])
         glUniform1f(self.modelVisibilityLoc,params["_visibility"])
         self.maskRadius = params["maskRadius"]
 
@@ -784,9 +785,7 @@ class View2D(View,QtOpenGL.QGLWidget):
         if self.pattersonView:
             pattersonParams = self.data.pattersonItem.getParams(img)
             if self.pattersonView and (img == self.selectedImage) and (pattersonParams["_pattersonImg"] == img) and not self.data.pattersonItem.textureLoaded:
-                #glDeleteTextures(self.pattersonTextures.values())
-                #self.pattersonTextures = GLCache(1024*1024*int(QtCore.QSettings().value("textureCacheSize")))
-                temp = abs(self.loaderThread.pattersonData[img])
+                temp = abs(self.loaderThread.pattersonData)
                 P = numpy.ones(temp.shape,dtype=numpy.float32)
                 P[:] = temp[:]
                 texture = glGenTextures(1)
@@ -795,7 +794,8 @@ class View2D(View,QtOpenGL.QGLWidget):
                 glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
                 glPixelStorei(GL_UNPACK_ALIGNMENT, 1)
                 glTexImage2D(GL_TEXTURE_2D, 0, OpenGL.GL.ARB.texture_float.GL_ALPHA32F_ARB, P.shape[1], P.shape[0], 0, GL_ALPHA, GL_FLOAT, P);
-                self.pattersonTextures[img] = texture
+                self.pattersonTexture = texture
+                self.pattersonTextureImg = img
                 self.data.pattersonItem.textureLoaded = True
                 self.updateGL()
 
@@ -1081,11 +1081,11 @@ class View2D(View,QtOpenGL.QGLWidget):
     def clearTextures(self):
         glDeleteTextures(self.imageTextures.values())
         glDeleteTextures(self.maskTextures.values())
-        glDeleteTextures(self.pattersonTextures.values())
         self.imageTextures = GLCache(1024*1024*int(QtCore.QSettings().value("textureCacheSize")))
         self.maskTextures = GLCache(1024*1024*int(QtCore.QSettings().value("textureCacheSize"))) 
-        self.pattersonTextures = GLCache(1024*1024*int(QtCore.QSettings().value("textureCacheSize")))
         self.loaderThread.clear()
+        self.pattersonTexture = None
+        self.pattersonTextureImg = -1
 #        self.clearLoaderThread.emit(0)
     def setStackWidth(self,width):
         self.stackWidth = width 

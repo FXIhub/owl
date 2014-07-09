@@ -369,8 +369,8 @@ class ImageLoader(QtCore.QObject):
         self.imageLoaded.emit(img)
     def loadPatterson(self,img):
         patterson = self.view.getPatterson()
-        self.pattersonData[img] = numpy.ones((self.view.data.height(),self.view.data.width()),dtype=numpy.float32)
-        self.pattersonData[img][:] = abs(patterson)[:]
+        self.pattersonData = numpy.ones((self.view.data.height(),self.view.data.width()),dtype=numpy.float32)
+        self.pattersonData[:] = abs(patterson)[:]
         self.imageLoaded.emit(img)
     def loadedImages(self):
         return self.imageData.keys()
@@ -381,4 +381,4 @@ class ImageLoader(QtCore.QObject):
         self.imageData = ArrayCache(1024*1024*int(QtCore.QSettings().value("imageCacheSize")))
         self.phaseData = ArrayCache(1024*1024*int(QtCore.QSettings().value("phaseCacheSize")))
         self.maskData = ArrayCache(1024*1024*int(QtCore.QSettings().value("maskCacheSize")))
-        self.pattersonData = ArrayCache(1024*1024*int(QtCore.QSettings().value("imageCacheSize")))
+        self.pattersonData = None
