@@ -1018,33 +1018,35 @@ class ModelProperties(QtGui.QGroupBox, modelProperties.Ui_ModelProperties):
                 self.setParams()
     def showParams(self,params=None):
         img = self.parent.viewer.view.view2D.selectedImage
-        if self.modelItem == None or img == None:
-            self.centerX.setValue(0)
+        if img != None:
+            self.centerX.setReadOnly(False)
+            self.centerY.setReadOnly(False)
+            self.diameter.setReadOnly(False)
+            self.scaling.setReadOnly(False)
+            self.maskRadius.setReadOnly(False)
+            self.visibilitySlider.setEnabled(True)
+        else:
             self.centerX.setReadOnly(True)
-            self.centerY.setValue(0)
             self.centerY.setReadOnly(True)
-            self.diameter.setValue(0)
             self.diameter.setReadOnly(True)
-            self.scaling.setValue(0)
             self.scaling.setReadOnly(True)
-            self.maskRadius.setValue(0)
             self.maskRadius.setReadOnly(True)
+            self.visibilitySlider.setEnabled(False)           
+        if self.modelItem == None:
+            self.centerX.setValue(0)
+            self.centerY.setValue(0)
+            self.diameter.setValue(0)
+            self.scaling.setValue(0)
+            self.maskRadius.setValue(0)
             self.visibilitySlider.setValue(50)
-            self.visibilitySlider.setEnabled(False)
         else:
             params = self.modelItem.getParams(img)
             self.centerX.setValue(params["offCenterX"])
-            self.centerX.setReadOnly(False)
             self.centerY.setValue(params["offCenterY"])
-            self.centerY.setReadOnly(False)
             self.diameter.setValue(params["diameterNM"])
-            self.diameter.setReadOnly(False)
             self.scaling.setValue(params["intensityMJUM2"])
-            self.scaling.setReadOnly(False)
             self.maskRadius.setValue(params["maskRadius"])
-            self.maskRadius.setReadOnly(False)
             self.visibilitySlider.setValue(params["_visibility"]*100)
-            self.visibilitySlider.setEnabled(True)
     def setParams(self):
         params = {}
         img = self.parent.viewer.view.view2D.selectedImage
@@ -1145,9 +1147,9 @@ class PattersonProperties(QtGui.QGroupBox, pattersonProperties.Ui_PattersonPrope
             params = self.pattersonItem.getParams(img)
             self.smooth.setValue(params["smooth"])
             self.smooth.setReadOnly(False)
-            if img != params["pattersonImg"]:
+            if img != params["_pattersonImg"]:
                 self.pattersonItem.patterson = None
-                self.pattersonItem.setParams(None,{"pattersonImg":-1})
+                self.pattersonItem.setParams(None,{"_pattersonImg":-1})
     def setParams(self):
         params = {}
         img = self.parent.viewer.view.view2D.selectedImage

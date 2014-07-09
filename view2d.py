@@ -494,7 +494,7 @@ class View2D(View,QtOpenGL.QGLWidget):
         data_texture_loc = glGetUniformLocation(self.shader, "data")
         glUniform1i(data_texture_loc,1)
         pattersonParams = self.data.pattersonItem.getParams(img)
-        pattersonEnabled = (img == pattersonParams["pattersonImg"]) and (img == self.selectedImage) and self.pattersonView and (img in self.pattersonTextures)
+        pattersonEnabled = (img == pattersonParams["_pattersonImg"]) and (img == self.selectedImage) and self.pattersonView and (img in self.pattersonTextures)
         if not pattersonEnabled:
             imageTexture =  self.imageTextures[img]
             imageData = self.loaderThread.imageData
@@ -783,7 +783,7 @@ class View2D(View,QtOpenGL.QGLWidget):
         
         if self.pattersonView:
             pattersonParams = self.data.pattersonItem.getParams(img)
-            if self.pattersonView and (img == self.selectedImage) and (pattersonParams["pattersonImg"] == img) and not self.data.pattersonItem.textureLoaded:
+            if self.pattersonView and (img == self.selectedImage) and (pattersonParams["_pattersonImg"] == img) and not self.data.pattersonItem.textureLoaded:
                 #glDeleteTextures(self.pattersonTextures.values())
                 #self.pattersonTextures = GLCache(1024*1024*int(QtCore.QSettings().value("textureCacheSize")))
                 temp = abs(self.loaderThread.pattersonData[img])
@@ -808,7 +808,7 @@ class View2D(View,QtOpenGL.QGLWidget):
                 self.loaderThread.imageData.touch(img)
             if self.pattersonView:
                 pattersonParams = self.data.pattersonItem.getParams(img)
-                if (pattersonParams["pattersonImg"] == img) and (self.selectedImage == img) and not self.data.pattersonItem.textureLoaded:
+                if (pattersonParams["_pattersonImg"] == img) and (self.selectedImage == img) and not self.data.pattersonItem.textureLoaded:
                     self.needDataPatterson.emit(img)
     
     # positive counts correspond to upwards movement of window / downwards movement of images
