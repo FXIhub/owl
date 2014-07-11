@@ -115,7 +115,7 @@ class FileLoader(QtCore.QObject):
         for n,d in self.dataItems.items():
             if d.isSelectedStack:
                 if "numEvents" in self.f[n].attrs.keys():
-                    #self.f[n].refresh()
+                    self.f[n].refresh()
                     N.append(self.f[n].attrs.get("numEvents")[0])
                     print n,N
                 else:
@@ -269,10 +269,10 @@ class DataItem:
         return self.fileLoader.f[self.fullName].attrs[name]
         
     def data(self,**kwargs):
-        try:
-            self.fileLoader.f[self.fullName].refresh()
-        except:
-            self.logger.debug("Failed to refresh dataset. Probably the h5py version that is installed does not support SWMR.")
+        #try:
+        #    self.fileLoader.f[self.fullName].refresh()
+        #except:
+        #    self.logger.debug("Failed to refresh dataset. Probably the h5py version that is installed does not support SWMR.")
 
         complex_mode = kwargs.get("complex_mode",None)
         if self.isComplex == False and complex_mode != None:
