@@ -19,18 +19,21 @@ class AbstractParameterItem:
         self.indParams = {}
         self.genParams = {}
         self.dataItems = {}
+        self.chunkSize = 10000
+        self.numEvents = None
         self.initParams()
     def initParams(self):
         # return if we do not even know the stack size
         if self.fileLoader.stackSize == None:
-            return
-        N = self.fileLoader.stackSize
+            self.numEvents = self.chunkSize
+        else:
+            self.numEvents = self.fileLoader.stackSize - self.fileLoader.stackSize % self.chunkSize + self.chunkSize
         # set all general params to default values
         for n,v in self.paramsGenDef.items():
             self.genParams[n] = v
         #  set all individual params to default values
         for n,v in self.paramsIndDef.items():
-            self.indParams[n] = numpy.ones(N)*v
+            self.indParams[n] = numpy.ones(self.numEvents)*v
         # link to existing data items if there are any
         if self.name in self.parentGroup.children:
             gi = self.parentGroup.children[self.name]
@@ -52,6 +55,10 @@ class AbstractParameterItem:
             img = 0
         else:
             img = img0
+        # dynamically growing arrays for the case of SWMR operation
+        if img >= self.numEvents:
+            for n,v in self.indParamsDef.items():
+                self.indParams[n] = numpy.append(self.indParams[n],numpy.ones(self.chunkSize)*v)
         ps = {}
         for n,p in self.genParams.items():
             ps[n] = p
@@ -79,15 +86,17 @@ class AbstractParameterItem:
                 self.fileLoader.reopenFile()
                 self.fileLoader.addGroupPosterior(self.fullName)
                 treeDirty = True
-            for n,p in self.indParams.items():
+            for n,p0 in self.indParams.items():
+                p = p0[:self.numEvents]
                 if n in grp:
                     ds = grp[n]
                     if ds.shape[0] != p.shape:
                         ds.resize(p.shape)
-                    ds[:len(p)] = p[:]
+                    ds[:self.numEvents] = p[:]
                 else:
                     ds = self.fileLoader.f[self.fullName].create_dataset(n,p.shape,maxshape=(None,),chunks=(10000,),data=self.indParams[n])
                     ds.attrs.modify("axes",["experiment_identifier"])
+                    ds.attrs.modify("numEvents",[self.numEvents])
                     self.fileLoader.reopenFile()
                     self.fileLoader.addDatasetPosterior(self.fullName+"/"+n)
                     treeDirty = True
@@ -104,8 +113,6 @@ class AbstractParameterItem:
         # the following two lines lead to a crash and a corrupt file, I have no clue why
         if treeDirty:
             self.fileLoader.fileLoaderExtended.emit()
-
-
 
 class ModelItem(AbstractParameterItem):
     def __init__(self,parentGroup,fileLoader):
@@ -140,9 +147,6 @@ class PattersonItem(AbstractParameterItem):
         self.patterson = PC.patterson(img)
         self.setParams(img,{"_pattersonImg":img})
         self.textureLoaded = False
-
-
-
 
 class TagsItem:
     def __init__(self,parent,fileLoader,path):
@@ -182,7 +186,6 @@ class TagsItem:
         self.tagsDirty = True
         newMembers = numpy.zeros((len(tags),self.fileLoader.stackSize),dtype=numpy.int8)
         if(self.tagMembers != None):
-            newMembers = numpy.zeros((len(tags),self.fileLoader.stackSize),dtype=numpy.int8)
             # Copy old members to new members
             for i in range(0,len(tags)):
                 # Check if the new tag is an old tag

@@ -13,25 +13,36 @@ class FileLoader(QtCore.QObject):
         QtCore.QObject.__init__(self)
         self.parent = parent
         self.stackSize = None
-    def openFile(self,fullFilename):
+    def openFile(self,fullFilename,mode="r*"):
         if isinstance(self.f,h5py.File):
             self.f.close()
-        try:
-            self.f = h5py.File(fullFilename, "r+")#,libver='latest')
-        except IOError as e:            
-            if( str(e) == 'Unable to open file (File is already open for write or swmr write)'):                                
-                print "\n\n!!! TIP: Trying running h5clearsb.py on the file !!!\n\n"
-            raise
+        opened = False
+        if mode == "r*":
+            try:
+                self.f = h5py.File(fullFilename,"r*")
+                opened = True
+            except:
+                print "Failed opening %s in SWMR reading mode. Trying to open file in read-write mode." % fullFilename
+        if not opened:
+            try:
+                self.f = h5py.File(fullFilename, "r+")#,libver='latest')
+            except IOError as e:            
+                if( str(e) == 'Unable to open file (File is already open for write or swmr write)'):                                
+                    print "\n\n!!! TIP: Trying running h5clearsb.py on the file !!!\n\n"
+                raise
         #            print e.strerror
-        #self.f = h5py.File(fullFilename, "r*") # for swmr
-    def reopenFile(self):
+    def reopenFile(self,mode0=None):
         # IMPORTANT NOTE:
         # Reopening the file is required after groups (/ datasets?) are created, otherwise we corrupt the file.
         # As we have to do this from time to time never rely on direct pointers to HDF5 datatsets. You better access data only via the HDF5 file object fileLoader.f[datasetname].
-        self.openFile(self.fullFilename)
+        if mode0 == None:
+            mode = self.f.mode
+        else:
+            mode = mode0
+        self.openFile(self.fullFilename,mode)
     def loadFile(self,fullFilename):
         self.f = None
-        self.openFile(fullFilename)
+        self.openFile(fullFilename,"r*")
         self.fullFilename = fullFilename
         self.filename = QtCore.QFileInfo(fullFilename).fileName()
         self.fullName = self.name = "/"
@@ -98,13 +109,15 @@ class FileLoader(QtCore.QObject):
                 elif isinstance(c,GroupItem):                  
                     addDatasetRecursively(c,c.children)
 
-        addDatasetRecursively(self,self.children)
+        addDatoasetRecursively(self,self.children)
     def updateStackSize(self):
         N = []
         for n,d in self.dataItems.items():
             if d.isSelectedStack:
                 if "numEvents" in self.f[n].attrs.keys():
+                    #self.f[n].refresh()
                     N.append(self.f[n].attrs.get("numEvents")[0])
+                    print n,N
                 else:
                     N.append(self.f[n].shape[d.stackDim])
         if len(N) > 0:
@@ -114,20 +127,37 @@ class FileLoader(QtCore.QObject):
         if N != self.stackSize:
             self.stackSize = N
             self.stackSizeChanged.emit(N)
+    def ensureReadWriteMode(self):
+        if self.f.mode == "r*":
+            accepted = QtGui.QMessageBox.question(self,"Change to read-write mode?",
+                                                  "The file is currently opened in SWMR mode. Data can not be written to file in this mode. Do you like to reopen the file in read-write mode?",
+                                                  QtGui.QMessageBox.Ok,QtGui.QMessageBox.Cancel) == QtGui.QMessageBox.Ok
+            if accepted:
+                self.reopenFile("r+")
+                return 0
+        return 1
     def saveTags(self):
-        for n,t in self.tagsItems.items():
-            t.saveTags()
+        if 0 ==  self.ensureRWModeActivated():
+            for n,t in self.tagsItems.items():
+                t.saveTags()
     def modelsChanged(self):
         for n,m in self.modelItems.items():
             if m.paramsDirty:
                 return True
         return False
+    def pattersonsChanged(self):
+        for n,p in self.pattersonItems.items():
+            if p.paramsDirty:
+                return True
+        return False
     def saveModels(self):
-        for n,m in self.modelItems.items():
-            m.saveParams()
+        if 0 ==  self.ensureRWModeActivated():
+            for n,m in self.modelItems.items():
+                m.saveParams()
     def savePattersons(self):
-        for n,m in self.pattersonItems.items():
-            m.saveParams()
+        if 0 ==  self.ensureRWModeActivated():
+            for n,m in self.pattersonItems.items():
+                m.saveParams()
 
 class GroupItem:
     def __init__(self,parent,fileLoader,fullName):
@@ -239,11 +269,6 @@ class DataItem:
         return self.fileLoader.f[self.fullName].attrs[name]
         
     def data(self,**kwargs):
-        #if self.isStack and self.format == 2:
-            #print "AAA",self.fullName,self.fileLoader.f[self.fullName][0]
-            #self.fileLoader.f[self.fullName].refresh()
-            #print "BBB",self.fullName,self.fileLoader.f[self.fullName][0]
-
         try:
             self.fileLoader.f[self.fullName].refresh()
         except:

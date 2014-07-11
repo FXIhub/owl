@@ -444,7 +444,7 @@ class Viewer(QtGui.QMainWindow):
                                           "Would you like to save changes to the models?",
                                           QtGui.QMessageBox.Save,QtGui.QMessageBox.Discard) == QtGui.QMessageBox.Save:
                 self.fileLoader.saveModels()
-        if self.fileLoader.modelsChanged():
+        if self.fileLoader.pattersonsChanged():
             if QtGui.QMessageBox.question(self,"Save Patterson configurations?",
                                           "Would you like to save changes to the Patterson configurations?",
                                           QtGui.QMessageBox.Save,QtGui.QMessageBox.Discard) == QtGui.QMessageBox.Save:
