@@ -105,19 +105,19 @@ class FileLoader(QtCore.QObject):
                     d = DataItem(group,self,"/"+name)
                     c.children[name[name.rindex('/')+1:]] = d
                     self.dataItems[name] = d
-                    #print "add dataset",self.dataItems.keys(),name0
                 elif isinstance(c,GroupItem):                  
                     addDatasetRecursively(c,c.children)
 
-        addDatoasetRecursively(self,self.children)
+        addDatasetRecursively(self,self.children)
     def updateStackSize(self):
         N = []
         for n,d in self.dataItems.items():
             if d.isSelectedStack:
                 if "numEvents" in self.f[n].attrs.keys():
-                    self.f[n].refresh()
+                    if not self.f.mode == "r+": # self.f.mode == None if opened in swmr mode. This is odd.
+                        self.f[n].refresh()
                     N.append(self.f[n].attrs.get("numEvents")[0])
-                    print n,N
+                    #print n,N
                 else:
                     N.append(self.f[n].shape[d.stackDim])
         if len(N) > 0:
@@ -127,9 +127,9 @@ class FileLoader(QtCore.QObject):
         if N != self.stackSize:
             self.stackSize = N
             self.stackSizeChanged.emit(N)
-    def ensureReadWriteMode(self):
-        if self.f.mode == "r*":
-            accepted = QtGui.QMessageBox.question(self,"Change to read-write mode?",
+    def ensureReadWriteModeActivated(self):
+        if self.f.mode != "r+":
+            accepted = QtGui.QMessageBox.question(self.parent,"Change to read-write mode?",
                                                   "The file is currently opened in SWMR mode. Data can not be written to file in this mode. Do you like to reopen the file in read-write mode?",
                                                   QtGui.QMessageBox.Ok,QtGui.QMessageBox.Cancel) == QtGui.QMessageBox.Ok
             if accepted:
@@ -137,7 +137,7 @@ class FileLoader(QtCore.QObject):
                 return 0
         return 1
     def saveTags(self):
-        if 0 ==  self.ensureRWModeActivated():
+        if 0 ==  self.ensureReadWriteModeActivated():
             for n,t in self.tagsItems.items():
                 t.saveTags()
     def modelsChanged(self):
@@ -151,11 +151,11 @@ class FileLoader(QtCore.QObject):
                 return True
         return False
     def saveModels(self):
-        if 0 ==  self.ensureRWModeActivated():
+        if 0 ==  self.ensureReadWriteModeActivated():
             for n,m in self.modelItems.items():
                 m.saveParams()
     def savePattersons(self):
-        if 0 ==  self.ensureRWModeActivated():
+        if 0 ==  self.ensureReadWriteModeActivated():
             for n,m in self.pattersonItems.items():
                 m.saveParams()
 
@@ -269,11 +269,6 @@ class DataItem:
         return self.fileLoader.f[self.fullName].attrs[name]
         
     def data(self,**kwargs):
-        #try:
-        #    self.fileLoader.f[self.fullName].refresh()
-        #except:
-        #    self.logger.debug("Failed to refresh dataset. Probably the h5py version that is installed does not support SWMR.")
-
         complex_mode = kwargs.get("complex_mode",None)
         if self.isComplex == False and complex_mode != None:
             return None

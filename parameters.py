@@ -218,6 +218,7 @@ class TagsItem:
             ds = self.fileLoader.f[self.path].create_dataset('tags',self.tagMembers.shape,maxshape=(None,None),chunks=(1,10000),data=self.tagMembers)
             ds.attrs.modify("axes",["tag:experiment_identifier"])
             self.fileLoader.reopenFile()
+            ds = self.fileLoader.f[self.path+"tags"]
             self.fileLoader.addDatasetPosterior(self.path+"tags")
             self.fileLoader.fileLoaderExtended.emit()
         # Save tag names
