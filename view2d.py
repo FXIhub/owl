@@ -18,7 +18,6 @@ import fit
 class View2D(View,QtOpenGL.QGLWidget):
     needDataImage = QtCore.Signal(int)
     needDataPatterson = QtCore.Signal(int)
-    #imageSelected = QtCore.Signal(int)
     centralImgChanged = QtCore.Signal(int,int,int,int)
     translationChanged = QtCore.Signal(int,int)
     stackWidthChanged = QtCore.Signal(int)
@@ -42,7 +41,6 @@ class View2D(View,QtOpenGL.QGLWidget):
         self.data = None
         self.mask = None
         self.texturesLoading = {}
-        #self.imageStackN = None
         
         self.imageTextures = GLCache(0)
         self.maskTextures = GLCache(0)
@@ -78,7 +76,6 @@ class View2D(View,QtOpenGL.QGLWidget):
         self.loadingImageAnimationTimer.setInterval(100)
 
         self.setAcceptDrops(True)
-#        self.time1 = time.time()
 
         self.slideshowTimer = QtCore.QTimer()
         self.slideshowTimer.setInterval(2000)
@@ -88,8 +85,6 @@ class View2D(View,QtOpenGL.QGLWidget):
 
 	settings = QtCore.QSettings()
         self.PNGOutputPath = settings.value("PNGOutputPath")
-        self.MarkOutputPath = settings.value("MarkOutputPath")
-	#print self.PNGOutputPath
         self.setFocusPolicy(QtCore.Qt.StrongFocus)
         self.tagView = True
         self.modelView = False
@@ -727,9 +722,6 @@ class View2D(View,QtOpenGL.QGLWidget):
         if(self.has_data is False):
             return visible
 
-        #if self.integrationMode != None:
-	#    return [0]
-
         top_left = self.windowToViewIndex(0,0,0,checkExistance=False,clip=False)
         bottom_right = self.windowToViewIndex(self.width(),self.height(),0,checkExistance=False,clip=False)
 
@@ -1141,19 +1133,9 @@ class View2D(View,QtOpenGL.QGLWidget):
         image.save(filename)
         self.viewer.statusBar.showMessage("Saving image %i to %s" % (self.centralImg,filename),1000)	
 
-    def addtoMarked(self):
-        file = open('%s/%s_marked.txt' %(self.MarkOutputPath, self.viewer.filename.split("/")[-1][:-4]), 'a')
-        file.write('%s\n' %self.selectedImage)
-        file.close()
-
     def getStackSize(self):
         self.updateStackSize()
         return self.stackSize
-        #if self.data == None:
-        #    return 0
-        #else:
-        #    len(self.data)
-
     def toggleAutoLast(self):
         self.autoLast = not self.autoLast
         self.browseToLastIfAuto()
