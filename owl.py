@@ -120,8 +120,6 @@ class Viewer(QtGui.QMainWindow):
             settings.setValue("movingAverageSize", 10.);
         if(not settings.contains("PNGOutputPath")):
             settings.setValue("PNGOutputPath", "./");
-        if(not settings.contains("MarkOutputPath")):
-            settings.setValue("MarkOutputPath", "./");
         if(not settings.contains("TagColors")):
             settings.setValue("TagColors",  [QtGui.QColor(52,102,164),
                                              QtGui.QColor(245,121,0),
@@ -195,11 +193,6 @@ class Viewer(QtGui.QMainWindow):
         act = QtGui.QAction("To PNG",self)
         act.setShortcut(QtGui.QKeySequence("Ctrl+P"))
         self.saveMenu.toPNG = act
-        self.saveMenu.addAction(act)
-
-        act = QtGui.QAction("Mark", self)
-        act.setShortcut(QtGui.QKeySequence("Ctrl+M"))
-        self.saveMenu.Mark = act
         self.saveMenu.addAction(act)
 
         self.viewMenu = self.menuBar().addMenu(self.tr("&View"));
@@ -378,7 +371,6 @@ class Viewer(QtGui.QMainWindow):
         self.goMenu.nextRow.triggered.connect(self.view.view2D.nextRow)
         self.goMenu.previousRow.triggered.connect(self.view.view2D.previousRow)
         self.saveMenu.toPNG.triggered.connect(self.view.view2D.saveToPNG)
-        self.saveMenu.Mark.triggered.connect(self.view.view2D.addtoMarked)
         for i in range(0,len(self.editMenu.toggleTag)):
             self.editMenu.toggleTag[i].triggered.connect(lambda id=i: self.dataProp.toggleTag(id))
         self.editMenu.moveSelectionRight.triggered.connect(lambda: self.view.view2D.moveSelectionBy(1,0))
@@ -488,9 +480,6 @@ class Viewer(QtGui.QMainWindow):
             v = diag.PNGOutputPath.text()
             settings.setValue("PNGOutputPath",v)
             self.view.view2D.PNGOutputPath = v
-            v = diag.MarkOutputPath.text()
-            settings.setValue("MarkOutputPath",v)
-            self.view.view2D.MarkOutputPath = v
 
             shortcuts = settings.value("Shortcuts")
             for r in range(0,diag.shortcutsTable.rowCount()):

@@ -2,8 +2,8 @@
 
 # Form implementation generated from reading ui file 'preferencesDialog.ui'
 #
-# Created: Fri Jun 27 17:09:54 2014
-#      by: pyside-uic 0.2.15 running on PySide 1.2.1
+# Created: Sun Jul 13 15:09:36 2014
+#      by: pyside-uic 0.2.14 running on PySide 1.1.2
 #
 # WARNING! All changes made in this file will be lost!
 
@@ -94,22 +94,16 @@ class Ui_PreferencesDialog(object):
         self.tab.setObjectName("tab")
         self.gridLayout = QtGui.QGridLayout(self.tab)
         self.gridLayout.setObjectName("gridLayout")
-        self.MarkOutputPath = QtGui.QLineEdit(self.tab)
-        self.MarkOutputPath.setObjectName("MarkOutputPath")
-        self.gridLayout.addWidget(self.MarkOutputPath, 2, 1, 1, 1)
+        spacerItem = QtGui.QSpacerItem(20, 40, QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Expanding)
+        self.gridLayout.addItem(spacerItem, 0, 1, 1, 1)
         self.label = QtGui.QLabel(self.tab)
         self.label.setObjectName("label")
         self.gridLayout.addWidget(self.label, 1, 0, 1, 1)
         self.PNGOutputPath = QtGui.QLineEdit(self.tab)
         self.PNGOutputPath.setObjectName("PNGOutputPath")
         self.gridLayout.addWidget(self.PNGOutputPath, 1, 1, 1, 1)
-        self.label_2 = QtGui.QLabel(self.tab)
-        self.label_2.setObjectName("label_2")
-        self.gridLayout.addWidget(self.label_2, 2, 0, 1, 1)
-        spacerItem = QtGui.QSpacerItem(20, 40, QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Expanding)
-        self.gridLayout.addItem(spacerItem, 3, 1, 1, 1)
         spacerItem1 = QtGui.QSpacerItem(20, 40, QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Expanding)
-        self.gridLayout.addItem(spacerItem1, 0, 1, 1, 1)
+        self.gridLayout.addItem(spacerItem1, 2, 1, 1, 1)
         self.tabWidget.addTab(self.tab, "")
         self.tab_2 = QtGui.QWidget()
         self.tab_2.setObjectName("tab_2")
@@ -199,7 +193,7 @@ class Ui_PreferencesDialog(object):
         self.verticalLayout.addWidget(self.buttonBox)
 
         self.retranslateUi(PreferencesDialog)
-        self.tabWidget.setCurrentIndex(0)
+        self.tabWidget.setCurrentIndex(1)
         QtCore.QObject.connect(self.buttonBox, QtCore.SIGNAL("accepted()"), PreferencesDialog.accept)
         QtCore.QObject.connect(self.buttonBox, QtCore.SIGNAL("rejected()"), PreferencesDialog.reject)
         QtCore.QMetaObject.connectSlotsByName(PreferencesDialog)
@@ -223,7 +217,6 @@ class Ui_PreferencesDialog(object):
         self.shortcutsTable.setSortingEnabled(__sortingEnabled)
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_3), QtGui.QApplication.translate("PreferencesDialog", "Shortcuts", None, QtGui.QApplication.UnicodeUTF8))
         self.label.setText(QtGui.QApplication.translate("PreferencesDialog", "PNG output path:", None, QtGui.QApplication.UnicodeUTF8))
-        self.label_2.setText(QtGui.QApplication.translate("PreferencesDialog", "Mark output path:", None, QtGui.QApplication.UnicodeUTF8))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab), QtGui.QApplication.translate("PreferencesDialog", "Paths", None, QtGui.QApplication.UnicodeUTF8))
         self.label_5.setText(QtGui.QApplication.translate("PreferencesDialog", "Texture Cache (in MB):", None, QtGui.QApplication.UnicodeUTF8))
         self.label_3.setText(QtGui.QApplication.translate("PreferencesDialog", "Image Cache (in MB):", None, QtGui.QApplication.UnicodeUTF8))

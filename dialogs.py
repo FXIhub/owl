@@ -162,7 +162,6 @@ class PreferencesDialog(QtGui.QDialog, preferencesDialog.Ui_PreferencesDialog):
         self.updateTimerSpin.setValue(int(settings.value("updateTimer")))
         self.movingAverageSizeSpin.setValue(float(settings.value("movingAverageSize")))
         self.PNGOutputPath.setText(settings.value("PNGOutputPath"))
-        self.MarkOutputPath.setText(settings.value("MarkOutputPath"))
         self.shortcutsTable.installEventFilter(self)
         shortcuts = settings.value("Shortcuts")
         for r in range(0,self.shortcutsTable.rowCount()):
