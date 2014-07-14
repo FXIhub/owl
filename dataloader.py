@@ -350,7 +350,7 @@ class DataItem:
             else:
                 return self.data(**kwargs)[self.selectedIndex,:]
         else:
-            return f.data(**kwargs)
+            return self.data(**kwargs)
 
 
 class ImageLoader(QtCore.QObject):
@@ -370,6 +370,8 @@ class ImageLoader(QtCore.QObject):
             # as there is always only 1 thread running
             # loadImage
             self.imageLoaded.emit(img)
+            return
+        if self.view.data == None:
             return
         self.logger.debug("Loading image %d"  % (img))
         ################### Important Note ##################
