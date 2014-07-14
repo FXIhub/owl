@@ -50,6 +50,7 @@ class Viewer(QtGui.QMainWindow):
 
         self.statusBar = self.statusBar()
         self.statusBar.showMessage("Initializing...")
+        self.settings = QtCore.QSettings()
         self.init_settings()
         self.splitter = QtGui.QSplitter(self)
         self.indexProjector = IndexProjector()
@@ -68,21 +69,24 @@ class Viewer(QtGui.QMainWindow):
         self.splitter.setStretchFactor(2,0)
         self.setCentralWidget(self.splitter)
         self.statusBar.showMessage("Initialization complete.",1000)
-        
+
         self.geometry = Geometry();
         self.resize(800,450)
-        settings = QtCore.QSettings()
-        if(settings.contains("geometry")):
-            self.restoreGeometry(settings.value("geometry"));
-        if(settings.contains("windowState")):
-            self.restoreState(settings.value("windowState"));
+        if(self.settings.contains("geometry")):
+            self.restoreGeometry(self.settings.value("geometry"));
+        if(self.settings.contains("windowState")):
+            self.restoreState(self.settings.value("windowState"));
 
         QtCore.QTimer.singleShot(0,self.after_show)
         self.updateTimer = QtCore.QTimer()
-        self.updateTimer.setInterval(int(settings.value("updateTimer")))
+        self.updateTimer.setInterval(int(self.settings.value("updateTimer")))
         self.updateTimer.timeout.connect(self.fileLoader.updateStackSize)
+        if self.settings.value("fileMode") == "r*":
+            self.updateTimer.start()
+        else:
+            self.updateTimer.stop()
 
-        self.view.view1D.setWindowSize(float(settings.value("movingAverageSize")))
+        self.view.view1D.setWindowSize(float(self.settings.value("movingAverageSize")))
 
         self.initConnections()
         self.dataProp.emitView1DProp()
@@ -99,29 +103,28 @@ class Viewer(QtGui.QMainWindow):
         self.CXINavigation.CXITree.buildTree(self.fileLoader)
         self.CXINavigation.CXITree.loadData()
     def init_settings(self):
-        settings = QtCore.QSettings()
-        if(not settings.contains("scrollDirection")):
-            settings.setValue("scrollDirection", 1);
-        if(not settings.contains("imageCacheSize")):
+        if(not self.settings.contains("scrollDirection")):
+            self.settings.setValue("scrollDirection", 1);
+        if(not self.settings.contains("imageCacheSize")):
             # Default to 1 GB
-            settings.setValue("imageCacheSize", 1024);
-        if(not settings.contains("phaseCacheSize")):
+            self.settings.setValue("imageCacheSize", 1024);
+        if(not self.settings.contains("phaseCacheSize")):
             # Default to 1 GB
-            settings.setValue("phaseCacheSize", 1024);
-        if(not settings.contains("maskCacheSize")):
+            self.settings.setValue("phaseCacheSize", 1024);
+        if(not self.settings.contains("maskCacheSize")):
             # Default to 1 GB
-            settings.setValue("maskCacheSize", 1024);
-        if(not settings.contains("textureCacheSize")):
+            self.settings.setValue("maskCacheSize", 1024);
+        if(not self.settings.contains("textureCacheSize")):
             # Default to 256 MB
-            settings.setValue("textureCacheSize", 256);
-        if(not settings.contains("updateTimer")):
-            settings.setValue("updateTimer", 10000);
-        if(not settings.contains("movingAverageSize")):
-            settings.setValue("movingAverageSize", 10.);
-        if(not settings.contains("PNGOutputPath")):
-            settings.setValue("PNGOutputPath", "./");
-        if(not settings.contains("TagColors")):
-            settings.setValue("TagColors",  [QtGui.QColor(52,102,164),
+            self.settings.setValue("textureCacheSize", 256);
+        if(not self.settings.contains("updateTimer")):
+            self.settings.setValue("updateTimer", 10000);
+        if(not self.settings.contains("movingAverageSize")):
+            self.settings.setValue("movingAverageSize", 10.);
+        if(not self.settings.contains("PNGOutputPath")):
+            self.settings.setValue("PNGOutputPath", "./");
+        if(not self.settings.contains("TagColors")):
+            self.settings.setValue("TagColors",  [QtGui.QColor(52,102,164),
                                              QtGui.QColor(245,121,0),
                                              QtGui.QColor(117,80,123),
                                              QtGui.QColor(115,210,22),
@@ -129,7 +132,7 @@ class Viewer(QtGui.QMainWindow):
                                              QtGui.QColor(193,125,17),
                                              QtGui.QColor(237,212,0)]);        
 
-        if(not settings.contains("Shortcuts")):
+        if(not self.settings.contains("Shortcuts")):
             shortcuts = {}
             shortcuts["Move Selection Right"] = QtGui.QKeySequence("Right").toString()
             shortcuts["Move Selection Left"] = QtGui.QKeySequence("Left").toString()
@@ -140,13 +143,23 @@ class Viewer(QtGui.QMainWindow):
             shortcuts["Toggle 3rd Tag"] = QtGui.QKeySequence("3").toString()
             for i in range(4,8):
                 shortcuts["Toggle "+str(i)+"th Tag"] = QtGui.QKeySequence(str(i)).toString()
-            settings.setValue("Shortcuts",  shortcuts);
-
+            self.settings.setValue("Shortcuts",  shortcuts);
+        if not self.settings.contains("fileMode"):
+            self.settings.setValue("fileMode","r+")
+        else:
+            if not settingsOwl.swmrSupported and (self.settings.value("fileMode") == "r*"):
+                self.settings.setValue("fileMode","r+")
+                
     def init_menus(self):
         self.fileMenu = self.menuBar().addMenu(self.tr("&File"));
+
         self.openFile = QtGui.QAction("Open",self)
         self.fileMenu.addAction(self.openFile)
         self.openFile.triggered.connect(self.openFileClicked)
+
+        self.fileMode = QtGui.QAction("File mode",self)
+        self.fileMenu.addAction(self.fileMode)
+        self.fileMode.triggered.connect(self.fileModeClicked)      
 
         self.saveTags = QtGui.QAction("Save Tags",self)
         self.fileMenu.addAction(self.saveTags)
@@ -224,12 +237,6 @@ class Viewer(QtGui.QMainWindow):
         act.triggered.connect(self.view.view2D.toggleAutoLast)
         self.viewMenu.addAction(act)
 
-        act = QtGui.QAction("Auto update",self)
-        act.setCheckable(True)
-        act.setShortcut(QtGui.QKeySequence("Ctrl+U"))
-        act.triggered.connect(self.toggleUpdate)
-        self.viewMenu.addAction(act)
-
         self.viewMenu.addSeparator()
 
         self.viewActions = {"File Tree" : QtGui.QAction("File Tree",self),
@@ -295,15 +302,14 @@ class Viewer(QtGui.QMainWindow):
             a.setCheckable(True)
             self.colormapActions[colormap] = a
 
-        settings = QtCore.QSettings()
-        if(settings.contains("colormap")):
-            self.colormapActions[settings.value('colormap')].setChecked(True)
+        if(self.settings.contains("colormap")):
+            self.colormapActions[self.settings.value('colormap')].setChecked(True)
         else:
             self.colormapActions['jet'].setChecked(True)
         self.colormapMenu.addMenu(self.exoticColormapMenu)
         self.viewMenu.addMenu(self.colormapMenu)
 
-        shortcuts = settings.value('Shortcuts')
+        shortcuts = self.settings.value('Shortcuts')
         self.editMenu.toggleTag = []
 
         action = QtGui.QAction('Toggle 1st Tag',self)
@@ -385,6 +391,19 @@ class Viewer(QtGui.QMainWindow):
         fileName = QtGui.QFileDialog.getOpenFileName(self,"Open CXI File", None, "CXI Files (*.cxi)");
         if(fileName[0]):
             self.openCXIFile(fileName[0])
+    def fileModeClicked(self):
+	diag = dialogs.FileModeDialog(self)
+        if(diag.exec_()):
+            if diag.rw.isChecked():
+                self.fileLoader.mode = "r+"
+                self.settings.setValue("fileMode","r+")
+                self.updateTimer.stop()
+            elif diag.rswmr.isChecked():
+                self.fileLoader.mode = "r*"
+                self.settings.setValue("fileMode","r*")
+                self.updateTimer.start()
+            if self.fileLoader.f != None:
+                self.fileLoader.reopenFile()
     def saveTagsClicked(self):
         self.fileLoader.saveTags()
     def saveModelsClicked(self):
@@ -441,52 +460,51 @@ class Viewer(QtGui.QMainWindow):
                                           "Would you like to save changes to the Patterson configurations?",
                                           QtGui.QMessageBox.Save,QtGui.QMessageBox.Discard) == QtGui.QMessageBox.Save:
                 self.fileLoader.savePattersons()
-        settings = QtCore.QSettings()
-        settings.setValue("geometry", self.saveGeometry())
-        settings.setValue("windowState", self.saveState())
-        settings.setValue("colormap", self.dataProp.view2DProp['colormapText'])
-        settings.setValue("normScaling", self.dataProp.view2DProp['normScaling'])
-        settings.setValue("normGamma", self.dataProp.view2DProp['normGamma'])
-        settings.setValue("normClamp", self.dataProp.view2DProp['normClamp'])
-        settings.setValue("normVmin", self.dataProp.view2DProp['normVmin'])
-        settings.setValue("normVmax", self.dataProp.view2DProp['normVmax'])
+        self.settings.setValue("geometry", self.saveGeometry())
+        self.settings.setValue("windowState", self.saveState())
+        self.settings.setValue("colormap", self.dataProp.view2DProp['colormapText'])
+        self.settings.setValue("normScaling", self.dataProp.view2DProp['normScaling'])
+        self.settings.setValue("normGamma", self.dataProp.view2DProp['normGamma'])
+        self.settings.setValue("normClamp", self.dataProp.view2DProp['normClamp'])
+        self.settings.setValue("normVmin", self.dataProp.view2DProp['normVmin'])
+        self.settings.setValue("normVmax", self.dataProp.view2DProp['normVmax'])
+        self.settings.setValue("fileMode", self.fileLoader.mode)
         QtGui.QMainWindow.closeEvent(self,event)
     def preferencesClicked(self):
 	diag = dialogs.PreferencesDialog(self)
-        settings = QtCore.QSettings()
         if(diag.exec_()):
             if(diag.natural.isChecked()):
-                settings.setValue("scrollDirection",-1)
+                self.settings.setValue("scrollDirection",-1)
             else:
-                settings.setValue("scrollDirection",1)
+                self.settings.setValue("scrollDirection",1)
             v = diag.imageCacheSpin.value()
-            settings.setValue("imageCacheSize",v)
+            self.settings.setValue("imageCacheSize",v)
             self.view.view2D.loaderThread.imageData.setSizeInBytes(v*1024*1024)
             v = diag.imageCacheSpin.value()
-            settings.setValue("phaseCacheSize",v)
+            self.settings.setValue("phaseCacheSize",v)
             self.view.view2D.loaderThread.phaseData.setSizeInBytes(v*1024*1024)
             v = diag.maskCacheSpin.value()
-            settings.setValue("maskCacheSize",v)
+            self.settings.setValue("maskCacheSize",v)
             self.view.view2D.loaderThread.maskData.setSizeInBytes(v*1024*1024)
             v = diag.textureCacheSpin.value()
-            settings.setValue("textureCacheSize",v)
+            self.settings.setValue("textureCacheSize",v)
             self.view.view2D.imageTextures.setSizeInBytes(v*1024*1024)
             v = diag.updateTimerSpin.value()
-            settings.setValue("updateTimer",v)
+            self.settings.setValue("updateTimer",v)
             self.updateTimer.setInterval(v)
             v = diag.movingAverageSizeSpin.value()
-            settings.setValue("movingAverageSize",v)
+            self.settings.setValue("movingAverageSize",v)
             self.view.view1D.setWindowSize(v)
             v = diag.PNGOutputPath.text()
-            settings.setValue("PNGOutputPath",v)
+            self.settings.setValue("PNGOutputPath",v)
             self.view.view2D.PNGOutputPath = v
 
-            shortcuts = settings.value("Shortcuts")
+            shortcuts = self.settings.value("Shortcuts")
             for r in range(0,diag.shortcutsTable.rowCount()):
                 name = diag.shortcutsTable.verticalHeaderItem(r).text()            
                 string =  QtGui.QKeySequence.fromString(diag.shortcutsTable.item(r,0).text(),QtGui.QKeySequence.NativeText).toString()
                 shortcuts[name] = string
-            settings.setValue("Shortcuts",shortcuts)
+            self.settings.setValue("Shortcuts",shortcuts)
 
             self.editMenu.moveSelectionDown.setShortcut(QtGui.QKeySequence.fromString(shortcuts['Move Selection Down']))
             self.editMenu.moveSelectionUp.setShortcut(QtGui.QKeySequence.fromString(shortcuts['Move Selection Up']))
@@ -731,11 +749,6 @@ class Viewer(QtGui.QMainWindow):
         self.CXINavigation.dataBoxes["image"].button.setName(n)
     def handleViewIndexSelected(self,index):
         self.view.view2D.browseToViewIndex(index)
-    def toggleUpdate(self):
-        if self.updateTimer.isActive():
-            self.updateTimer.stop()
-        else:
-            self.updateTimer.start()
     def toggleModelView(self):
         self.view.view2D.toggleModelView()
         self.dataProp.modelProperties.toggleVisible()

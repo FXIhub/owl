@@ -12,37 +12,41 @@ class FileLoader(QtCore.QObject):
     def __init__(self,parent):
         QtCore.QObject.__init__(self)
         self.parent = parent
+        self.f = None
         self.stackSize = None
-    def openFile(self,fullFilename,mode="r*"):
+        self.mode = parent.settings.value("fileMode")
+    def openFile(self,fullFilename,mode0=None):
+        if mode0 != None:
+            self.mode = mode0
+        mode = self.mode
+        if mode == "r*" and not settingsOwl.swmrSupported:
+            return 1
         if isinstance(self.f,h5py.File):
             self.f.close()
-        opened = False
-        if mode == "r*":
-            try:
-                self.f = h5py.File(fullFilename,"r*")
-                opened = True
-            except:
-                print "Failed opening %s in SWMR reading mode. Trying to open file in read-write mode." % fullFilename
-        if not opened:
-            try:
-                self.f = h5py.File(fullFilename, "r+")#,libver='latest')
-            except IOError as e:            
-                if( str(e) == 'Unable to open file (File is already open for write or swmr write)'):                                
-                    print "\n\n!!! TIP: Trying running h5clearsb.py on the file !!!\n\n"
-                raise
-        #            print e.strerror
-    def reopenFile(self,mode0=None):
+        try:
+            self.f = h5py.File(fullFilename,mode)#,libver='latest')
+            return 0
+        except IOError as e:            
+            if( str(e) == 'Unable to open file (File is already open for write or swmr write)'):                                
+                print "\n\n!!! TIP: Trying running h5clearsb.py on the file !!!\n\n"
+            raise
+            return 2
+        print self.f
+    def reopenFile(self):
         # IMPORTANT NOTE:
         # Reopening the file is required after groups (/ datasets?) are created, otherwise we corrupt the file.
         # As we have to do this from time to time never rely on direct pointers to HDF5 datatsets. You better access data only via the HDF5 file object fileLoader.f[datasetname].
-        if mode0 == None:
-            mode = self.f.mode
-        else:
-            mode = mode0
-        self.openFile(self.fullFilename,mode)
+        if self.mode == "r*":
+            self.parent.updateTimer.start()
+        elif self.mode == "r+":
+            self.parent.updateTimer.stop()
+        return self.openFile(self.fullFilename,self.mode)
     def loadFile(self,fullFilename):
         self.f = None
-        self.openFile(fullFilename,"r*")
+        err =  self.openFile(fullFilename,"r*")
+        if err == 1:
+            print "Cannot open file. SWMR mode not supported by your h5py version. Please change file mode in the file menue and try again."
+            return
         self.fullFilename = fullFilename
         self.filename = QtCore.QFileInfo(fullFilename).fileName()
         self.fullName = self.name = "/"
@@ -110,6 +114,8 @@ class FileLoader(QtCore.QObject):
 
         addDatasetRecursively(self,self.children)
     def updateStackSize(self):
+        if self.f == None:
+            return
         N = []
         for n,d in self.dataItems.items():
             if d.isSelectedStack:
@@ -133,28 +139,39 @@ class FileLoader(QtCore.QObject):
                                                   "The file is currently opened in SWMR mode. Data can not be written to file in this mode. Do you like to reopen the file in read-write mode?",
                                                   QtGui.QMessageBox.Ok,QtGui.QMessageBox.Cancel) == QtGui.QMessageBox.Ok
             if accepted:
-                self.reopenFile("r+")
+                self.mode = "r+"
+                self.reopenFile()
                 return 0
         return 1
     def saveTags(self):
+        if self.f == None:
+            return
         if 0 ==  self.ensureReadWriteModeActivated():
             for n,t in self.tagsItems.items():
                 t.saveTags()
     def modelsChanged(self):
+        if self.f == None:
+            return
         for n,m in self.modelItems.items():
             if m.paramsDirty:
                 return True
         return False
     def pattersonsChanged(self):
+        if self.f == None:
+            return
         for n,p in self.pattersonItems.items():
             if p.paramsDirty:
                 return True
         return False
     def saveModels(self):
+        if self.f == None:
+            return
         if 0 ==  self.ensureReadWriteModeActivated():
             for n,m in self.modelItems.items():
                 m.saveParams()
     def savePattersons(self):
+        if self.f == None:
+            return
         if 0 ==  self.ensureReadWriteModeActivated():
             for n,m in self.pattersonItems.items():
                 m.saveParams()

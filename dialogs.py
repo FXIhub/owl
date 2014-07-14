@@ -10,7 +10,8 @@ from PySide import QtGui, QtCore, QtOpenGL
 import numpy
 import math
 import logging
-import tagsDialog,selectIndexDialog,preferencesDialog
+import settingsOwl
+import tagsDialog,selectIndexDialog,preferencesDialog,fileModeDialog
 
 class TagsDialog(QtGui.QDialog, tagsDialog.Ui_TagsDialog):
     def __init__(self,parent,tags):
@@ -186,3 +187,17 @@ class PreferencesDialog(QtGui.QDialog, preferencesDialog.Ui_PreferencesDialog):
             # standard event processing
             return QtGui.QDialog.eventFilter(self,obj, event);
 
+
+
+class FileModeDialog(QtGui.QDialog, fileModeDialog.Ui_FileModeDialog):
+    def __init__(self,parent):
+        QtGui.QDialog.__init__(self,parent,QtCore.Qt.WindowTitleHint)
+        self.setupUi(self)
+        settings = parent.settings
+        mode = settings.value("fileMode")
+        if mode == "r+":
+            self.rw.setChecked(True)
+        elif mode == "r*":
+            self.rswmr.setChecked(True)
+        if not settingsOwl.swmrSupported:
+            self.rw.isEnabled(False)
