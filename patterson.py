@@ -22,7 +22,8 @@ def patterson(img,mask,**kwargs):
     return P
 
 def kernel(mask,smooth):
-    K = scipy.ndimage.gaussian_filter(mask,smooth)
+    K = scipy.ndimage.gaussian_filter(numpy.array(mask,dtype="float"),smooth)
+    #K = scipy.ndimage.gaussian_filter(mask,smooth)
     K -= 0.5*K.max()
     K[K<0] = 0.
     K /= K.max()
