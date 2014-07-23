@@ -665,12 +665,11 @@ class Viewer(QtGui.QMainWindow):
             self.viewActions["View 1D"].setChecked(False)
             self.statusBar.showMessage("Reset Y data for plot." % dataName,1000)
         else:
-
+            dataItem = self.CXINavigation.CXITree.fileLoader.dataItems[dataName]
             nDims = len(dataItem.shape())
             if dataItem.isStack and (nDims == 3):
                 selIndDialog = dialogs.SelectIndexDialog(self,dataItem)
                 selIndDialog.exec_() 
-            dataItem = self.CXINavigation.CXITree.fileLoader.dataItems[dataName]
             if not dataItem.isPresentable:
                 self.statusBar.showMessage("Data not presentable.")
                 return

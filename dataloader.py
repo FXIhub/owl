@@ -343,7 +343,7 @@ class DataItem:
                 return self.data(**kwargs)[self.selectedIndex,:]
         elif len(self.shape()) == 3:
             img = kwargs.get("img",0)
-            return self.data(**kwargs)[img,self.selectedIndex,:]
+            return self.data(**kwargs)[self.selectedIndex,:]
         else:
             return self.data(**kwargs)
 

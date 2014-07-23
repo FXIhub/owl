@@ -63,7 +63,7 @@ class View1D(View,QtGui.QFrame):
         if self.dataItemY != None:
             self.dataItemY.deselectStack()
         self.dataItemY = dataItem
-        if self.dataItem.isStack:
+        if self.dataItemY.isStack:
             self.img = 0
         else:
             self.img = None
