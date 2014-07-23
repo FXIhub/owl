@@ -982,6 +982,7 @@ class ModelProperties(QtGui.QGroupBox, modelProperties.Ui_ModelProperties):
         params["maskRadius"] = self.maskRadius.value()
         params["_visibility"] = float(self.visibilitySlider.value()/100.)
         self.modelItem.setParams(img,params)
+        self.parent.viewer.view.view2D.generateTexture(img)
     def onExperiment(self):
         expDialog = ExperimentDialog(self)
         expDialog.exec_()
