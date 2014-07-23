@@ -982,7 +982,9 @@ class ModelProperties(QtGui.QGroupBox, modelProperties.Ui_ModelProperties):
         params["maskRadius"] = self.maskRadius.value()
         params["_visibility"] = float(self.visibilitySlider.value()/100.)
         self.modelItem.setParams(img,params)
-        self.parent.viewer.view.view2D.generateTexture(img)
+        # max: needed at psusr to really refresh, works without on my mac
+        self.parent.viewer.view.view2D.paintImage(img)
+        self.parent.viewer.view.view2D.updateGL()
     def onExperiment(self):
         expDialog = ExperimentDialog(self)
         expDialog.exec_()
@@ -1081,9 +1083,15 @@ class PattersonProperties(QtGui.QGroupBox, pattersonProperties.Ui_PattersonPrope
         img = self.parent.viewer.view.view2D.selectedImage
         params["smooth"] = self.smooth.value()
         self.pattersonItem.setParams(img,params)
+        # max: needed at psusr to really refresh, works without on my mac
+        self.parent.viewer.view.view2D.paintImage(img)
+        self.parent.viewer.view.view2D.updateGL()
     def calculatePatterson(self):
         img = self.parent.viewer.view.view2D.selectedImage
         if img != None:
             self.pattersonItem.calculatePatterson(img)
+        # max: needed at psusr to really refresh, works without on my mac
+        self.parent.viewer.view.view2D.paintImage(img)
+        self.parent.viewer.view.view2D.updateGL()
     def toggleVisible(self):
         self.setVisible(not self.isVisible())

@@ -626,6 +626,7 @@ class View2D(View,QtOpenGL.QGLWidget):
 
             
         glPopMatrix()
+
     def paintGL(self):
         '''
         Drawing routine
@@ -772,6 +773,7 @@ class View2D(View,QtOpenGL.QGLWidget):
         if self.pattersonView:
             pattersonParams = self.data.pattersonItem.getParams(img)
             if self.pattersonView and (img == self.selectedImage) and (pattersonParams["_pattersonImg"] == img) and not self.data.pattersonItem.textureLoaded:
+                print "generate patterson texture"
                 temp = abs(self.loaderThread.pattersonData)
                 P = numpy.ones(temp.shape,dtype=numpy.float32)
                 P[:] = temp[:]
@@ -795,6 +797,7 @@ class View2D(View,QtOpenGL.QGLWidget):
                 self.loaderThread.imageData.touch(img)
             if self.pattersonView:
                 pattersonParams = self.data.pattersonItem.getParams(img)
+                #print pattersonParams["_pattersonImg"],img,self.selectedImage,self.data.pattersonItem.textureLoaded
                 if (pattersonParams["_pattersonImg"] == img) and (self.selectedImage == img) and not self.data.pattersonItem.textureLoaded:
                     self.needDataPatterson.emit(img)
     

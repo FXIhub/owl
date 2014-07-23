@@ -20,7 +20,7 @@ class View1D(View,QtGui.QFrame):
         self.plotMode = "plot"
         self.dataItemY = None
         self.dataItemX = None
-        self.setPixelStack()
+        #self.setPixelStack()
         self.setWindowSize()
         self.nBins = 200
         self.img = None
@@ -72,7 +72,7 @@ class View1D(View,QtGui.QFrame):
             self.dataItemY.selectStack()
         else:
             self.dataItemYLabel = ""
-        self.setPixelStack()
+        #self.setPixelStack()
         self.dataItemYChanged.emit(dataItem)
     def setWindowSize(self,windowSize=None):
         if windowSize == None:
