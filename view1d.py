@@ -23,6 +23,7 @@ class View1D(View,QtGui.QFrame):
         self.setPixelStack()
         self.setWindowSize()
         self.nBins = 200
+        self.img = None
     def initPlot(self,widgetType="plot"):
         self.lineColor = (255,255,255)
         self.lineWidth = 1
@@ -43,6 +44,11 @@ class View1D(View,QtGui.QFrame):
         self.plot.getAxis("right").setWidth(space)
         self.setStyle()
         #self.p.update()
+    def onPixelClicked(self,info):
+        if self.dataItemY != None and info != None:
+            if self.dataItemY.isStack:
+                self.img = int(info["img"])
+                self.refreshPlot()
     def setDataItemX(self,dataItem):
         if self.dataItemX != None:
             self.dataItemX.deselectStack()
@@ -57,6 +63,10 @@ class View1D(View,QtGui.QFrame):
         if self.dataItemY != None:
             self.dataItemY.deselectStack()
         self.dataItemY = dataItem
+        if self.dataItem.isStack:
+            self.img = 0
+        else:
+            self.img = None
         if hasattr(dataItem,"fullName"):
             self.dataItemYLabel = dataItem.fullName
             self.dataItemY.selectStack()
@@ -64,10 +74,6 @@ class View1D(View,QtGui.QFrame):
             self.dataItemYLabel = ""
         self.setPixelStack()
         self.dataItemYChanged.emit(dataItem)
-    def setPixelStack(self,ix=None,iy=None,N=None):
-        self.ix = ix
-        self.iy = iy
-        self.N = N
     def setWindowSize(self,windowSize=None):
         if windowSize == None:
             self._windowSize = 100
@@ -135,7 +141,7 @@ class View1D(View,QtGui.QFrame):
         if self.dataItemY == None:
             dataY = None
         else:
-            dataY = self.dataItemY.data(ix=self.ix,iy=self.iy,N=self.N,windowSize=self.windowSize())
+            dataY = self.dataItemY.data1D(windowSize=self.windowSize(),img=self.img)
         if dataY == None:
             self.p.setData([0])
             self.setPlotMode(self.plotMode)

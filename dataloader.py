@@ -289,12 +289,13 @@ class DataItem:
         complex_mode = kwargs.get("complex_mode",None)
         if self.isComplex == False and complex_mode != None:
             return None
+        img = kwargs.get("img",None)
         if self.isStack and self.format == 2:
-            img = kwargs.get("img",None)
             d = numpy.array(self.fileLoader.f[self.fullName][img])
-
         elif self.isStack and self.format == 1:
-            if self.fileLoader.stackSize == None:
+            if img != None:
+                d = numpy.array(self.fileLoader.f[self.fullName])[img][:]
+            elif self.fileLoader.stackSize == None:
                 d = numpy.array(self.fileLoader.f[self.fullName])[:,:]
             else:
                 d = numpy.array(self.fileLoader.f[self.fullName])[:self.fileLoader.stackSize,:]
@@ -307,15 +308,6 @@ class DataItem:
 
         else:
             d = numpy.array(self.fileLoader.f[self.fullName])
-
-        ix = kwargs.get("ix",None)
-        iy = kwargs.get("iy",None)
-        if ix != None and iy != None:
-            if len(d.shape) == 3:
-                d = d[:,iy,ix]
-            else:
-                d = d[iy,ix]
-
         if kwargs.get("binaryMask",False):
             d = (d & PIXEL_IS_IN_MASK) == 0
 
@@ -349,6 +341,9 @@ class DataItem:
                 return self.data(**kwargs)[:,self.selectedIndex]
             else:
                 return self.data(**kwargs)[self.selectedIndex,:]
+        elif len(self.shape()) == 3:
+            img = kwargs.get("img",0)
+            return self.data(**kwargs)[img,self.selectedIndex,:]
         else:
             return self.data(**kwargs)
 

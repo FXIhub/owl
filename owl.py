@@ -372,6 +372,7 @@ class Viewer(QtGui.QMainWindow):
         self.dataProp.view1DPropChanged.connect(self.handleView1DPropChanged)
         self.dataProp.view2DPropChanged.connect(self.handleView2DPropChanged)
         self.view.view2D.pixelClicked.connect(self.dataProp.onPixelClicked)
+        self.view.view2D.pixelClicked.connect(self.view.view1D.onPixelClicked)
         self.view.view2D.centralImgChanged.connect(self.dataProp.refreshDataCurrent)
         self.view.view1D.viewIndexSelected.connect(self.handleViewIndexSelected)
         self.goMenu.nextRow.triggered.connect(self.view.view2D.nextRow)
@@ -664,6 +665,11 @@ class Viewer(QtGui.QMainWindow):
             self.viewActions["View 1D"].setChecked(False)
             self.statusBar.showMessage("Reset Y data for plot." % dataName,1000)
         else:
+
+            nDims = len(dataItem.shape())
+            if dataItem.isStack and (nDims == 3):
+                selIndDialog = dialogs.SelectIndexDialog(self,dataItem)
+                selIndDialog.exec_() 
             dataItem = self.CXINavigation.CXITree.fileLoader.dataItems[dataName]
             if not dataItem.isPresentable:
                 self.statusBar.showMessage("Data not presentable.")
@@ -675,13 +681,7 @@ class Viewer(QtGui.QMainWindow):
             self.dataProp.plotBox.show()
             self.viewActions["View 1D"].setChecked(True)
             self.statusBar.showMessage("Loaded Y data for plot: %s" % dataName,1000)
-    #def handleView1DPropChanged(self,prop):
-    #    self.view.view1D.show()
-    #    self.dataProp.plotBox.show()
-    #    self.viewActions["View 1D"].setChecked(True)
-    #    self.view.view1D.setProps(prop)
-        #self.CXINavigation.dataBoxes["plot"].button.setName("%s (%i,%i)" % (dataName,ix,iy))
-        #self.statusBar.showMessage("Loaded pixel stack to plot: %s (%i,%i)" % (data.name,iy,ix),1000)
+        
     def handlePlotModeTriggered(self,foovalue=None):
         self.view.view1D.setPlotMode(self.CXINavigation.dataMenus["plot Y"].getPlotMode())
         self.view.view1D.refreshPlot()
