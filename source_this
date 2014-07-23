@@ -3,22 +3,23 @@
 . /reg/g/psdm/etc/sit_env.sh
 . /reg/g/psdm/bin/sit_setup.sh ana-0.12.1
 
+export MY_HOME=/reg/neh/home/hantke/
 # HDF5 with SWMR
 export SWMR=1
 if [[ $SWMR == 1 ]]
 then
-    export PATH=$HOME/local_swmr/bin:${PATH}
-    export LD_LIBRARY_PATH=$HOME/local_swmr/lib:${LD_LIBRARY_PATH}
-    export PYTHONPATH=$HOME/src_swmr/python/h5py/build/lib.linux-x86_64-2.7/:${PYTHONPATH}
+    export PATH=$MY_HOME/local_swmr/bin:${PATH}
+    export LD_LIBRARY_PATH=$MY_HOME/local_swmr/lib:${LD_LIBRARY_PATH}
+    export PYTHONPATH=$MY_HOME/src_swmr/python/h5py/build/lib.linux-x86_64-2.7/:${PYTHONPATH}
     export PATH=/reg/neh/home/hantke/programs/cheetah/build_psana_swmr/source/psana/:$PATH
 fi
 
 # QT
-export LD_LIBRARY_PATH=$HOME/local_qt/lib/:$LD_LIBRARY_PATH
-export PATH=$HOME/local_qt/bin/:$PATH
+export LD_LIBRARY_PATH=$MY_HOME/local_qt/lib/:$LD_LIBRARY_PATH
+export PATH=$MY_HOME/local_qt/bin/:$PATH
 
 # PYSIDE
-export PYSIDESANDBOXPATH=$HOME/local_pyside
+export PYSIDESANDBOXPATH=$MY_HOME/local_pyside
 export PATH=$PYSIDESANDBOXPATH/bin:$PATH
 export PYTHONPATH=$PYSIDESANDBOXPATH/lib/python2.7/site-packages:$PYTHONPATH
 export PYTHONPATH=/reg/neh/home1/hantke/src/python/pyside/PyOpenGL-accelerate-3.1.0/build/lib.linux-x86_64-2.7:$PYTHONPATH
