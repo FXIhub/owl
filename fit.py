@@ -4,6 +4,7 @@ import pickle
 import logging
 import scipy.signal
 from scipy.optimize import leastsq
+import scipy.stats
 
 class FitModel:
     def __init__(self,dataItemImage,dataItemMask):
@@ -172,14 +173,25 @@ def fit(image,mask,params,r_max):
 
     K = I0 * ( rho_e*p/D*DICT_physical_constants["re"]*V )**2
 
-    v0 = [K,r]
 
-    #print params
-
-    err = lambda v: ((i_fit_m(v)-fitimg)**2).sum()
+    err = lambda v: 1-scipy.stats.pearsonr(i_fit_m([K,v]),fitimg)[0]
     maxfev=1000 
-    # non-linear leastsq, v0: starting point
-    v1, success = leastsq(lambda v: numpy.ones(len(v))*err(v),v0, maxfev=maxfev)
+
+    # First fit the radius
+    # Start with brute force with a sensible range
+    # We'll assume at least 10x oversampling
+    range = [(D*wavelength/(2 * p * image.shape[0]), D*wavelength/(10 * p))]
+    r = scipy.optimize.brute(err, range, Ns=200)[0]
+    # End with least square
+#    r, success = leastsq(err, r, maxfev=maxfev,xtol=1e-3)
+    r, cov_r, infodict, mesg, ier = leastsq(err, r, maxfev=maxfev,xtol=1e-3, full_output=1)
+    r = r[0]
+
+    # Now fit the intensity
+    err2 = lambda v: i_fit_m([v,r])-fitimg
+    K, success = leastsq(err2, K, maxfev=maxfev, xtol=1e-3)
+
+    v1 = [K,r]
     Vnew = 4/3.*numpy.pi*v1[1]**3
     I0 = v1[0] / (rho_e*p/D*DICT_physical_constants["re"]*Vnew)**2
     params["intensityMJUM2"] = I0/1.E-3/1.E12*ey_J
