@@ -214,19 +214,15 @@ class DataProp(QtGui.QWidget):
         # normVmax
         hbox = QtGui.QHBoxLayout()
         hbox.addWidget(QtGui.QLabel("Maximum value:"))
-        self.displayMax = QtGui.QDoubleSpinBox(parent=self)
-        self.displayMax.setMinimum(-1000000.)
-        self.displayMax.setMaximum(1000000.)
-        self.displayMax.setSingleStep(1.)
+        self.displayMax = QtGui.QLineEdit(self)
+        self.displayMax.setValidator(QtGui.QDoubleValidator())
         hbox.addWidget(self.displayMax)
         self.displayBox.vbox.addLayout(hbox)
         # normVmin
         hbox = QtGui.QHBoxLayout()
         hbox.addWidget(QtGui.QLabel("Minimum value:"))
-        self.displayMin = QtGui.QDoubleSpinBox(parent=self)
-        self.displayMin.setMinimum(-1000000.)
-        self.displayMin.setMaximum(1000000.)
-        self.displayMin.setSingleStep(1.)
+        self.displayMin = QtGui.QLineEdit(self)
+        self.displayMin.setValidator(QtGui.QDoubleValidator())
         hbox.addWidget(self.displayMin)
         self.displayBox.vbox.addLayout(hbox)
 
@@ -455,7 +451,7 @@ class DataProp(QtGui.QWidget):
             edges = (edges[:-1]+edges[1:])/2.0
             item = self.intensityHistogram.plot(edges,numpy.log10(hist+1),fillLevel=0,fillBrush=QtGui.QColor(255, 255, 255, 128),antialias=True)
             self.intensityHistogram.getPlotItem().getViewBox().setMouseEnabled(x=False,y=False)
-            self.intensityHistogramRegion = pyqtgraph.LinearRegionItem(values=[self.displayMin.value(),self.displayMax.value()],brush="#ffffff15")
+            self.intensityHistogramRegion = pyqtgraph.LinearRegionItem(values=[float(self.displayMin.text()),float(self.displayMax.text())],brush="#ffffff15")
             self.intensityHistogramRegion.sigRegionChangeFinished.connect(self.onHistogramClicked)
             self.intensityHistogram.addItem(self.intensityHistogramRegion)
             self.intensityHistogram.autoRange()
@@ -473,15 +469,15 @@ class DataProp(QtGui.QWidget):
             self.pixelBox.hide()
     def onHistogramClicked(self,region):
         (min,max) = region.getRegion()
-        self.displayMin.setValue(min)
-        self.displayMax.setValue(max)
+        self.displayMin.setText(str(min))
+        self.displayMax.setText(str(max))
         self.checkLimits()
         self.emitView2DProp()
     # NORM
     def setNorm(self):
         P = self.view2DProp
-        P["normVmin"] = self.displayMin.value()
-        P["normVmax"] = self.displayMax.value()
+        P["normVmin"] = float(self.displayMin.text())
+        P["normVmax"] = float(self.displayMax.text())
         P["autorange"] = self.displayAutorange.isChecked()
         P["normClamp"] = self.displayClamp.isChecked()
         if self.displayLin.isChecked():
@@ -491,7 +487,8 @@ class DataProp(QtGui.QWidget):
         else:
             P["normScaling"] = "pow"
         P["normGamma"] = self.displayGamma.value()
-        self.intensityHistogramRegion.setRegion([self.displayMin.value(),self.displayMax.value()])
+        self.intensityHistogramRegion.setRegion([float(self.displayMin.text()),
+                                                 float(self.displayMax.text())])
     def clearNorm(self):
         settings = QtCore.QSettings()
         if(settings.contains("normVmax")):
@@ -507,8 +504,8 @@ class DataProp(QtGui.QWidget):
         else:
             autorange = False
         self.displayAutorange.setChecked(autorange)
-        self.displayMin.setValue(normVmin)
-        self.displayMax.setValue(normVmax)
+        self.displayMin.setText(str(normVmin))
+        self.displayMax.setText(str(normVmax))
         if(settings.contains("normClamp")):
             normClamp = bool(settings.value('normClamp'))
         else:
@@ -654,8 +651,8 @@ class DataProp(QtGui.QWidget):
         self.setCurrentImg()
         self.view2DPropChanged.emit(self.view2DProp)
     def checkLimits(self):
-        self.displayMax.setMinimum(self.displayMin.value())
-        self.displayMin.setMaximum(self.displayMax.value())
+        self.displayMax.validator().setBottom(float(self.displayMin.text()))
+        self.displayMin.validator().setTop(float(self.displayMax.text()))
         self.emitView2DProp()
     # still needed?
     def keyPressEvent(self,event):
