@@ -23,7 +23,8 @@ class FitModel:
     def fit(self,img,params):
         I = self.dataItemImage.data(img=img)
         M = self.dataItemMask.data(img=img,binaryMask=True)
-        params = fit(I,M,params,params["maskRadius"])
+        params = fit(I,M,params,params["maskRadius"],downsampling=5,do_brute=True)
+        params = fit(I,M,params,params["maskRadius"],downsampling=1,do_brute=False)
         return params
 
 def center(img,msk,params,dc_max,r_max):
@@ -133,16 +134,19 @@ def gaussian_smooth_2d1d(I,sm,precision=1.):
         return []
 
 #from pylab import *
-def fit(image,mask,params,r_max):
+def fit(image,mask,params,r_max,downsampling=1,do_brute=True):
+    # Downsample image
     X,Y = numpy.meshgrid(numpy.arange(0.,image.shape[1],1.),numpy.arange(0.,image.shape[0],1.))
+    mask = mask[::downsampling,::downsampling]
     s = image.shape
     cx = (s[1]-1)/2.+params["offCenterX"]
     cy = (s[0]-1)/2.+params["offCenterY"]
     Rsq = (X-cx)**2+(Y-cy)**2
     Mr = (r_max**2)>=Rsq
+    Mr = Mr[::downsampling,::downsampling]
     Xm = X[mask*Mr]
     Ym = Y[mask*Mr]
-
+    
     #imsave("img.png",log10(image))
     #imsave("mask.png",mask)
     #imsave("Mr.png",Mr)
@@ -163,7 +167,7 @@ def fit(image,mask,params,r_max):
     fitimg = image[mask*Mr]/params["detectorADUPhoton"]/params["detectorQuantumEfficiency"]
 
     #q = generate_absqmap(X-cx,Y-cy,p,D,wavelength)
-    #I_fit = lambda K,r: I_sphere_diffraction(K,q,r)
+    #I_fit = lambda K,r: I_sphere_diffraction(K,q,r)    
     qm = generate_absqmap(Xm-cx,Ym-cy,p,D,wavelength)
     I_fit_m = lambda K,r: I_sphere_diffraction(K,qm,r)
 
@@ -179,12 +183,16 @@ def fit(image,mask,params,r_max):
 
     # First fit the radius
     # Start with brute force with a sensible range
-    # We'll assume at least 10x oversampling
-    range = [(D*wavelength/(2 * p * image.shape[0]), D*wavelength/(10 * p))]
-    r = scipy.optimize.brute(err, range, Ns=200)[0]
+    # We'll assume at least 20x oversampling
+    if(do_brute):
+        pixel_size = (D*wavelength/(p * image.shape[0]))
+        range = [(pixel_size, pixel_size*image.shape[0]/(40))]
+        Ns = 2 * range[0][1]/range[0][0]
+        r = scipy.optimize.brute(err, range, Ns=Ns)[0]
     # End with least square
-#    r, success = leastsq(err, r, maxfev=maxfev,xtol=1e-3)
+    # r, success = leastsq(err, r, maxfev=maxfev,xtol=1e-3)
     r, cov_r, infodict, mesg, ier = leastsq(err, r, maxfev=maxfev,xtol=1e-3, full_output=1)
+#    print infodict
     r = r[0]
 
     # Now fit the intensity
