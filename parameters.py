@@ -116,7 +116,13 @@ class AbstractParameterItem:
 
 class ModelItem(AbstractParameterItem):
     def __init__(self,parentGroup,fileLoader):
-        individualParamsDef = {"offCenterX":0.,"offCenterY":0.,"intensityMJUM2":1.,"diameterNM":100.,"maskRadius":100}
+        self.settings = QtCore.QSettings()
+        individualParamsDef = {"offCenterX": float(self.settings.value("modelCenterX")),
+                               "offCenterY": float(self.settings.value("modelCenterY")),
+                               "intensityMJUM2": float(self.settings.value("modelIntensity")),
+                               "diameterNM": float(self.settings.value("modelDiameter")),
+                               "maskRadius": float(self.settings.value("modelMaskRadius"))}
+
         generalParamsDef = {"photonWavelengthNM":1.,"detectorDistanceMM":1000.,"detectorPixelSizeUM":75.,"detectorQuantumEfficiency":1.,"detectorADUPhoton":10.,"materialType":"water","_visibility":0.5}
         name = "model"
         AbstractParameterItem.__init__(self,parentGroup,fileLoader,name,individualParamsDef,generalParamsDef)

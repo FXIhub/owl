@@ -131,6 +131,17 @@ class Viewer(QtGui.QMainWindow):
                                              QtGui.QColor(204,0,0),
                                              QtGui.QColor(193,125,17),
                                              QtGui.QColor(237,212,0)]);        
+        if(not self.settings.contains("modelCenterX")):
+            self.settings.setValue("modelCenterX", 0)
+        if(not self.settings.contains("modelCenterY")):
+            self.settings.setValue("modelCenterY", 0)
+        if(not self.settings.contains("modelDiameter")):
+            self.settings.setValue("modelDiameter", 100)
+        if(not self.settings.contains("modelIntensity")):
+            self.settings.setValue("modelIntensity", 1)
+        if(not self.settings.contains("modelMaskRadius")):
+            self.settings.setValue("modelMaskRadius", 300)
+
 
         if(not self.settings.contains("Shortcuts")):
             shortcuts = {}
@@ -518,6 +529,11 @@ class Viewer(QtGui.QMainWindow):
             for i in range(3,6):
                 self.editMenu.toggleTag[i].setShortcut(QtGui.QKeySequence.fromString(shortcuts['Toggle '+str(i+1)+'th Tag']))
 
+            self.settings.setValue("modelCenterX",diag.modelCenterX.text())
+            self.settings.setValue("modelCenterY",diag.modelCenterY.text())
+            self.settings.setValue("modelDiameter",diag.modelDiameter.text())
+            self.settings.setValue("modelIntensity",diag.modelIntensity.text())
+            self.settings.setValue("modelMaskRadius",diag.modelMaskRadius.text())
     def handleNeedDataImage(self,dataName=None):
         if dataName == "" or dataName == None:
             self.CXINavigation.CXITree.loadData()

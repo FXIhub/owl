@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>464</width>
-    <height>251</height>
+    <width>449</width>
+    <height>284</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,7 +17,7 @@
    <item>
     <widget class="QTabWidget" name="tabWidget">
      <property name="currentIndex">
-      <number>1</number>
+      <number>3</number>
      </property>
      <widget class="QWidget" name="tab_3">
       <attribute name="title">
@@ -358,6 +358,86 @@
           </size>
          </property>
         </spacer>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="tab_5">
+      <attribute name="title">
+       <string>Model</string>
+      </attribute>
+      <layout class="QFormLayout" name="formLayout">
+       <property name="fieldGrowthPolicy">
+        <enum>QFormLayout::FieldsStayAtSizeHint</enum>
+       </property>
+       <item row="0" column="0">
+        <widget class="QLabel" name="label_2">
+         <property name="font">
+          <font>
+           <weight>75</weight>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="text">
+          <string>Default Values </string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <widget class="QLabel" name="label_9">
+         <property name="text">
+          <string>Center X [px]:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1">
+        <widget class="QLineEdit" name="modelCenterX"/>
+       </item>
+       <item row="2" column="0">
+        <widget class="QLabel" name="label_10">
+         <property name="text">
+          <string>Center Y [px]:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="1">
+        <widget class="QLineEdit" name="modelCenterY"/>
+       </item>
+       <item row="3" column="0">
+        <widget class="QLabel" name="label_11">
+         <property name="text">
+          <string>Diameter [nm]:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="1">
+        <widget class="QLineEdit" name="modelDiameter"/>
+       </item>
+       <item row="4" column="0">
+        <widget class="QLabel" name="label_12">
+         <property name="text">
+          <string>Intensity [mj/µm2]:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="1">
+        <widget class="QLineEdit" name="modelIntensity"/>
+       </item>
+       <item row="5" column="0">
+        <widget class="QLabel" name="label_13">
+         <property name="text">
+          <string>Mask Radius [px]:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="1">
+        <widget class="QLineEdit" name="modelMaskRadius"/>
+       </item>
+       <item row="0" column="1">
+        <widget class="QLabel" name="label_14">
+         <property name="text">
+          <string>(requires restarting to take effect)</string>
+         </property>
+        </widget>
        </item>
       </layout>
      </widget>

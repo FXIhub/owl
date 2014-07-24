@@ -171,6 +171,22 @@ class PreferencesDialog(QtGui.QDialog, preferencesDialog.Ui_PreferencesDialog):
                 string =  QtGui.QKeySequence.fromString(shortcuts[name]).toString(QtGui.QKeySequence.NativeText)
                 self.shortcutsTable.item(r,0).setText(string)
             
+        self.modelCenterX.setText(str(settings.value("modelCenterX")))
+        self.modelCenterY.setText(str(settings.value("modelCenterY")))
+        self.modelDiameter.setText(str(settings.value("modelDiameter")))
+        self.modelIntensity.setText(str(settings.value("modelIntensity")))
+        self.modelMaskRadius.setText(str(settings.value("modelMaskRadius")))
+
+        # Set validators
+        validator = QtGui.QDoubleValidator()
+        self.modelCenterX.setValidator(validator)
+        self.modelCenterY.setValidator(validator)
+        validator = QtGui.QDoubleValidator()
+        validator.setBottom(0)
+        self.modelDiameter.setValidator(validator)
+        self.modelIntensity.setValidator(validator)
+        self.modelMaskRadius.setValidator(validator)
+
     def eventFilter(self,obj,event):
         # If it's a keypress, there are selected items and the press is not just modifier keys
         if(event.type() == QtCore.QEvent.KeyPress and len(self.shortcutsTable.selectedItems()) and

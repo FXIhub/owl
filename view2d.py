@@ -481,7 +481,6 @@ class View2D(View,QtOpenGL.QGLWidget):
         img_width = self.getImgWidth("scene",False)
         img_height = self.getImgHeight("scene",False)
         glPushMatrix()
-
         (x,y,z) = self.imageToScene(img,imagePos='BottomLeft',withBorder=False)
         glTranslatef(x,y,z)
 
