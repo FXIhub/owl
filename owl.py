@@ -53,6 +53,7 @@ class Viewer(QtGui.QMainWindow):
         self.settings = QtCore.QSettings()
         self.init_settings()
         self.splitter = QtGui.QSplitter(self)
+        self.splitter.setContentsMargins(0,0,0,0)
         self.indexProjector = IndexProjector()
         self.view = ViewSplitter(self,self.indexProjector)
         self.init_menus()
@@ -272,6 +273,8 @@ class Viewer(QtGui.QMainWindow):
       
         actions = {}
         for viewName in viewNames:
+            if(viewName == "Tags"):
+                self.viewMenu.addSeparator()
             actions[viewName] = self.viewActions[viewName]
             actions[viewName].setCheckable(True)
             actions[viewName].setShortcut(QtGui.QKeySequence(viewShortcuts[viewName]))
@@ -319,6 +322,10 @@ class Viewer(QtGui.QMainWindow):
             self.colormapActions['jet'].setChecked(True)
         self.colormapMenu.addMenu(self.exoticColormapMenu)
         self.viewMenu.addMenu(self.colormapMenu)
+
+        action = QtGui.QAction("Power Scale Exp...",self)
+        action.triggered.connect(self.setPowerExponent)
+        self.viewMenu.addAction(action)
 
         shortcuts = self.settings.value('Shortcuts')
         self.editMenu.toggleTag = []
@@ -476,7 +483,6 @@ class Viewer(QtGui.QMainWindow):
         self.settings.setValue("windowState", self.saveState())
         self.settings.setValue("colormap", self.dataProp.view2DProp['colormapText'])
         self.settings.setValue("normScaling", self.dataProp.view2DProp['normScaling'])
-        self.settings.setValue("normGamma", self.dataProp.view2DProp['normGamma'])
         self.settings.setValue("normClamp", self.dataProp.view2DProp['normClamp'])
         self.settings.setValue("normVmin", self.dataProp.view2DProp['normVmin'])
         self.settings.setValue("normVmax", self.dataProp.view2DProp['normVmax'])
@@ -784,6 +790,14 @@ class Viewer(QtGui.QMainWindow):
     def onFileLoaderExtended(self):
         self.CXINavigation.CXITree.updateTree()
 
+    def setPowerExponent(self):
+        gamma = float(self.settings.value("normGamma"))
+        gamma,ok = QtGui.QInputDialog.getDouble(self, "Power Scale Exponent",
+                                             "Set New Power Scale Exponent:",
+                                             gamma)
+        if(ok):
+            gamma = self.settings.setValue("normGamma",gamma)
+            self.dataProp.emitView2DProp()
 
 def exceptionHandler(type, value, traceback):
     sys.__excepthook__(type,value,traceback)

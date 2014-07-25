@@ -10,6 +10,7 @@ import modelProperties
 import pattersonProperties
 import fit
 import experimentDialog
+import displayBox
 
 def sizeof_fmt(num):
     for x in ['bytes','kB','MB','GB']:
@@ -34,8 +35,11 @@ class DataProp(QtGui.QWidget):
         self.vbox = QtGui.QVBoxLayout()
         # stack
         self.stackSize = None
+
+        self.settings = QtCore.QSettings()
         # scrolling
         self.vboxScroll = QtGui.QVBoxLayout()
+        self.vboxScroll.setContentsMargins(0,0,11,0)
         self.scrollWidget = QtGui.QWidget()
         self.scrollWidget.setLayout(self.vboxScroll)
         self.scrollArea = QtGui.QScrollArea()
@@ -44,13 +48,11 @@ class DataProp(QtGui.QWidget):
         self.scrollArea.setWidget(self.scrollWidget)
         self.scrollArea.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
         self.scrollArea.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
-        #self.scrollArea.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAsNeeded)
+
         self.vbox.addWidget(self.scrollArea)
         # GENERAL PROPERTIES
         # properties: data
         self.generalBox = QtGui.QGroupBox("General Properties");
-        #self.generalBox.setCheckable(True)
-        #self.generalBox.isChecked(True)
         self.generalBox.vbox = QtGui.QVBoxLayout()
         self.generalBox.setLayout(self.generalBox.vbox)
         self.shape = QtGui.QLabel("Shape:", parent=self)
@@ -196,87 +198,8 @@ class DataProp(QtGui.QWidget):
         self.pixelBox.setLayout(self.pixelBox.vbox)
         self.pixelBox.hide()
         # DISPLAY PROPERTIES
-        self.displayBox = QtGui.QGroupBox("Display Properties");
-        self.displayBox.vbox = QtGui.QVBoxLayout()
-        self.intensityHistogram = pyqtgraph.PlotWidget()
-        self.intensityHistogram.hideAxis('left')
-        self.intensityHistogram.hideAxis('bottom')
-        self.intensityHistogram.setFixedHeight(50)
-        region = pyqtgraph.LinearRegionItem(values=[0,1],brush="#ffffff15")
-        self.intensityHistogram.addItem(region)
-        self.intensityHistogram.autoRange()
-        self.intensityHistogramRegion = region
+        self.displayBox = DisplayBox(self)
 
-        # Make the histogram fit the available width
-        self.intensityHistogram.setSizePolicy(QtGui.QSizePolicy.Ignored,QtGui.QSizePolicy.Preferred)
-        self.displayBox.vbox.addWidget(self.intensityHistogram)
-        # property: NORM
-        # normVmax
-        hbox = QtGui.QHBoxLayout()
-        hbox.addWidget(QtGui.QLabel("Maximum value:"))
-        self.displayMax = QtGui.QLineEdit(self)
-        self.displayMax.setValidator(QtGui.QDoubleValidator())
-        hbox.addWidget(self.displayMax)
-        self.displayBox.vbox.addLayout(hbox)
-        # normVmin
-        hbox = QtGui.QHBoxLayout()
-        hbox.addWidget(QtGui.QLabel("Minimum value:"))
-        self.displayMin = QtGui.QLineEdit(self)
-        self.displayMin.setValidator(QtGui.QDoubleValidator())
-        hbox.addWidget(self.displayMin)
-        self.displayBox.vbox.addLayout(hbox)
-
-        vbox = QtGui.QVBoxLayout()
-
-        # autorange
-        hbox = QtGui.QHBoxLayout()
-        label = QtGui.QLabel("Autorange")
-        label.setToolTip("If enabled scale is dynamically adjusted to min/max range of every image")
-        hbox.addWidget(label)
-        hbox.addStretch()
-        self.displayAutorange = QtGui.QCheckBox("",parent=self)
-        hbox.addWidget(self.displayAutorange)
-        vbox.addLayout(hbox)
-
-        # normClamp
-        hbox = QtGui.QHBoxLayout()
-        label = QtGui.QLabel("Clamp")
-        label.setToolTip("If enabled set values outside the min/max range to min/max")
-        hbox.addWidget(label)
-        hbox.addStretch()
-        self.displayClamp = QtGui.QCheckBox("",parent=self)
-        hbox.addWidget(self.displayClamp)
-        vbox.addLayout(hbox)
-
-        # colormap
-        hbox = QtGui.QHBoxLayout()
-        hbox.addLayout(vbox)
-        hbox.addStretch()
-        self.displayColormap = QtGui.QPushButton("Colormap",parent=self)
-        self.displayColormap.setFixedSize(QtCore.QSize(100,30))
-        self.displayColormap.setMenu(self.viewer.colormapMenu)
-        hbox.addWidget(self.displayColormap)
-
-        self.displayBox.vbox.addLayout(hbox)
-
-        # normText
-        vbox = QtGui.QVBoxLayout()
-        vbox.addWidget(QtGui.QLabel("Scaling:"))
-        self.displayLin = QtGui.QRadioButton("Linear")
-        self.displayLog = QtGui.QRadioButton("Logarithmic")
-        self.displayPow = QtGui.QRadioButton("Power")
-        vbox.addWidget(self.displayLin)
-        vbox.addWidget(self.displayLog)
-        # normGamma
-        hbox = QtGui.QHBoxLayout()
-        self.displayGamma = QtGui.QDoubleSpinBox(parent=self)
-        self.displayGamma.setValue(0.25);
-        self.displayGamma.setSingleStep(0.25);
-        hbox.addWidget(self.displayPow)
-        hbox.addWidget(self.displayGamma)
-        vbox.addLayout(hbox)
-        self.displayBox.vbox.addLayout(vbox)
-        self.displayBox.setLayout(self.displayBox.vbox)
         # sorting
         self.sortingBox = QtGui.QGroupBox("Sorting")
         self.sortingBox.vbox = QtGui.QVBoxLayout()
@@ -359,15 +282,12 @@ class DataProp(QtGui.QWidget):
         self.clear()
         # connect signals
         self.imageStackSubplots.editingFinished.connect(self.emitView2DProp)
-        self.displayMax.editingFinished.connect(self.checkLimits)
-        self.displayMin.editingFinished.connect(self.checkLimits)
-        self.displayClamp.stateChanged.connect(self.emitView2DProp)
-        self.displayAutorange.stateChanged.connect(self.emitView2DProp)
-        self.displayAutorange.stateChanged.connect(self.setModMinMax)
-        self.displayLin.toggled.connect(self.emitView2DProp)
-        self.displayLog.toggled.connect(self.emitView2DProp)
-        self.displayPow.toggled.connect(self.emitView2DProp)
-        self.displayGamma.editingFinished.connect(self.emitView2DProp)
+        self.displayBox.displayMax.editingFinished.connect(self.checkLimits)
+        self.displayBox.displayMin.editingFinished.connect(self.checkLimits)
+        self.displayBox.displayClamp.stateChanged.connect(self.emitView2DProp)
+        self.displayBox.displayAutorange.stateChanged.connect(self.emitView2DProp)
+        self.displayBox.displayAutorange.stateChanged.connect(self.setModMinMax)
+        self.displayBox.displayScale.currentIndexChanged.connect(self.emitView2DProp)
         self.invertSortingCheckBox.toggled.connect(self.emitView2DProp)
         self.invertSortingCheckBox.toggled.connect(self.emitView1DProp)
         self.viewer.colormapActionGroup.triggered.connect(self.emitView2DProp)
@@ -447,14 +367,15 @@ class DataProp(QtGui.QWidget):
             self.imageBox.show()
             self.pixelBox.show()
             (hist,edges) = numpy.histogram(self.data.data(img=info["img"]),bins=100)
-            self.intensityHistogram.clear()
-            edges = (edges[:-1]+edges[1:])/2.0
-            item = self.intensityHistogram.plot(edges,numpy.log10(hist+1),fillLevel=0,fillBrush=QtGui.QColor(255, 255, 255, 128),antialias=True)
-            self.intensityHistogram.getPlotItem().getViewBox().setMouseEnabled(x=False,y=False)
-            self.intensityHistogramRegion = pyqtgraph.LinearRegionItem(values=[float(self.displayMin.text()),float(self.displayMax.text())],brush="#ffffff15")
-            self.intensityHistogramRegion.sigRegionChangeFinished.connect(self.onHistogramClicked)
-            self.intensityHistogram.addItem(self.intensityHistogramRegion)
-            self.intensityHistogram.autoRange()
+            self.displayBox.pixelClicked(hist,edges)
+            # self.intensityHistogram.clear()
+            # edges = (edges[:-1]+edges[1:])/2.0
+            # item = self.intensityHistogram.plot(edges,numpy.log10(hist+1),fillLevel=0,fillBrush=QtGui.QColor(255, 255, 255, 128),antialias=True)
+            # self.intensityHistogram.getPlotItem().getViewBox().setMouseEnabled(x=False,y=False)
+            # self.intensityHistogramRegion = pyqtgraph.LinearRegionItem(values=[float(self.displayMin.text()),float(self.displayMax.text())],brush="#ffffff15")
+            # self.intensityHistogramRegion.sigRegionChangeFinished.connect(self.onHistogramClicked)
+            # self.intensityHistogram.addItem(self.intensityHistogramRegion)
+            # self.intensityHistogram.autoRange()
             # Check if we clicked on a tag
             if(info["tagClicked"] != -1):
                 # Toggle tag
@@ -469,26 +390,26 @@ class DataProp(QtGui.QWidget):
             self.pixelBox.hide()
     def onHistogramClicked(self,region):
         (min,max) = region.getRegion()
-        self.displayMin.setText(str(min))
-        self.displayMax.setText(str(max))
+        self.displayBox.displayMin.setText(str(min))
+        self.displayBox.displayMax.setText(str(max))
         self.checkLimits()
         self.emitView2DProp()
     # NORM
     def setNorm(self):
         P = self.view2DProp
-        P["normVmin"] = float(self.displayMin.text())
-        P["normVmax"] = float(self.displayMax.text())
-        P["autorange"] = self.displayAutorange.isChecked()
-        P["normClamp"] = self.displayClamp.isChecked()
-        if self.displayLin.isChecked():
+        P["normVmin"] = float(self.displayBox.displayMin.text())
+        P["normVmax"] = float(self.displayBox.displayMax.text())
+        P["autorange"] = self.displayBox.displayAutorange.isChecked()
+        P["normClamp"] = self.displayBox.displayClamp.isChecked()
+        if self.displayBox.displayScale.currentIndex() == 0:
             P["normScaling"] = "lin"
-        elif self.displayLog.isChecked():
+        elif self.displayBox.displayScale.currentIndex() == 1:
             P["normScaling"] = "log"
         else:
             P["normScaling"] = "pow"
-        P["normGamma"] = self.displayGamma.value()
-        self.intensityHistogramRegion.setRegion([float(self.displayMin.text()),
-                                                 float(self.displayMax.text())])
+        P["normGamma"] = float(self.settings.value('normGamma'))
+        self.displayBox.intensityHistogramRegion.setRegion([float(self.displayBox.displayMin.text()),
+                                                            float(self.displayBox.displayMax.text())])
     def clearNorm(self):
         settings = QtCore.QSettings()
         if(settings.contains("normVmax")):
@@ -503,41 +424,36 @@ class DataProp(QtGui.QWidget):
             autorange = bool(settings.value('autorange'))
         else:
             autorange = False
-        self.displayAutorange.setChecked(autorange)
-        self.displayMin.setText(str(normVmin))
-        self.displayMax.setText(str(normVmax))
+        self.displayBox.displayAutorange.setChecked(autorange)
+        self.displayBox.displayMin.setText(str(normVmin))
+        self.displayBox.displayMax.setText(str(normVmax))
         if(settings.contains("normClamp")):
             normClamp = bool(settings.value('normClamp'))
         else:
             normClamp = True
-        self.displayClamp.setChecked(normClamp)
-        if(settings.contains("normGamma")):
-            self.displayGamma.setValue(float(settings.value("normGamma")))
-        else:
-            self.displayGamma.setValue(0.25)
+        self.displayBox.displayClamp.setChecked(normClamp)
         if(settings.contains("normScaling")):
             norm = settings.value("normScaling")
             if(norm == "lin"):
-                self.displayLin.setChecked(True)
+                self.displayBox.displayScale.setCurrentIndex(0)
             elif(norm == "log"):
-                self.displayLog.setChecked(True)
+                self.displayBox.displayScale.setCurrentIndex(1)
             elif(norm == "pow"):
-                self.displayPow.setChecked(True)
+                self.displayBox.displayScale.setCurrentIndex(2)
             else:
                 sys.exit(-1)
         else:
-            self.displayLog.setChecked(True)
+            self.displayBox.displayScale.setCurrentIndex(1)
         self.setNorm()
     # COLORMAP
     def setColormap(self,foovalue=None):
         P = self.view2DProp
         a = self.viewer.colormapActionGroup.checkedAction()
-        self.displayColormap.setText(a.text())
-        self.displayColormap.setIcon(a.icon())
+        self.displayBox.displayColormap.setText(a.text())
+        self.displayBox.displayColormap.setIcon(a.icon())
         P["colormapText"] = a.text()
 
     def clearColormap(self):
-#        self.displayColormap.setCurrentIndex(0)
         self.setColormap()
     # STACK
     def setImageStackSubplots(self,foovalue=None):
@@ -651,8 +567,8 @@ class DataProp(QtGui.QWidget):
         self.setCurrentImg()
         self.view2DPropChanged.emit(self.view2DProp)
     def checkLimits(self):
-        self.displayMax.validator().setBottom(float(self.displayMin.text()))
-        self.displayMin.validator().setTop(float(self.displayMax.text()))
+        self.displayBox.displayMax.validator().setBottom(float(self.displayBox.displayMin.text()))
+        self.displayBox.displayMin.validator().setTop(float(self.displayBox.displayMax.text()))
         self.emitView2DProp()
     # still needed?
     def keyPressEvent(self,event):
@@ -1094,3 +1010,33 @@ class PattersonProperties(QtGui.QGroupBox, pattersonProperties.Ui_PattersonPrope
         self.parent.viewer.view.view2D.updateGL()
     def toggleVisible(self):
         self.setVisible(not self.isVisible())
+
+class DisplayBox(QtGui.QGroupBox, displayBox.Ui_displayBox):
+    def __init__(self,parent):
+
+        QtGui.QGroupBox.__init__(self,parent)
+        self.setupUi(self)
+        self.parent = parent
+        self.intensityHistogram.setSizePolicy(QtGui.QSizePolicy.Ignored,QtGui.QSizePolicy.Preferred)
+        self.intensityHistogram.hideAxis('left')
+        self.intensityHistogram.hideAxis('bottom')
+        self.intensityHistogram.setFixedHeight(50)
+        region = pyqtgraph.LinearRegionItem(values=[0,1],brush="#ffffff15")
+        self.intensityHistogram.addItem(region)
+        self.intensityHistogram.autoRange()
+        self.intensityHistogramRegion = region
+
+        self.displayMin.setValidator(QtGui.QDoubleValidator())
+        self.displayMax.setValidator(QtGui.QDoubleValidator())
+        self.displayColormap.setFixedSize(QtCore.QSize(100,30))
+        self.displayColormap.setMenu(self.parent.viewer.colormapMenu)
+    def pixelClicked(self,hist, edges):
+        self.intensityHistogram.clear()
+        edges = (edges[:-1]+edges[1:])/2.0
+        item = self.intensityHistogram.plot(edges,numpy.log10(hist+1),fillLevel=0,fillBrush=QtGui.QColor(255, 255, 255, 128),antialias=True)
+        self.intensityHistogram.getPlotItem().getViewBox().setMouseEnabled(x=False,y=False)
+        self.intensityHistogramRegion = pyqtgraph.LinearRegionItem(values=[float(self.displayMin.text()),float(self.displayMax.text())],brush="#ffffff15")
+        self.intensityHistogramRegion.sigRegionChangeFinished.connect(self.parent.onHistogramClicked)
+        self.intensityHistogram.addItem(self.intensityHistogramRegion)
+        self.intensityHistogram.autoRange()
+
