@@ -390,8 +390,8 @@ class DataProp(QtGui.QWidget):
             self.pixelBox.hide()
     def onHistogramClicked(self,region):
         (min,max) = region.getRegion()
-        self.displayBox.displayMin.setText(str(min))
-        self.displayBox.displayMax.setText(str(max))
+        self.displayBox.displayMin.setText("%5.3g" % (min))
+        self.displayBox.displayMax.setText("%5.3g" % (max))
         self.checkLimits()
         self.emitView2DProp()
     # NORM
@@ -537,9 +537,9 @@ class DataProp(QtGui.QWidget):
         P["lines"] = self.plotLinesCheckBox.isChecked()
         P["points"] = self.plotPointsCheckBox.isChecked()
     def setModMinMax(self):
-        c =  self.displayAutorange.isChecked() == False
-        self.displayMin.setEnabled(c)
-        self.displayMax.setEnabled(c)
+        c =  self.displayBox.displayAutorange.isChecked() == False
+        self.displayBox.displayMin.setEnabled(c)
+        self.displayBox.displayMax.setEnabled(c)
     def setCurrentImg(self):
         P = self.view2DProp
         i = self.currentImg.text()
