@@ -138,6 +138,8 @@ class View2D(View,QtOpenGL.QGLWidget):
         glMatrixMode(GL_MODELVIEW);
         glLoadIdentity();
 
+
+
         self.circle_image = QtGui.QImage(100,100,QtGui.QImage.Format_ARGB32_Premultiplied)
         painter = QtGui.QPainter(self.circle_image)
         painter.setRenderHints(QtGui.QPainter.Antialiasing | QtGui.QPainter.SmoothPixmapTransform)
@@ -331,60 +333,73 @@ class View2D(View,QtOpenGL.QGLWidget):
 
     def paintSelectedImageBorder(self,img_width,img_height):
         glPushMatrix()
-        glShadeModel(GL_FLAT)
         glColor3f(1.0,1.0,1.0);
-        glLineWidth(0.5/self.zoom)
+        glLineWidth(0.5)
         glBegin(GL_LINE_LOOP)
         glVertex3f (0, img_height, 0.0);
-        v = 10.0/self.zoom
-        vi = 0
-        while(v < img_width):
-            glVertex3f (v, img_height, 0.0);                            
-            if(vi % 2):
-                glColor3f(0.0,0.0,0.0);
-            else:
-                glColor3f(1.0,1.0,1.0);
-            vi += 1
-            v += 10.0/self.zoom 
-        glColor3f(1.0,1.0,1.0);
         glVertex3f (img_width, img_height, 0.0);
-        v = 10.0/self.zoom
-        vi = 0
-        while(v < img_height):
-            glVertex3f (img_width, img_height-v, 0.0);                            
-            if(vi % 2):
-                glColor3f(0.0,0.0,0.0);
-            else:
-                glColor3f(1.0,1.0,1.0);
-            vi += 1
-            v += 10.0/self.zoom 
-        glColor3f(1.0,1.0,1.0);
         glVertex3f (img_width, 0, 0.0);
-        v = 10.0/self.zoom
-        vi = 0
-        while(v < img_width):
-            glVertex3f (img_width-v, 0, 0.0);                            
-            if(vi % 2):
-                glColor3f(0.0,0.0,0.0);
-            else:
-                glColor3f(1.0,1.0,1.0);
-            vi += 1
-            v += 10.0/self.zoom 
-        glColor3f(1.0,1.0,1.0);
         glVertex3f (0, 0, 0.0);
-        v = 10.0/self.zoom
-        vi = 0
-        while(v < img_height):
-            glVertex3f (0, v, 0.0);                            
-            if(vi % 2):
-                glColor3f(0.0,0.0,0.0);
-            else:
-                glColor3f(1.0,1.0,1.0);
-            vi += 1
-            v += 10.0/self.zoom 
         glEnd ();
         glPopMatrix()
-        
+
+    def paintImageProperties(self,img):
+        img_width = self.getImgWidth("scene",False)
+        img_height = self.getImgHeight("scene",False)
+        glPushMatrix()
+
+
+        font = QtGui.QFont("Courier")
+        font.setPointSize(15)
+        metrics = QtGui.QFontMetrics(font)
+        glColor3f(1.0,1.0,1.0)
+        text = []
+        text.append("Std Dev: %-5.3g" % numpy.std(self.loaderThread.imageData[img]))
+        text.append("Mean: %-5.3g" % numpy.mean(self.loaderThread.imageData[img]))
+        text.append("Sum: %-5.3g" % numpy.sum(self.loaderThread.imageData[img]))
+        text.append("Max: %-5.3g" % numpy.max(self.loaderThread.imageData[img]))
+        text.append("Min: %-5.3g" % numpy.min(self.loaderThread.imageData[img]))
+        text.append("Index: %d" % self.indexProjector.imgToIndex(img))
+        text.append("Image: %d" % img)
+        max_width = 0
+        height = 0
+
+        for i in range(0,len(text)):
+            max_width = max(metrics.width(text[i]), max_width)
+        pad = img_width*0.02
+        border = img_width*0.015
+
+        height = metrics.height()*len(text)
+
+        glTranslate(border,border,0)
+        if(0):
+            glColor3f(0.3,0.3,0.3);
+            glLineWidth(0.5)
+            glBegin(GL_LINE_LOOP)
+            glVertex3f (0, 0, 0.0);
+            glVertex3f (2*pad+max_width/self.zoom, 0, 0.0);
+            glVertex3f (2*pad+max_width/self.zoom, 2*pad+height/self.zoom, 0.0);
+            glVertex3f (0, 2*pad+height/self.zoom, 0.0);
+            glEnd ();
+
+        glColor4f(0.1,0.1,0.1,0.5);
+        glLineWidth(0.5)
+        glBegin(GL_QUADS)
+        glVertex3f (0, 0, 0.0);
+        glVertex3f (2*pad+max_width/self.zoom, 0, 0.0);
+        glVertex3f (2*pad+max_width/self.zoom, 2*pad+height/self.zoom, 0.0);
+        glVertex3f (0, 2*pad+height/self.zoom, 0.0);
+        glEnd ();
+
+        height = 0.0
+        glColor3f(0.7,0.7,0.7);
+        for i in range(0,len(text)):
+#            self.renderText(float(img_width - max_width),height,0.0,text[i],font);
+            self.renderText(pad,pad+height/self.zoom,0.0,text[i],font);
+            height += metrics.height()
+
+        glPopMatrix()
+
     def paintCircleFitMask(self):
         glPushMatrix()
         glShadeModel(GL_FLAT)
@@ -576,19 +591,9 @@ class View2D(View,QtOpenGL.QGLWidget):
         glActiveTexture(GL_TEXTURE0)  
 
         glUseProgram(0)
-        if(self.indexProjector.imgToIndex(img) == self.lastHoveredViewIndex):
-            glPushMatrix()
-            glColor3f(1.0,1.0,1.0);
-            glLineWidth(0.5/self.zoom)
-            glBegin(GL_LINE_LOOP)
-            glVertex3f (0, img_height, 0.0);
-            glVertex3f (img_width, img_height, 0.0);
-            glVertex3f (img_width, 0, 0.0);
-            glVertex3f (0, 0, 0.0);
-            glEnd ();
-            glPopMatrix()
-        elif(img == self.selectedImage):
+        if(img == self.selectedImage):
             self.paintSelectedImageBorder(img_width,img_height)
+            self.paintImageProperties(img)
         if(self.modelView):
             self.paintCircleFitMask()
         if(self.data and self.tagView and self.data.tagsItem.tags and self.data.tagsItem.tags != []):
@@ -626,10 +631,12 @@ class View2D(View,QtOpenGL.QGLWidget):
             
         glPopMatrix()
 
+
     def paintGL(self):
         '''
         Drawing routine
         '''
+
 #        self.time2 = time.time()
         time3 = time.time()
 #        print '%s function took %0.3f ms' % ("Non paintGL", (self.time2-self.time1)*1000.0)
