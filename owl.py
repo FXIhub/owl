@@ -793,8 +793,8 @@ class Viewer(QtGui.QMainWindow):
     def setPowerExponent(self):
         gamma = float(self.settings.value("normGamma"))
         gamma,ok = QtGui.QInputDialog.getDouble(self, "Power Scale Exponent",
-                                             "Set New Power Scale Exponent:",
-                                             gamma)
+                                                "Set New Power Scale Exponent:",
+                                                gamma,-10,10,3)
         if(ok):
             gamma = self.settings.setValue("normGamma",gamma)
             self.dataProp.emitView2DProp()
