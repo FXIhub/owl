@@ -89,6 +89,7 @@ class View2D(View,QtOpenGL.QGLWidget):
         self.tagView = True
         self.modelView = False
         self.pattersonView = False
+        self.hoveredPixel = None
     def setData(self,dataItem=None):
         if self.data != None:
             self.data.deselectStack()
@@ -350,10 +351,18 @@ class View2D(View,QtOpenGL.QGLWidget):
 
 
         font = QtGui.QFont("Courier")
-        font.setPointSize(15)
+        font.setPointSize(15-self.stackWidth*2)
         metrics = QtGui.QFontMetrics(font)
         glColor3f(1.0,1.0,1.0)
         text = []
+        if(self.indexProjector.indexToImg(self.lastHoveredViewIndex) == img):
+            ix = self.hoveredPixel[0]
+            iy = self.hoveredPixel[1]
+            if self.loaderThread.maskData[img] != None:
+                text.append("Mask: %5.3g" % (self.loaderThread.maskData[img][iy,ix]))
+            text.append("Value: %5.3g" % (self.loaderThread.imageData[img][iy,ix]))
+            text.append("Pixel: (%d,%d)" % (ix,iy))
+
         text.append("Std Dev: %-5.3g" % numpy.std(self.loaderThread.imageData[img]))
         text.append("Mean: %-5.3g" % numpy.mean(self.loaderThread.imageData[img]))
         text.append("Sum: %-5.3g" % numpy.sum(self.loaderThread.imageData[img]))
@@ -935,6 +944,17 @@ class View2D(View,QtOpenGL.QGLWidget):
                         info["tagClicked"] = int(iy/self.tagDistance())
         return info
     def mouseMoveEvent(self, event):
+        pos = self.mapFromGlobal(QtGui.QCursor.pos())
+        x = pos.x()
+        y = pos.y()
+        img = self.windowToImage(x,y,0)
+        if img in self.loaderThread.imageData.keys():
+            (ix,iy) = self.windowToImageCoordinates(x,y,0)            
+            if (ix < self.loaderThread.imageData[img].shape[1] and
+                iy < self.loaderThread.imageData[img].shape[0] and
+                ix >= 0 and iy >= 0):
+                self.hoveredPixel = [ix,iy]
+                self.updateGL()
         if(self.dragging):
             self.translateBy([0,-(event.pos()-self.dragPos).y()])
             self.clipTranslation()
