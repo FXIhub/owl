@@ -20,9 +20,10 @@ class View1D(View,QtGui.QFrame):
         self.plotMode = "plot"
         self.dataItemY = None
         self.dataItemX = None
-        self.setPixelStack()
+        #self.setPixelStack()
         self.setWindowSize()
         self.nBins = 200
+        self.img = None
     def initPlot(self,widgetType="plot"):
         self.lineColor = (255,255,255)
         self.lineWidth = 1
@@ -43,6 +44,11 @@ class View1D(View,QtGui.QFrame):
         self.plot.getAxis("right").setWidth(space)
         self.setStyle()
         #self.p.update()
+    def onPixelClicked(self,info):
+        if self.dataItemY != None and info != None:
+            if self.dataItemY.isStack:
+                self.img = int(info["img"])
+                self.refreshPlot()
     def setDataItemX(self,dataItem):
         if self.dataItemX != None:
             self.dataItemX.deselectStack()
@@ -57,17 +63,17 @@ class View1D(View,QtGui.QFrame):
         if self.dataItemY != None:
             self.dataItemY.deselectStack()
         self.dataItemY = dataItem
+        if self.dataItemY.isStack:
+            self.img = 0
+        else:
+            self.img = None
         if hasattr(dataItem,"fullName"):
             self.dataItemYLabel = dataItem.fullName
             self.dataItemY.selectStack()
         else:
             self.dataItemYLabel = ""
-        self.setPixelStack()
+        #self.setPixelStack()
         self.dataItemYChanged.emit(dataItem)
-    def setPixelStack(self,ix=None,iy=None,N=None):
-        self.ix = ix
-        self.iy = iy
-        self.N = N
     def setWindowSize(self,windowSize=None):
         if windowSize == None:
             self._windowSize = 100
@@ -135,10 +141,7 @@ class View1D(View,QtGui.QFrame):
         if self.dataItemY == None:
             dataY = None
         else:
-            print self.dataItemY.H5Dataset
-            print self.dataItemY.H5Dataset[:10]
-            print self.dataItemY.H5Dataset.shape
-            dataY = self.dataItemY.data(ix=self.ix,iy=self.iy,N=self.N,windowSize=self.windowSize())
+            dataY = self.dataItemY.data1D(windowSize=self.windowSize(),img=self.img)
         if dataY == None:
             self.p.setData([0])
             self.setPlotMode(self.plotMode)
@@ -156,12 +159,13 @@ class View1D(View,QtGui.QFrame):
                 dataX = self.dataItemX.data()
             if self.indexProjector.imgs != None and dataY.shape[0] == self.indexProjector.imgs.shape[0]:
                 dataY = dataY[self.indexProjector.imgs]
-            self.p.setData(dataX,dataY)
+            validMask = numpy.isfinite(dataX)*numpy.isfinite(dataY)
+            self.p.setData(dataX[validMask],dataY[validMask])
         elif self.plotMode == "histogram":
-            if self.nBins == None:
-                N = 200
-            else:
-                N = self.nBins
+            #if self.nBins == None:
+            #    N = 200
+            #else:
+            N = self.nBins
             (hist,edges) = numpy.histogram(dataY,bins=N)
             edges = (edges[:-1]+edges[1:])/2.0
             self.p.setData(edges,hist)        
@@ -176,11 +180,11 @@ class View1D(View,QtGui.QFrame):
         else:
             line = None
         self.setStyle(symbol=symbol,line=line)
-        self.nBins = props["N"]
+        #self.nBins = props["N"]
         self.refreshPlot()
     def emitViewIndexSelected(self,foovalue=None):
         index = int(self.infLine.getXPos())
         self.viewIndexSelected.emit(index)
-    def onPlotNBinsEdit(self):
-        self.nBins = int(self.sender().text())
-        self.refreshPlot()
+    #def onPlotNBinsEdit(self):
+    #    self.nBins = int(self.sender().text())
+    #    self.refreshPlot()

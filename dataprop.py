@@ -6,6 +6,11 @@ import h5py
 from matplotlib import colors
 from matplotlib import cm
 import pyqtgraph
+import modelProperties
+import pattersonProperties
+import fit
+import experimentDialog
+import displayBox
 
 def sizeof_fmt(num):
     for x in ['bytes','kB','MB','GB']:
@@ -13,7 +18,7 @@ def sizeof_fmt(num):
             return "%3.1f %s" % (num, x)
         num /= 1024.0
     return "%3.1f %s" % (num, 'TB')
-    
+
 
 class DataProp(QtGui.QWidget):
     view2DPropChanged = QtCore.Signal(dict)
@@ -30,8 +35,11 @@ class DataProp(QtGui.QWidget):
         self.vbox = QtGui.QVBoxLayout()
         # stack
         self.stackSize = None
+
+        self.settings = QtCore.QSettings()
         # scrolling
         self.vboxScroll = QtGui.QVBoxLayout()
+        self.vboxScroll.setContentsMargins(0,0,11,0)
         self.scrollWidget = QtGui.QWidget()
         self.scrollWidget.setLayout(self.vboxScroll)
         self.scrollArea = QtGui.QScrollArea()
@@ -40,13 +48,11 @@ class DataProp(QtGui.QWidget):
         self.scrollArea.setWidget(self.scrollWidget)
         self.scrollArea.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
         self.scrollArea.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
-        #self.scrollArea.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAsNeeded)
+
         self.vbox.addWidget(self.scrollArea)
         # GENERAL PROPERTIES
         # properties: data
         self.generalBox = QtGui.QGroupBox("General Properties");
-        #self.generalBox.setCheckable(True)
-        #self.generalBox.isChecked(True)
         self.generalBox.vbox = QtGui.QVBoxLayout()
         self.generalBox.setLayout(self.generalBox.vbox)
         self.shape = QtGui.QLabel("Shape:", parent=self)
@@ -66,7 +72,7 @@ class DataProp(QtGui.QWidget):
         self.currentImg.hbox.addWidget(self.currentImg.label)
         self.currentImg.hbox.addStretch()
         self.currentImg.hbox.addWidget(self.currentImg)
-        self.currentImg.edited = False 
+        self.currentImg.edited = False
 
         self.generalBox.vbox.addWidget(self.shape)
         self.generalBox.vbox.addWidget(self.datatype)
@@ -87,83 +93,6 @@ class DataProp(QtGui.QWidget):
         hbox.addWidget(self.imageStackSubplots)
         self.imageStackBox.vbox.addLayout(hbox)
 
-        hbox0 = QtGui.QHBoxLayout()
-        vbox = QtGui.QVBoxLayout()
-	self.imageStackMeanButton = QtGui.QPushButton("Mean",parent=self)
-	self.imageStackStdButton = QtGui.QPushButton("Std",parent=self)
-	self.imageStackMinButton = QtGui.QPushButton("Min",parent=self)
-	self.imageStackMaxButton = QtGui.QPushButton("Max",parent=self)
-        validator = QtGui.QIntValidator()
-        validator.setBottom(0)
-        hbox = QtGui.QHBoxLayout()
-        hbox.addWidget(QtGui.QLabel("N:"))
-        self.imageStackNEdit = QtGui.QLineEdit(self)
-        self.imageStackNEdit.setMaximumWidth(100)
-        hbox.addWidget(self.imageStackNEdit)
-        vbox.addWidget(self.imageStackMeanButton)
-	vbox.addWidget(self.imageStackStdButton)
-	vbox.addWidget(self.imageStackMinButton)
-	vbox.addWidget(self.imageStackMaxButton)
-        hbox0.addLayout(hbox)
-        hbox0.addLayout(vbox)
-        self.imageStackBox.vbox.addLayout(hbox0)
-	
-        # properties: selected image
-        self.imageBox = QtGui.QGroupBox("Selected Image");
-        self.imageBox.vbox = QtGui.QVBoxLayout()
-
-        hbox = QtGui.QHBoxLayout()
-        hbox.addWidget(QtGui.QLabel("Image:"))
-        widget = QtGui.QLabel("None",parent=self)
-        hbox.addWidget(widget)
-        self.imageImg = widget
-
-        self.imageBox.vbox.addLayout(hbox)
-
-        hbox = QtGui.QHBoxLayout()
-        hbox.addWidget(QtGui.QLabel("View index:"))
-        widget = QtGui.QLabel("None",parent=self)
-        hbox.addWidget(widget)
-        self.imageViewIndex = widget
-        self.imageBox.vbox.addLayout(hbox)
-        
-        hbox = QtGui.QHBoxLayout()
-        hbox.addWidget(QtGui.QLabel("Minimum value:"))
-        widget = QtGui.QLabel("None",parent=self)
-        hbox.addWidget(widget)
-        self.imageMin = widget
-        self.imageBox.vbox.addLayout(hbox)
-
-        hbox = QtGui.QHBoxLayout()
-        hbox.addWidget(QtGui.QLabel("Maximum value:"))
-        widget = QtGui.QLabel("None",parent=self)
-        hbox.addWidget(widget)
-        self.imageMax = widget
-        self.imageBox.vbox.addLayout(hbox)
-
-        hbox = QtGui.QHBoxLayout()
-        hbox.addWidget(QtGui.QLabel("Sum:"))
-        widget = QtGui.QLabel("None",parent=self)
-        hbox.addWidget(widget)
-        self.imageSum = widget
-        self.imageBox.vbox.addLayout(hbox)
-
-        hbox = QtGui.QHBoxLayout()
-        hbox.addWidget(QtGui.QLabel("Mean value:"))
-        widget = QtGui.QLabel("None",parent=self)
-        hbox.addWidget(widget)
-        self.imageMean = widget
-        self.imageBox.vbox.addLayout(hbox)
-
-        hbox = QtGui.QHBoxLayout()
-        hbox.addWidget(QtGui.QLabel("Std. deviation:"))
-        widget = QtGui.QLabel("None",parent=self)
-        hbox.addWidget(widget)
-        self.imageStd = widget
-        self.imageBox.vbox.addLayout(hbox)
-
-        self.imageBox.setLayout(self.imageBox.vbox)
-        self.imageBox.hide()
 
         self.pixelBox = QtGui.QGroupBox("Selected Pixel");
         self.pixelBox.vbox = QtGui.QVBoxLayout()
@@ -199,91 +128,8 @@ class DataProp(QtGui.QWidget):
         self.pixelBox.setLayout(self.pixelBox.vbox)
         self.pixelBox.hide()
         # DISPLAY PROPERTIES
-        self.displayBox = QtGui.QGroupBox("Display Properties");
-        self.displayBox.vbox = QtGui.QVBoxLayout()
-        self.intensityHistogram = pyqtgraph.PlotWidget()
-        self.intensityHistogram.hideAxis('left')
-        self.intensityHistogram.hideAxis('bottom')
-        self.intensityHistogram.setFixedHeight(50)
-        region = pyqtgraph.LinearRegionItem(values=[0,1],brush="#ffffff15")
-        self.intensityHistogram.addItem(region)
-        self.intensityHistogram.autoRange()
-        self.intensityHistogramRegion = region
+        self.displayBox = DisplayBox(self)
 
-        # Make the histogram fit the available width
-        self.intensityHistogram.setSizePolicy(QtGui.QSizePolicy.Ignored,QtGui.QSizePolicy.Preferred)
-        self.displayBox.vbox.addWidget(self.intensityHistogram)
-        # property: NORM        
-        # normVmax
-        hbox = QtGui.QHBoxLayout()
-        hbox.addWidget(QtGui.QLabel("Maximum value:"))
-        self.displayMax = QtGui.QDoubleSpinBox(parent=self)
-        self.displayMax.setMinimum(-1000000.)
-        self.displayMax.setMaximum(1000000.)
-        self.displayMax.setSingleStep(1.)
-        hbox.addWidget(self.displayMax)
-        self.displayBox.vbox.addLayout(hbox)
-        # normVmin
-        hbox = QtGui.QHBoxLayout()
-        hbox.addWidget(QtGui.QLabel("Minimum value:"))
-        self.displayMin = QtGui.QDoubleSpinBox(parent=self)
-        self.displayMin.setMinimum(-1000000.)
-        self.displayMin.setMaximum(1000000.)
-        self.displayMin.setSingleStep(1.)
-        hbox.addWidget(self.displayMin)
-        self.displayBox.vbox.addLayout(hbox)
-        
-        vbox = QtGui.QVBoxLayout()
-
-        # autorange
-        hbox = QtGui.QHBoxLayout()
-        label = QtGui.QLabel("Autorange")
-        label.setToolTip("If enabled scale is dynamically adjusted to min/max range of every image")
-        hbox.addWidget(label)
-        hbox.addStretch()
-        self.displayAutorange = QtGui.QCheckBox("",parent=self)
-        hbox.addWidget(self.displayAutorange)
-        vbox.addLayout(hbox)
-        
-        # normClamp
-        hbox = QtGui.QHBoxLayout()
-        label = QtGui.QLabel("Clamp")
-        label.setToolTip("If enabled set values outside the min/max range to min/max")
-        hbox.addWidget(label)
-        hbox.addStretch()
-        self.displayClamp = QtGui.QCheckBox("",parent=self)
-        hbox.addWidget(self.displayClamp)
-        vbox.addLayout(hbox)
-
-        # colormap
-        hbox = QtGui.QHBoxLayout()
-        hbox.addLayout(vbox)
-        hbox.addStretch()
-        self.displayColormap = QtGui.QPushButton("Colormap",parent=self)
-        self.displayColormap.setFixedSize(QtCore.QSize(100,30))
-        self.displayColormap.setMenu(self.viewer.colormapMenu)
-        hbox.addWidget(self.displayColormap)
-
-        self.displayBox.vbox.addLayout(hbox)
-
-        # normText
-        vbox = QtGui.QVBoxLayout()
-        vbox.addWidget(QtGui.QLabel("Scaling:"))
-        self.displayLin = QtGui.QRadioButton("Linear")
-        self.displayLog = QtGui.QRadioButton("Logarithmic")
-        self.displayPow = QtGui.QRadioButton("Power")
-        vbox.addWidget(self.displayLin)
-        vbox.addWidget(self.displayLog)
-        # normGamma
-        hbox = QtGui.QHBoxLayout()
-        self.displayGamma = QtGui.QDoubleSpinBox(parent=self)
-        self.displayGamma.setValue(0.25);
-        self.displayGamma.setSingleStep(0.25);
-        hbox.addWidget(self.displayPow)
-        hbox.addWidget(self.displayGamma)        
-        vbox.addLayout(hbox)
-        self.displayBox.vbox.addLayout(vbox)
-        self.displayBox.setLayout(self.displayBox.vbox)
         # sorting
         self.sortingBox = QtGui.QGroupBox("Sorting")
         self.sortingBox.vbox = QtGui.QVBoxLayout()
@@ -304,52 +150,8 @@ class DataProp(QtGui.QWidget):
         self.filterBox.hide()
         self.activeFilters = []
         self.inactiveFilters = []
-        # pixel stack
-        self.pixelStackBox = QtGui.QGroupBox("Pixel stack")
-        self.pixelStackBox.vbox = QtGui.QVBoxLayout()
-        hbox0 = QtGui.QHBoxLayout()
 
-        validator = QtGui.QIntValidator()
-        validator.setBottom(0)
-        self.pixelStackXEdit = QtGui.QLineEdit(self)
-        self.pixelStackXEdit.setMaximumWidth(100)
-        self.pixelStackXEdit.setValidator(validator)
-        self.pixelStackYEdit = QtGui.QLineEdit(self)
-        self.pixelStackYEdit.setMaximumWidth(100)
-        self.pixelStackYEdit.setValidator(validator)
-        self.pixelStackNEdit = QtGui.QLineEdit(self)
-        self.pixelStackNEdit.setMaximumWidth(100)
-        self.pixelStackNEdit.setValidator(validator)
-
-        vbox = QtGui.QVBoxLayout()
-
-        hbox = QtGui.QHBoxLayout()
-        hbox.addWidget(QtGui.QLabel("X:"))
-        hbox.addWidget(self.pixelStackXEdit)
-        vbox.addLayout(hbox)
-
-        hbox = QtGui.QHBoxLayout()
-        hbox.addWidget(QtGui.QLabel("Y:"))
-        hbox.addWidget(self.pixelStackYEdit)
-        vbox.addLayout(hbox)
-
-        hbox = QtGui.QHBoxLayout()
-        hbox.addWidget(QtGui.QLabel("N:"))
-        hbox.addWidget(self.pixelStackNEdit)
-        vbox.addLayout(hbox)
-
-        hbox0.addLayout(vbox)
-
-        self.pixelStackPickButton = QtGui.QPushButton("Pick",self)
-        self.pixelStackPick = False
-        hbox0.addWidget(self.pixelStackPickButton)
-        self.pixelStackBox.vbox.addLayout(hbox0)
-
-        self.pixelStackPlotButton = QtGui.QPushButton("Plot",self)
-        self.pixelStackBox.vbox.addWidget(self.pixelStackPlotButton)
-        
-        self.pixelStackBox.setLayout(self.pixelStackBox.vbox)
-        self.pixelStackBox.show()
+        # plot box
 
         self.plotBox = QtGui.QGroupBox("Plot")
         self.plotBox.vbox = QtGui.QVBoxLayout()
@@ -361,7 +163,7 @@ class DataProp(QtGui.QWidget):
         validatorSci.setNotation(QtGui.QDoubleValidator.ScientificNotation)
 
         self.plotNBinsEdit = QtGui.QLineEdit(self)
-        #self.plotNBinsEdit.setMaximumWidth(100)
+        self.plotNBinsEdit.setMaximumWidth(100)
         self.plotNBinsEdit.setValidator(validatorInt)
 
         hbox = QtGui.QHBoxLayout()
@@ -385,36 +187,39 @@ class DataProp(QtGui.QWidget):
         self.plotBox.setLayout(self.plotBox.vbox)
         self.plotBox.hide()
 
+
+        self.modelProperties = ModelProperties(self)
+        self.modelProperties.hide()
+
+        self.pattersonProperties = PattersonProperties(self)
+        self.pattersonProperties.hide()
+        
         # add all widgets to main vbox
         self.vboxScroll.addWidget(self.generalBox)
-        self.vboxScroll.addWidget(self.imageBox) 
-        self.vboxScroll.addWidget(self.pixelBox)               
+        self.vboxScroll.addWidget(self.pixelBox)
         self.vboxScroll.addWidget(self.displayBox)
-        self.vboxScroll.addWidget(self.pixelStackBox)
+        #self.vboxScroll.addWidget(self.pixelStackBox)
         self.vboxScroll.addWidget(self.imageStackBox)
         self.vboxScroll.addWidget(self.sortingBox)
         self.vboxScroll.addWidget(self.filterBox)
-        self.vboxScroll.addWidget(self.plotBox)        
+        self.vboxScroll.addWidget(self.plotBox)
+        self.vboxScroll.addWidget(self.modelProperties)
+        self.vboxScroll.addWidget(self.pattersonProperties)
         self.vboxScroll.addStretch()
         self.setLayout(self.vbox)
         # clear all properties
         self.clear()
         # connect signals
-        self.imageStackSubplots.editingFinished.connect(self.emitView2DProp)    
-        self.displayMax.editingFinished.connect(self.checkLimits)
-        self.displayMin.editingFinished.connect(self.checkLimits)
-        self.displayClamp.stateChanged.connect(self.emitView2DProp)
-        self.displayAutorange.stateChanged.connect(self.emitView2DProp)
-        self.displayAutorange.stateChanged.connect(self.setModMinMax)
-        self.displayLin.toggled.connect(self.emitView2DProp)        
-        self.displayLog.toggled.connect(self.emitView2DProp)
-        self.displayPow.toggled.connect(self.emitView2DProp)
-        self.displayGamma.editingFinished.connect(self.emitView2DProp)
+        self.imageStackSubplots.editingFinished.connect(self.emitView2DProp)
+        self.displayBox.displayMax.editingFinished.connect(self.checkLimits)
+        self.displayBox.displayMin.editingFinished.connect(self.checkLimits)
+        self.displayBox.displayClamp.stateChanged.connect(self.emitView2DProp)
+        self.displayBox.displayAutorange.stateChanged.connect(self.emitView2DProp)
+        self.displayBox.displayAutorange.stateChanged.connect(self.setModMinMax)
+        self.displayBox.displayScale.currentIndexChanged.connect(self.emitView2DProp)
         self.invertSortingCheckBox.toggled.connect(self.emitView2DProp)
         self.invertSortingCheckBox.toggled.connect(self.emitView1DProp)
         self.viewer.colormapActionGroup.triggered.connect(self.emitView2DProp)
-        self.pixelStackPickButton.released.connect(self.onPixelStackPickButton)
-        self.pixelStackPlotButton.released.connect(self.emitView1DProp)
         self.plotLinesCheckBox.toggled.connect(self.emitView1DProp)
         self.plotPointsCheckBox.toggled.connect(self.emitView1DProp)
         self.plotNBinsEdit.editingFinished.connect(self.emitView1DProp)
@@ -433,7 +238,7 @@ class DataProp(QtGui.QWidget):
     def onStackSizeChanged(self,newStackSize):
         self.stackSize = newStackSize
         self.updateShape()
-    def updateShape(self):        
+    def updateShape(self):
         if self.data != None:
             # update shape label
             string = "Shape: "
@@ -470,17 +275,10 @@ class DataProp(QtGui.QWidget):
         self.datatype.setText("Data Type: ")
         self.datasize.setText("Data Size: ")
         self.dataform.setText("Data Form: ")
-        self.imageStackBox.hide()	
+        self.imageStackBox.hide()
     # VIEW
     def onPixelClicked(self,info):
         if self.data != None and info != None:
-            self.imageViewIndex.setText(str(int(info["viewIndex"])))
-            self.imageImg.setText(str(int(info["img"])))
-            self.imageMin.setText("%.3e" % float(info["imageMin"]))
-            self.imageMax.setText("%.3e" % float(info["imageMax"]))
-            self.imageSum.setText("%.3e" % float(info["imageSum"]))
-            self.imageMean.setText("%.3e" % float(info["imageMean"]))
-            self.imageStd.setText("%.3e" % float(info["imageStd"]))
             self.pixelIx.setText(str(int(info["ix"])))
             self.pixelIy.setText(str(int(info["iy"])))
             self.pixelImageValue.setText("%.3f" % (info["imageValue"]))
@@ -488,46 +286,49 @@ class DataProp(QtGui.QWidget):
                 self.pixelMaskValue.setText("None")
             else:
                 self.pixelMaskValue.setText(str(int(info["maskValue"])))
-            self.imageBox.show()
             self.pixelBox.show()
             (hist,edges) = numpy.histogram(self.data.data(img=info["img"]),bins=100)
-            self.intensityHistogram.clear()
-            edges = (edges[:-1]+edges[1:])/2.0
-            item = self.intensityHistogram.plot(edges,numpy.log10(hist+1),fillLevel=0,fillBrush=QtGui.QColor(255, 255, 255, 128),antialias=True)
-            self.intensityHistogram.getPlotItem().getViewBox().setMouseEnabled(x=False,y=False)
-            self.intensityHistogramRegion = pyqtgraph.LinearRegionItem(values=[self.displayMin.value(),self.displayMax.value()],brush="#ffffff15")
-            self.intensityHistogramRegion.sigRegionChangeFinished.connect(self.onHistogramClicked)
-            self.intensityHistogram.addItem(self.intensityHistogramRegion)
-            self.intensityHistogram.autoRange()
-            if self.pixelStackPick:
-                self.pixelStackPick = False
-                self.pixelStackXEdit.setText(str(int(info["ix"])))
-                self.pixelStackYEdit.setText(str(int(info["iy"])))
-                self.pixelStackNEdit.setText(str(self.data.shape()[0]))
+            self.displayBox.pixelClicked(hist,edges)
+            # self.intensityHistogram.clear()
+            # edges = (edges[:-1]+edges[1:])/2.0
+            # item = self.intensityHistogram.plot(edges,numpy.log10(hist+1),fillLevel=0,fillBrush=QtGui.QColor(255, 255, 255, 128),antialias=True)
+            # self.intensityHistogram.getPlotItem().getViewBox().setMouseEnabled(x=False,y=False)
+            # self.intensityHistogramRegion = pyqtgraph.LinearRegionItem(values=[float(self.displayMin.text()),float(self.displayMax.text())],brush="#ffffff15")
+            # self.intensityHistogramRegion.sigRegionChangeFinished.connect(self.onHistogramClicked)
+            # self.intensityHistogram.addItem(self.intensityHistogramRegion)
+            # self.intensityHistogram.autoRange()
+            # Check if we clicked on a tag
+            if(info["tagClicked"] != -1):
+                # Toggle tag
+                self.data.tagsItem.setTag(info["img"],info["tagClicked"],(self.data.tagsItem.tagMembers[info["tagClicked"],info["img"]]+1)%2)
+            
+            self.modelProperties.showParams()
+            self.pattersonProperties.showParams()
         else:
             self.imageBox.hide()
             self.pixelBox.hide()
     def onHistogramClicked(self,region):
         (min,max) = region.getRegion()
-        self.displayMin.setValue(min)
-        self.displayMax.setValue(max)
+        self.displayBox.displayMin.setText("%5.3g" % (min))
+        self.displayBox.displayMax.setText("%5.3g" % (max))
         self.checkLimits()
         self.emitView2DProp()
     # NORM
     def setNorm(self):
         P = self.view2DProp
-        P["normVmin"] = self.displayMin.value()
-        P["normVmax"] = self.displayMax.value()
-        P["autorange"] = self.displayAutorange.isChecked()
-        P["normClamp"] = self.displayClamp.isChecked()
-        if self.displayLin.isChecked():
+        P["normVmin"] = float(self.displayBox.displayMin.text())
+        P["normVmax"] = float(self.displayBox.displayMax.text())
+        P["autorange"] = self.displayBox.displayAutorange.isChecked()
+        P["normClamp"] = self.displayBox.displayClamp.isChecked()
+        if self.displayBox.displayScale.currentIndex() == 0:
             P["normScaling"] = "lin"
-        elif self.displayLog.isChecked():
+        elif self.displayBox.displayScale.currentIndex() == 1:
             P["normScaling"] = "log"
         else:
             P["normScaling"] = "pow"
-        P["normGamma"] = self.displayGamma.value()
-        self.intensityHistogramRegion.setRegion([self.displayMin.value(),self.displayMax.value()])
+        P["normGamma"] = float(self.settings.value('normGamma'))
+        self.displayBox.intensityHistogramRegion.setRegion([float(self.displayBox.displayMin.text()),
+                                                            float(self.displayBox.displayMax.text())])
     def clearNorm(self):
         settings = QtCore.QSettings()
         if(settings.contains("normVmax")):
@@ -542,41 +343,36 @@ class DataProp(QtGui.QWidget):
             autorange = bool(settings.value('autorange'))
         else:
             autorange = False
-        self.displayAutorange.setChecked(autorange)
-        self.displayMin.setValue(normVmin)
-        self.displayMax.setValue(normVmax)
+        self.displayBox.displayAutorange.setChecked(autorange)
+        self.displayBox.displayMin.setText(str(normVmin))
+        self.displayBox.displayMax.setText(str(normVmax))
         if(settings.contains("normClamp")):
             normClamp = bool(settings.value('normClamp'))
         else:
             normClamp = True
-        self.displayClamp.setChecked(normClamp)
-        if(settings.contains("normGamma")):
-            self.displayGamma.setValue(float(settings.value("normGamma")))
-        else:
-            self.displayGamma.setValue(0.25)
+        self.displayBox.displayClamp.setChecked(normClamp)
         if(settings.contains("normScaling")):
             norm = settings.value("normScaling")
             if(norm == "lin"):
-                self.displayLin.setChecked(True)
+                self.displayBox.displayScale.setCurrentIndex(0)
             elif(norm == "log"):
-                self.displayLog.setChecked(True)
+                self.displayBox.displayScale.setCurrentIndex(1)
             elif(norm == "pow"):
-                self.displayPow.setChecked(True)
+                self.displayBox.displayScale.setCurrentIndex(2)
             else:
                 sys.exit(-1)
         else:
-            self.displayLog.setChecked(True)
+            self.displayBox.displayScale.setCurrentIndex(1)
         self.setNorm()
     # COLORMAP
     def setColormap(self,foovalue=None):
         P = self.view2DProp
         a = self.viewer.colormapActionGroup.checkedAction()
-        self.displayColormap.setText(a.text())        
-        self.displayColormap.setIcon(a.icon())        
+        self.displayBox.displayColormap.setText(a.text())
+        self.displayBox.displayColormap.setIcon(a.icon())
         P["colormapText"] = a.text()
 
     def clearColormap(self):
-#        self.displayColormap.setCurrentIndex(0)
         self.setColormap()
     # STACK
     def setImageStackSubplots(self,foovalue=None):
@@ -608,6 +404,7 @@ class DataProp(QtGui.QWidget):
             filterWidget = FilterWidget(self,data)
             filterWidget.dataItem.selectStack()
             filterWidget.limitsChanged.connect(self.emitView2DProp)
+            filterWidget.selectedIndexChanged.connect(self.emitView2DProp)
             self.filterBox.vbox.addWidget(filterWidget)
             self.activeFilters.append(filterWidget)
         else:
@@ -654,51 +451,14 @@ class DataProp(QtGui.QWidget):
         self.filterBox.setTitle("Filters (yield: %.2f%% - %i/%i)" % (p,Nsel,Ntot))
     def refreshFilter(self,data,index):
         self.activeFilters[index].refreshData(data)
-    # pixel stack histogram
-    #def setPixelStack(self):
-    #    P = self.view2DProp
-    #    x = self.pixelStackXEdit.text()
-    #    y = self.pixelStackYEdit.text()
-    #    if x == "" or y == "":
-    #        P["pixelStackX"] = None
-    #        P["pixelStackY"] = None
-    #    else:
-    #        P["pixelStackX"] = int(x)
-    #        P["pixekStackY"] = int(y)
-    def setImageStackN(self):
-        P = self.view2DProp
-        if self.imageStackNEdit.text() == "":
-            P["N"] = None
-        else:
-            P["N"] = int(self.imageStackNEdit.text())
-    def clearPixelStack(self):
-        self.pixelStackXEdit.setText("")
-        self.pixelStackYEdit.setText("")
-        self.pixelStackNEdit.setText("")
-    def onPixelStackPickButton(self):
-        self.pixelStackPick = True
-    def setPixelStack(self):
-        P = self.view1DProp
-        if self.pixelStackXEdit.text() == "":
-            P["ix"] = None
-        else:
-            P["ix"] = int(self.pixelStackXEdit.text())
-        if self.pixelStackYEdit.text() == "":
-            P["iy"] = None
-        else:
-            P["iy"] = int(self.pixelStackYEdit.text())
-        if self.pixelStackNEdit.text() == "":
-            P["N"] = None
-        else:
-            P["N"] = int(self.pixelStackNEdit.text())
     def setPlotStyle(self):
         P = self.view1DProp
         P["lines"] = self.plotLinesCheckBox.isChecked()
         P["points"] = self.plotPointsCheckBox.isChecked()
     def setModMinMax(self):
-        c =  self.displayAutorange.isChecked() == False
-        self.displayMin.setEnabled(c)
-        self.displayMax.setEnabled(c)
+        c =  self.displayBox.displayAutorange.isChecked() == False
+        self.displayBox.displayMin.setEnabled(c)
+        self.displayBox.displayMax.setEnabled(c)
     def setCurrentImg(self):
         P = self.view2DProp
         i = self.currentImg.text()
@@ -711,9 +471,9 @@ class DataProp(QtGui.QWidget):
             except:
                 P["img"] = None
         self.currentImg.edited = False
-    # update and emit current diplay properties        
+    # update and emit current diplay properties
     def emitView1DProp(self):
-        self.setPixelStack()
+        #self.setPixelStack()
         self.setPlotStyle()
         self.view1DPropChanged.emit(self.view1DProp)
     def emitView2DProp(self):
@@ -722,12 +482,12 @@ class DataProp(QtGui.QWidget):
         self.setColormap()
         self.setSorting()
         self.setFilters()
-        self.setImageStackN()
+        #self.setImageStackN()
         self.setCurrentImg()
         self.view2DPropChanged.emit(self.view2DProp)
     def checkLimits(self):
-        self.displayMax.setMinimum(self.displayMin.value())
-        self.displayMin.setMaximum(self.displayMax.value())
+        self.displayBox.displayMax.validator().setBottom(float(self.displayBox.displayMin.text()))
+        self.displayBox.displayMin.validator().setTop(float(self.displayBox.displayMax.text()))
         self.emitView2DProp()
     # still needed?
     def keyPressEvent(self,event):
@@ -736,6 +496,18 @@ class DataProp(QtGui.QWidget):
                 self.hide()
             else:
                 self.show()
+    def toggleTag(self,id):
+        img = self.viewer.view.view2D.selectedImage
+        if(img == None):
+            return
+        if(self.tagGroup.button(id) == None):
+            return
+        self.tagGroup.button(id).toggle()
+        value = self.tagGroup.button(id).isChecked()
+        self.data.tagItem.setTag(img,id,value)
+        self.viewer.tagsChanged = True
+
+               
 
 def paintColormapIcons(W,H):
     a = numpy.outer(numpy.ones(shape=(H,)),numpy.linspace(0.,1.,W))
@@ -760,6 +532,7 @@ def paintColormapIcons(W,H):
 
 class FilterWidget(QtGui.QWidget):
     limitsChanged = QtCore.Signal(float,float)
+    selectedIndexChanged = QtCore.Signal(int)
     def __init__(self,parent,dataItem):
         QtGui.QWidget.__init__(self,parent)
         vbox = QtGui.QVBoxLayout()
@@ -768,53 +541,119 @@ class FilterWidget(QtGui.QWidget):
         data = dataItem.data()
         vmin = numpy.min(data)
         vmax = numpy.max(data)
-        histogram = pyqtgraph.PlotWidget(self)
-        histogram.hideAxis('left')
-        histogram.hideAxis('bottom')
-        histogram.setFixedHeight(50)
+        self.histogram = pyqtgraph.PlotWidget(self)
+        self.histogram.hideAxis('left')
+        self.histogram.hideAxis('bottom')
+        self.histogram.setFixedHeight(50)
         # Make the histogram fit the available width
-        histogram.setSizePolicy(QtGui.QSizePolicy.Ignored,QtGui.QSizePolicy.Preferred)
+        self.histogram.setSizePolicy(QtGui.QSizePolicy.Ignored,QtGui.QSizePolicy.Preferred)
         region = pyqtgraph.LinearRegionItem(values=[vmin,vmax],brush="#ffffff15")
         region.sigRegionChangeFinished.connect(self.syncLimits)
-        histogram.addItem(region)
-        histogram.autoRange()
-        vbox.addWidget(histogram)
+        self.histogram.addItem(region)
+        self.histogram.autoRange()
+        vbox.addWidget(self.histogram)
         vbox.addWidget(nameLabel)
         vbox.addWidget(yieldLabel)
+
+        # for non-boolean filters
         hbox = QtGui.QHBoxLayout()
-        hbox.addWidget(QtGui.QLabel("Min.:"))
-        hbox.addWidget(QtGui.QLabel("Max.:"))
+        self.vminLabel = QtGui.QLabel("Min.:")
+        hbox.addWidget(self.vminLabel)
+        self.vmaxLabel = QtGui.QLabel("Max.:")
+        hbox.addWidget(self.vmaxLabel)
         vbox.addLayout(hbox)
         hbox = QtGui.QHBoxLayout()
         validator = QtGui.QDoubleValidator()
         validator.setDecimals(3)
         validator.setNotation(QtGui.QDoubleValidator.ScientificNotation)
-        vminLineEdit = QtGui.QLineEdit(self)
-        vminLineEdit.setText("%.7e" % (vmin*0.999))
-        vminLineEdit.setValidator(validator)
-        hbox.addWidget(vminLineEdit)
-        vmaxLineEdit = QtGui.QLineEdit(self)
-        vmaxLineEdit.setText("%.7e" % (vmax*1.001))
-        vmaxLineEdit.setValidator(validator)
-        hbox.addWidget(vmaxLineEdit)
+        self.vminLineEdit = QtGui.QLineEdit(self)
+        self.vminLineEdit.setText("%.7e" % (vmin*0.999))
+        self.vminLineEdit.setValidator(validator)
+        hbox.addWidget(self.vminLineEdit)
+        self.vmaxLineEdit = QtGui.QLineEdit(self)
+        self.vmaxLineEdit.setText("%.7e" % (vmax*1.001))
+        self.vmaxLineEdit.setValidator(validator)
+        hbox.addWidget(self.vmaxLineEdit)
         vbox.addLayout(hbox)
+
+        # for boolean filters
+        hbox = QtGui.QHBoxLayout()
+        self.invertLabel = QtGui.QLabel("Invert")
+        hbox.addWidget(self.invertLabel)
+        self.invertCheckBox = QtGui.QCheckBox("",parent=self)
+        hbox.addWidget(self.invertCheckBox)
+        hbox.addStretch()
+        vbox.addLayout(hbox)
+
+        self.setNonBooleanFilter()
+
+        # for 2-dimensional datasets
+        hbox = QtGui.QHBoxLayout()
+        self.indexLabel = QtGui.QLabel("Index:")
+        hbox.addWidget(self.indexLabel)
+        self.indexCombo = QtGui.QComboBox()
+        hbox.addWidget(self.indexCombo)
+        vbox.addLayout(hbox)
+
+        self.set1DimensionalDataset()
+
         self.setLayout(vbox)
-        self.histogram = histogram
         self.histogram.region = region
         self.histogram.itemPlot = None
         self.nameLabel = nameLabel
         self.yieldLabel = yieldLabel
-        self.vminLineEdit = vminLineEdit
-        self.vmaxLineEdit = vmaxLineEdit
         self.vbox = vbox
         self.refreshData(dataItem)
-        vminLineEdit.editingFinished.connect(self.emitLimitsChanged)
-        vmaxLineEdit.editingFinished.connect(self.emitLimitsChanged)
+        self.vminLineEdit.editingFinished.connect(self.emitLimitsChanged)
+        self.vmaxLineEdit.editingFinished.connect(self.emitLimitsChanged)
+        self.indexCombo.currentIndexChanged.connect(self.emitSelectedIndexChanged)
+        self.invertCheckBox.toggled.connect(self.syncLimits)
+    def setBooleanFilter(self):
+        self.histogram.hide()
+        self.vminLabel.hide()
+        self.vmaxLabel.hide()
+        self.vminLineEdit.hide()
+        self.vmaxLineEdit.hide()
+        self.invertLabel.show()
+        self.invertCheckBox.show()
+        self.isBooleanFilter = True
+    def setNonBooleanFilter(self):
+        self.histogram.show()
+        self.vminLabel.show()
+        self.vmaxLabel.show()
+        self.vminLineEdit.show()
+        self.vmaxLineEdit.show()
+        self.invertLabel.hide()
+        self.invertCheckBox.hide()
+        self.isBooleanFilter = False
+    def set1DimensionalDataset(self):
+        self.indexLabel.hide()
+        self.indexCombo.hide()
+        self.numberOfDimensionsDataset = 1
+    def set2DimensionalDataset(self):
+        self.indexLabel.show()
+        self.indexCombo.show()
+        self.indexCombo.setCurrentIndex(self.dataItem.selectedIndex)
+        self.numberOfDimensionsDataset = 2
+    def populateIndexCombo(self):
+        if not self.isTags:
+            nDims = self.dataItem.shape()[1]
+        else:
+            nDims = len(self.dataItem.attr("headings"))
+        labels = []
+        for i in range(nDims):
+            labels.append("%i" % i)
+        if self.isTags:
+            for i,tag in zip(range(nDims),self.dataItem.tags):
+                title = tag[0]
+                labels[i] += " " + title
+        self.indexCombo.addItems(labels)
     def refreshData(self,dataItem):
         self.nameLabel.setText(dataItem.fullName)
         self.dataItem = dataItem
-        self.data = dataItem.data()
-        Ntot = self.data.shape[0]
+        self.data = dataItem.data1D()
+        self.isTags = (self.dataItem.fullName[self.dataItem.fullName.rindex("/")+1:] == "tags")
+        Ntot = self.dataItem.fileLoader.stackSize
         vmin = numpy.min(self.data)
         vmax = numpy.max(self.data)
         yieldLabelString = "Yield: %.2f%% - %i/%i" % (100.,Ntot,Ntot)
@@ -829,8 +668,26 @@ class FilterWidget(QtGui.QWidget):
         self.histogram.itemPlot = item
         self.histogram.region.setRegion([vmin,vmax])
         self.histogram.autoRange()
+        if self.dataItem.selectedIndex == None:
+            self.set1DimensionalDataset()
+        else:
+            self.populateIndexCombo()
+            self.set2DimensionalDataset()
+        if self.isTags:
+            self.setBooleanFilter()
+        else:
+            self.setNonBooleanFilter()
+        self.syncLimits()
     def syncLimits(self):
-        (vmin,vmax) = self.histogram.region.getRegion()
+        if self.isBooleanFilter:
+            if self.invertCheckBox.isChecked():
+                vmin = -0.5
+                vmax = 0.5
+            else:
+                vmin = 0.5
+                vmax = 1.5
+        else:
+            (vmin,vmax) = self.histogram.region.getRegion()
         self.vminLineEdit.setText("%.3e" % (vmin*0.999))
         self.vmaxLineEdit.setText("%.3e" % (vmax*1.001))
         self.emitLimitsChanged()
@@ -991,10 +848,6 @@ class PattersonProperties(QtGui.QGroupBox, pattersonProperties.Ui_PattersonPrope
         self.params = {}
         self.setPattersonItem(None)
         self.smooth.valueChanged.connect(self.setParams)
-        self.darkfield.stateChanged.connect(self.setParams)
-        self.x.valueChanged.connect(self.setParams)
-        self.y.valueChanged.connect(self.setParams)
-        self.sigma.valueChanged.connect(self.setParams)
         self.pattersonPushButton.clicked.connect(self.calculatePatterson)
     def setPattersonItem(self,pattersonItem=None):
         self.pattersonItem = pattersonItem
@@ -1014,26 +867,10 @@ class PattersonProperties(QtGui.QGroupBox, pattersonProperties.Ui_PattersonPrope
         if self.pattersonItem == None or img == None:
             self.smooth.setValue(0)
             self.smooth.setReadOnly(True)
-            self.darkfield.setChecked(False)
-            self.darkfield.setEnabled(False)
-            self.x.setValue(0)
-            self.x.setReadOnly(True)
-            self.y.setValue(0)
-            self.y.setReadOnly(True)
-            self.sigma.setValue(0)
-            self.sigma.setReadOnly(True)
         else:
             params = self.pattersonItem.getParams(img)
             self.smooth.setValue(params["smooth"])
             self.smooth.setReadOnly(False)
-            self.darkfield.setChecked(params["darkfield"])
-            self.darkfield.setEnabled(True)
-            self.x.setValue(params["x"])
-            self.x.setReadOnly(False)
-            self.y.setValue(params["y"])
-            self.y.setReadOnly(False)
-            self.sigma.setValue(params["sigma"])
-            self.sigma.setReadOnly(False)
             if img != params["_pattersonImg"]:
                 self.pattersonItem.patterson = None
                 self.pattersonItem.setParams(None,{"_pattersonImg":-1})
@@ -1041,10 +878,6 @@ class PattersonProperties(QtGui.QGroupBox, pattersonProperties.Ui_PattersonPrope
         params = {}
         img = self.parent.viewer.view.view2D.selectedImage
         params["smooth"] = self.smooth.value()
-        params["darkfield"] = self.darkfield.isChecked()
-        params["x"] = self.x.value()
-        params["y"] = self.y.value()
-        params["sigma"] = self.sigma.value()
         self.pattersonItem.setParams(img,params)
         # max: needed at psusr to really refresh, works without on my mac
         self.parent.viewer.view.view2D.updateGL()

@@ -39,4 +39,3 @@ def kernel(mask,smooth,x=None,y=None,sigma=None):
         G = numpy.exp(-r**2/(2*sigma**2))
         K = K*G
     return K
-        

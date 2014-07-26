@@ -29,11 +29,13 @@ class IndexProjector(QtCore.QObject):
         else:
             if len(self.filters) > 0:
                 F = numpy.ones(shape=(len(self.filters),self.stackSize),dtype="bool")
-                for i,f in zip(range(len(self.filters)),self.filters):
-                    F[i,:] = f.data()[:self.stackSize]
-                for i,vmin,vmax in zip(range(len(self.filters)),vmins,vmaxs):
-                    F[i,:] = (F[i,:] <= vmax) * (F[i,:] >= vmin)
-                self._filterMask = numpy.array(F.prod(0),dtype="bool")
+                for i,f,vmin,vmax in zip(range(len(self.filters)),self.filters,vmins,vmaxs):
+                    filt = f.data1D()
+                    F[i,:] = (filt[:] <= vmax) * (filt[:] >= vmin)
+                if len(self.filters) > 1:
+                    self._filterMask = numpy.array(F.prod(0),dtype="bool").flatten()
+                else:
+                    self._filterMask = F.flatten()
             else:
                 self._filterMask = None
         self.vmins = vmins
@@ -97,6 +99,8 @@ class IndexProjector(QtCore.QObject):
         else:
             if int(index) >= len(self.imgs):
                 return self.imgs[-1]
+            elif int(index) < 0:
+                return self.imgs[0]
             else:
                 return self.imgs[int(index)]
     def clear(self):
