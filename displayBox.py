@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'displayBox.ui'
 #
-# Created: Fri Jul 25 15:31:37 2014
+# Created: Fri Jul 25 18:00:48 2014
 #      by: pyside-uic 0.2.15 running on PySide 1.2.1
 #
 # WARNING! All changes made in this file will be lost!
@@ -12,7 +12,7 @@ from PySide import QtCore, QtGui
 class Ui_displayBox(object):
     def setupUi(self, displayBox):
         displayBox.setObjectName("displayBox")
-        displayBox.resize(264, 204)
+        displayBox.resize(267, 204)
         sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Preferred)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -69,6 +69,7 @@ class Ui_displayBox(object):
         self.horizontalLayout_3 = QtGui.QHBoxLayout()
         self.horizontalLayout_3.setObjectName("horizontalLayout_3")
         self.displayScale = QtGui.QComboBox(displayBox)
+        self.displayScale.setFocusPolicy(QtCore.Qt.StrongFocus)
         self.displayScale.setObjectName("displayScale")
         self.displayScale.addItem("")
         self.displayScale.addItem("")

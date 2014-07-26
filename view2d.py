@@ -613,7 +613,7 @@ class View2D(View,QtOpenGL.QGLWidget):
                 glPushMatrix()
                 color = self.data.tagsItem.tags[i][1]
                 glColor3f(color.redF(),color.greenF(),color.blueF());
-                glLineWidth(0.5/self.zoom)
+                glLineWidth(0.5)
                 if(self.data.tagsItem.tagMembers[i][img]):
                     glBegin (GL_QUADS);
                 else:

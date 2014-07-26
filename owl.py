@@ -30,12 +30,8 @@ import dialogs
 Wishes:
 
 Infinite subplots
-Color tagged images
 Double click to zoom on image (double click again zoom back to width of column). Also changes to 1 column view
 View only tagged ones
-Tagging with numbers
-Different tags different colors
-Multiple tags per image
 More precise browse to img. At the moment we end up somewhere close to the image of intrest but not exactly to it.
 """
 
