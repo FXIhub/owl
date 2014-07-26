@@ -83,8 +83,6 @@ class View2D(View,QtOpenGL.QGLWidget):
         self.slideshowTimer.setInterval(2000)
         self.slideshowTimer.timeout.connect(self.nextSlideRow)
 
-        #self.translationChanged.connect(self.checkTargetCentralImage)
-
 	settings = QtCore.QSettings()
         self.PNGOutputPath = settings.value("PNGOutputPath")
         self.setFocusPolicy(QtCore.Qt.StrongFocus)
@@ -880,7 +878,7 @@ class View2D(View,QtOpenGL.QGLWidget):
             self.slideshowTimer.start()
     def nextSlideRow(self):
         self.nextRow(wrap=True)
-        info = self.getPixelInfo(img,self.ix,self.iy)
+        info = self.getPixelInfo(self.centralImg,self.ix,self.iy)
         if info == None:
             return
         self.selectedImage = info["img"]
