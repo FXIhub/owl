@@ -404,10 +404,10 @@ class ImageLoader(QtCore.QObject):
         #print "Emitting draw request %d " % (img)
         self.imageLoaded.emit(img)
     def loadPatterson(self,img):
-        data = self.view.data
-        mask = self.view.mask
-        PC = patterson.PattersonCreator(data,mask)
-        self.pattersonData = abs(PC.patterson(img))
+        params = self.view.data.pattersonItem.getParams(img)
+        I = self.view.data.data(img=img)
+        M = self.view.mask.data(img=img,binaryMask=True)
+        self.pattersonData = patterson.patterson(I,M,params,normalize=True)
         self.imageLoaded.emit(img)
     def loadedImages(self):
         return self.imageData.keys()

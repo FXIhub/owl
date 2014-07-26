@@ -3,21 +3,17 @@ import logging
 import scipy.signal
 import scipy.ndimage
 
-class PattersonCreator:
-    def __init__(self,dataItemImage,dataItemMask):
-        self.dataItemMask = dataItemMask
-        self.dataItemImage = dataItemImage
-    def patterson(self,img):
-        params = self.dataItemImage.pattersonItem.getParams(img)
-        I = self.dataItemImage.data(img=img)
-        I[I<params["imageThreshold"]] = params["imageThreshold"]
-        M = self.dataItemMask.data(img=img,binaryMask=True)
-        if not params["darkfield"]:
-            K = kernel(M,params["maskSmooth"],params["maskThreshold"])
-        else:
-            K = kernel(M,params["maskSmooth"],params["maskThreshold"],params["darkfieldX"],params["darkfieldY"],params["darkfieldSigma"])
-        P = numpy.fft.fftshift(numpy.fft.fft2(numpy.fft.fftshift(K*I)))
-        return P
+def patterson(I,M,params,normalize=False):
+    I[I<params["imageThreshold"]] = params["imageThreshold"]
+    if not params["darkfield"]:
+        K = kernel(M,params["maskSmooth"],params["maskThreshold"])
+    else:
+        K = kernel(M,params["maskSmooth"],params["maskThreshold"],params["darkfieldX"],params["darkfieldY"],params["darkfieldSigma"])
+    P = numpy.fft.fftshift(numpy.fft.fft2(numpy.fft.fftshift(K*I)))
+    if normalize:
+        P = abs(P)
+        P /= numpy.median(P)*10
+    return P
 
 def kernel(mask,smooth,threshold,x=None,y=None,sigma=None):
     K = scipy.ndimage.gaussian_filter(numpy.array(mask,dtype="float"),smooth)

@@ -541,7 +541,7 @@ class View2D(View,QtOpenGL.QGLWidget):
             glUniform1f(self.vmaxLoc,imageData.max())
         elif pattersonEnabled:
             glUniform1f(self.vminLoc,0.)
-            glUniform1f(self.vmaxLoc,numpy.median(imageData)*10)            
+            glUniform1f(self.vmaxLoc,1.)            
         else:
             glUniform1f(self.vminLoc,self.normVmin)
             glUniform1f(self.vmaxLoc,self.normVmax)
@@ -797,7 +797,7 @@ class View2D(View,QtOpenGL.QGLWidget):
         if self.pattersonView:
             pattersonParams = self.data.pattersonItem.getParams(img)
             if self.pattersonView and (img == self.selectedImage) and (pattersonParams["_pattersonImg"] == img) and not self.data.pattersonItem.textureLoaded:
-                print "generate patterson texture"
+                #print "generate patterson texture"
                 temp = abs(self.loaderThread.pattersonData)
                 P = numpy.ones(temp.shape,dtype=numpy.float32)
                 P[:] = temp[:]
