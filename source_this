@@ -32,9 +32,15 @@ export EDITOR=/usr/bin/emacs
 
 if [[ "$(hostname)" == psusr* ]]
 then
-# mounting remote
+# mounting remot
+    #umount $HOME/.amoc6914_sshfs
     mkdir -p $HOME/.amoc6914_sshfs
-    eval sshfs psexport:/reg/data/ana04/amo/amoc6914 $HOME/.amoc6914_sshfs
+    eval sshfs psexport:/reg/data/ana04/amo/amoc6914 $HOME/.amoc6914_sshfs -o direct_io
     rm $HOME/amoc6914_sshfs 2> /dev/null
     ln -s $HOME/.amoc6914_sshfs $HOME/amoc6914_sshfs
+    #umount $HOME/.amoc0113_sshfs
+    mkdir -p $HOME/.amoc0113_sshfs
+    eval sshfs psexport:/reg/data/ana04/amo/amoc0113 $HOME/.amoc0113_sshfs -o direct_io
+    rm $HOME/amoc0113_sshfs 2> /dev/null
+    ln -s $HOME/.amoc0113_sshfs $HOME/amoc0113_sshfs
 fi

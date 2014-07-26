@@ -40,6 +40,8 @@ class View2D(View,QtOpenGL.QGLWidget):
         #self.setFocusPolicy(QtCore.Qt.ClickFocus)
         self.data = None
         self.mask = None
+        self.ix = 0
+        self.iy = 0
         self.texturesLoading = {}
         
         self.imageTextures = GLCache(0)
@@ -879,6 +881,11 @@ class View2D(View,QtOpenGL.QGLWidget):
             self.slideshowTimer.start()
     def nextSlideRow(self):
         self.nextRow(wrap=True)
+        info = self.getPixelInfo(img,self.ix,self.iy)
+        if info == None:
+            return
+        self.selectedImage = info["img"]
+        self.pixelClicked.emit(info)
     def nextRow(self,wrap=False):
         self.changeRowBy(count=1,wrap=wrap)
     def previousRow(self,wrap=False):
@@ -910,8 +917,8 @@ class View2D(View,QtOpenGL.QGLWidget):
         y = pos.y()
         img = self.windowToImage(x,y,0)
         if img in self.loaderThread.imageData.keys():
-            (ix,iy) = self.windowToImageCoordinates(x,y,0)
-            info = self.getPixelInfo(img,ix,iy)
+            (self.ix,self.iy) = self.windowToImageCoordinates(x,y,0)
+            info = self.getPixelInfo(img,self.ix,self.iy)
             if info == None:
                 return
             self.selectedImage = info["img"]

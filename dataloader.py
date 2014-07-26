@@ -114,6 +114,7 @@ class FileLoader(QtCore.QObject):
 
         addDatasetRecursively(self,self.children)
     def updateStackSize(self):
+        #print "update"
         if self.f == None:
             return
         N = []
