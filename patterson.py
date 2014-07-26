@@ -10,32 +10,29 @@ class PattersonCreator:
     def patterson(self,img):
         params = self.dataItemImage.pattersonItem.getParams(img)
         I = self.dataItemImage.data(img=img)
-        I[I<params["min_threshold"]] = params["min_threshold"]
+        I[I<params["imageThreshold"]] = params["imageThreshold"]
         M = self.dataItemMask.data(img=img,binaryMask=True)
-        if params["darkfield"] == 0:
-            K = kernel(M,params["smooth"])
+        if not params["darkfield"]:
+            K = kernel(M,params["maskSmooth"],params["maskThreshold"])
         else:
-            K = kernel(M,params["smooth"],params["x"],params["y"],params["sigma"])
+            K = kernel(M,params["maskSmooth"],params["maskThreshold"],params["darkfieldX"],params["darkfieldY"],params["darkfieldSigma"])
         P = numpy.fft.fftshift(numpy.fft.fft2(numpy.fft.fftshift(K*I)))
         return P
 
-def patterson(img,mask,**kwargs):
-    smooth = kwargs.get("smooth",5.)
-    K = kernel(mask,smooth)
-    P = numpy.fft.fftshift(numpy.fft.fft2(numpy.fft.fftshift(K*img)))
-    return P
-
-def kernel(mask,smooth,x=None,y=None,sigma=None):
+def kernel(mask,smooth,threshold,x=None,y=None,sigma=None):
     K = scipy.ndimage.gaussian_filter(numpy.array(mask,dtype="float"),smooth)
-    K -= 0.5*K.max()
-    K[K<0] = 0.
+    t = K.max()*threshold
+    K[K<t] = 0
+    K = scipy.ndimage.gaussian_filter(numpy.array(K,dtype="float"),smooth)
     K /= K.max()
     if x!=None and y!=None and sigma!=None: 
         # multiply by darkfield kernel
         Ny, Nx = mask.shape
+        cx = (Nx-1)/2
+        cy = (Ny-1)/2
         NN = Nx*Ny
         X, Y = numpy.ogrid[0:Ny, 0:Nx]
-        r = numpy.hypot(X - x, Y - y)
+        r = numpy.hypot(X - (cx + x), Y - (cx + y))
         G = numpy.exp(-r**2/(2*sigma**2))
         K = K*G
     return K

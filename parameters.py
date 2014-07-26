@@ -142,7 +142,7 @@ class ModelItem(AbstractParameterItem):
 
 class PattersonItem(AbstractParameterItem):
     def __init__(self,parentGroup,fileLoader):
-        individualParamsDef = {"smooth":5.}
+        individualParamsDef = {"imageThreshold":30.,"maskSmooth":5.,"maskThreshold":0.2,"darkfield":False,"darkfieldX":0,"darkfieldY":0,"darkfieldSigma":100}
         generalParamsDef = {"_pattersonImg":-1}
         name = "patterson"
         AbstractParameterItem.__init__(self,parentGroup,fileLoader,name,individualParamsDef,generalParamsDef)

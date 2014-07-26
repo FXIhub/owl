@@ -847,7 +847,13 @@ class PattersonProperties(QtGui.QGroupBox, pattersonProperties.Ui_PattersonPrope
         self.setupUi(self)
         self.params = {}
         self.setPattersonItem(None)
-        self.smooth.valueChanged.connect(self.setParams)
+        self.imageThreshold.valueChanged.connect(self.setParams)
+        self.maskSmooth.valueChanged.connect(self.setParams)
+        self.maskThreshold.valueChanged.connect(self.setParams)
+        self.darkfield.stateChanged.connect(self.setParams)
+        self.darkfieldX.valueChanged.connect(self.setParams)
+        self.darkfieldY.valueChanged.connect(self.setParams)
+        self.darkfieldSigma.valueChanged.connect(self.setParams)
         self.pattersonPushButton.clicked.connect(self.calculatePatterson)
     def setPattersonItem(self,pattersonItem=None):
         self.pattersonItem = pattersonItem
@@ -865,19 +871,49 @@ class PattersonProperties(QtGui.QGroupBox, pattersonProperties.Ui_PattersonPrope
     def showParams(self,params=None):
         img = self.parent.viewer.view.view2D.selectedImage
         if self.pattersonItem == None or img == None:
-            self.smooth.setValue(0)
-            self.smooth.setReadOnly(True)
+            self.imageThreshold.setValue(0)
+            self.imageThreshold.setReadOnly(True)
+            self.maskSmooth.setValue(0)
+            self.maskSmooth.setReadOnly(True)
+            self.maskThreshold.setValue(0)
+            self.maskThreshold.setReadOnly(True)
+            self.darkfield.setChecked(0)
+            self.darkfield.setEnabled(False)
+            self.darkfieldX.setValue(0)
+            self.darkfieldX.setReadOnly(True)
+            self.darkfieldY.setValue(0)
+            self.darkfieldY.setReadOnly(True)
+            self.darkfieldSigma.setValue(0)
+            self.darkfieldSigma.setReadOnly(True)
         else:
             params = self.pattersonItem.getParams(img)
-            self.smooth.setValue(params["smooth"])
-            self.smooth.setReadOnly(False)
+            self.imageThreshold.setValue(params["imageThreshold"])
+            self.imageThreshold.setReadOnly(False)
+            self.maskSmooth.setValue(params["maskSmooth"])
+            self.maskSmooth.setReadOnly(False)
+            self.maskThreshold.setValue(params["maskThreshold"])
+            self.maskThreshold.setReadOnly(False)
+            self.darkfield.setChecked(params["darkfield"])
+            self.darkfield.setEnabled(True)
+            self.darkfieldX.setValue(params["darkfieldX"])
+            self.darkfieldX.setReadOnly(False)
+            self.darkfieldY.setValue(params["darkfieldY"])
+            self.darkfieldY.setReadOnly(False)
+            self.darkfieldSigma.setValue(params["darkfieldSigma"])
+            self.darkfieldSigma.setReadOnly(False)
             if img != params["_pattersonImg"]:
                 self.pattersonItem.patterson = None
                 self.pattersonItem.setParams(None,{"_pattersonImg":-1})
     def setParams(self):
         params = {}
         img = self.parent.viewer.view.view2D.selectedImage
-        params["smooth"] = self.smooth.value()
+        params["imageThreshold"] = self.imageThreshold.value()
+        params["maskSmooth"] = self.maskSmooth.value()
+        params["maskThreshold"] = self.maskThreshold.value()
+        params["darkfield"] = self.darkfield.isChecked()
+        params["darkfieldX"] = self.darkfieldX.value()
+        params["darkfieldY"] = self.darkfieldY.value()
+        params["darkfieldSigma"] = self.darkfieldSigma.value()
         self.pattersonItem.setParams(img,params)
         # max: needed at psusr to really refresh, works without on my mac
         self.parent.viewer.view.view2D.updateGL()
