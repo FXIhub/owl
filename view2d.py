@@ -812,7 +812,6 @@ class View2D(View,QtOpenGL.QGLWidget):
                 self.loaderThread.imageData.touch(img)
             if self.pattersonView:
                 pattersonParams = self.data.pattersonItem.getParams(img)
-                #print pattersonParams["_pattersonImg"],img,self.selectedImage,self.data.pattersonItem.textureLoaded
                 if (pattersonParams["_pattersonImg"] == img) and (self.selectedImage == img) and not self.data.pattersonItem.textureLoaded:
                     self.needDataPatterson.emit(img)
     

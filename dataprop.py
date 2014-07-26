@@ -967,7 +967,7 @@ class PattersonProperties(QtGui.QGroupBox, pattersonProperties.Ui_PattersonPrope
         self.params = {}
         self.setPattersonItem(None)
         self.smooth.valueChanged.connect(self.setParams)
-        self.pattersonPushButton.released.connect(self.calculatePatterson)
+        self.pattersonPushButton.clicked.connect(self.calculatePatterson)
     def setPattersonItem(self,pattersonItem=None):
         self.pattersonItem = pattersonItem
         if pattersonItem == None:
@@ -999,14 +999,12 @@ class PattersonProperties(QtGui.QGroupBox, pattersonProperties.Ui_PattersonPrope
         params["smooth"] = self.smooth.value()
         self.pattersonItem.setParams(img,params)
         # max: needed at psusr to really refresh, works without on my mac
-        self.parent.viewer.view.view2D.paintImage(img)
         self.parent.viewer.view.view2D.updateGL()
     def calculatePatterson(self):
         img = self.parent.viewer.view.view2D.selectedImage
         if img != None:
-            self.pattersonItem.calculatePatterson(img)
+            self.pattersonItem.requestPatterson(img)
         # max: needed at psusr to really refresh, works without on my mac
-        self.parent.viewer.view.view2D.paintImage(img)
         self.parent.viewer.view.view2D.updateGL()
     def toggleVisible(self):
         self.setVisible(not self.isVisible())
