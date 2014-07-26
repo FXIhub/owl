@@ -146,13 +146,10 @@ class PattersonItem(AbstractParameterItem):
         generalParamsDef = {"_pattersonImg":-1}
         name = "patterson"
         AbstractParameterItem.__init__(self,parentGroup,fileLoader,name,individualParamsDef,generalParamsDef)
-        self.patterson = None
         self.textureLoaded = False
-    def calculatePatterson(self,img):
-        PC = patterson.PattersonCreator(self.dataItemImage,self.dataItemMask)
-        self.patterson = PC.patterson(img)
+    def requestPatterson(self,img):
+        self.textureLoaded = False
         self.setParams(img,{"_pattersonImg":img})
-        self.textureLoaded = False
 
 class TagsItem:
     def __init__(self,parent,fileLoader,path):

@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>264</width>
+    <width>267</width>
     <height>204</height>
    </rect>
   </property>
@@ -117,6 +117,9 @@
     <layout class="QHBoxLayout" name="horizontalLayout_3">
      <item>
       <widget class="QComboBox" name="displayScale">
+       <property name="focusPolicy">
+        <enum>Qt::StrongFocus</enum>
+       </property>
        <item>
         <property name="text">
          <string>Linear</string>

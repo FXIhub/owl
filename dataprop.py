@@ -390,8 +390,8 @@ class DataProp(QtGui.QWidget):
             self.pixelBox.hide()
     def onHistogramClicked(self,region):
         (min,max) = region.getRegion()
-        self.displayBox.displayMin.setText(str(min))
-        self.displayBox.displayMax.setText(str(max))
+        self.displayBox.displayMin.setText("%5.3g" % (min))
+        self.displayBox.displayMax.setText("%5.3g" % (max))
         self.checkLimits()
         self.emitView2DProp()
     # NORM
@@ -537,9 +537,9 @@ class DataProp(QtGui.QWidget):
         P["lines"] = self.plotLinesCheckBox.isChecked()
         P["points"] = self.plotPointsCheckBox.isChecked()
     def setModMinMax(self):
-        c =  self.displayAutorange.isChecked() == False
-        self.displayMin.setEnabled(c)
-        self.displayMax.setEnabled(c)
+        c =  self.displayBox.displayAutorange.isChecked() == False
+        self.displayBox.displayMin.setEnabled(c)
+        self.displayBox.displayMax.setEnabled(c)
     def setCurrentImg(self):
         P = self.view2DProp
         i = self.currentImg.text()
@@ -967,7 +967,7 @@ class PattersonProperties(QtGui.QGroupBox, pattersonProperties.Ui_PattersonPrope
         self.params = {}
         self.setPattersonItem(None)
         self.smooth.valueChanged.connect(self.setParams)
-        self.pattersonPushButton.released.connect(self.calculatePatterson)
+        self.pattersonPushButton.clicked.connect(self.calculatePatterson)
     def setPattersonItem(self,pattersonItem=None):
         self.pattersonItem = pattersonItem
         if pattersonItem == None:
@@ -999,14 +999,12 @@ class PattersonProperties(QtGui.QGroupBox, pattersonProperties.Ui_PattersonPrope
         params["smooth"] = self.smooth.value()
         self.pattersonItem.setParams(img,params)
         # max: needed at psusr to really refresh, works without on my mac
-        self.parent.viewer.view.view2D.paintImage(img)
         self.parent.viewer.view.view2D.updateGL()
     def calculatePatterson(self):
         img = self.parent.viewer.view.view2D.selectedImage
         if img != None:
-            self.pattersonItem.calculatePatterson(img)
+            self.pattersonItem.requestPatterson(img)
         # max: needed at psusr to really refresh, works without on my mac
-        self.parent.viewer.view.view2D.paintImage(img)
         self.parent.viewer.view.view2D.updateGL()
     def toggleVisible(self):
         self.setVisible(not self.isVisible())

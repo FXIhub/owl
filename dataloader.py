@@ -5,6 +5,7 @@ from cache import ArrayCache
 import h5py
 import settingsOwl
 import parameters
+import patterson
 
 class FileLoader(QtCore.QObject):
     stackSizeChanged = QtCore.Signal(int)
@@ -403,9 +404,10 @@ class ImageLoader(QtCore.QObject):
         #print "Emitting draw request %d " % (img)
         self.imageLoaded.emit(img)
     def loadPatterson(self,img):
-        patterson = self.view.getPatterson()
-        self.pattersonData = numpy.ones((self.view.data.height(),self.view.data.width()),dtype=numpy.float32)
-        self.pattersonData[:] = abs(patterson)[:]
+        data = self.view.data
+        mask = self.view.mask
+        PC = patterson.PattersonCreator(data,mask)
+        self.pattersonData = abs(PC.patterson(img))
         self.imageLoaded.emit(img)
     def loadedImages(self):
         return self.imageData.keys()

@@ -615,7 +615,7 @@ class View2D(View,QtOpenGL.QGLWidget):
                 glPushMatrix()
                 color = self.data.tagsItem.tags[i][1]
                 glColor3f(color.redF(),color.greenF(),color.blueF());
-                glLineWidth(0.5/self.zoom)
+                glLineWidth(0.5)
                 if(self.data.tagsItem.tagMembers[i][img]):
                     glBegin (GL_QUADS);
                 else:
@@ -814,7 +814,6 @@ class View2D(View,QtOpenGL.QGLWidget):
                 self.loaderThread.imageData.touch(img)
             if self.pattersonView:
                 pattersonParams = self.data.pattersonItem.getParams(img)
-                #print pattersonParams["_pattersonImg"],img,self.selectedImage,self.data.pattersonItem.textureLoaded
                 if (pattersonParams["_pattersonImg"] == img) and (self.selectedImage == img) and not self.data.pattersonItem.textureLoaded:
                     self.needDataPatterson.emit(img)
     
