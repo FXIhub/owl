@@ -443,7 +443,7 @@ class Viewer(QtGui.QMainWindow):
         viewBoxes = {"File Tree" : [self.CXINavigation],
                      "Display Properties" : [self.dataProp],
                      "View 1D" : [self.view.view1D,self.dataProp.plotBox],
-                     "View 2D" : [self.view.view2DScrollWidget,self.dataProp.imageBox,self.dataProp.displayBox,self.dataProp.imageStackBox, self.dataProp.generalBox, self.dataProp.pixelBox]
+                     "View 2D" : [self.view.view2DScrollWidget,self.dataProp.displayBox,self.dataProp.imageStackBox, self.dataProp.generalBox, self.dataProp.pixelBox]
                  }
         boxes = viewBoxes[viewName]
         if(checked):
