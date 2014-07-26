@@ -391,7 +391,7 @@ class View2D(View,QtOpenGL.QGLWidget):
             glVertex3f (0, 2*pad+height/self.zoom, 0.0);
             glEnd ();
 
-        glColor4f(0.1,0.1,0.1,0.5);
+        glColor4f(0.1,0.1,0.1,0.8);
         glLineWidth(0.5)
         glBegin(GL_QUADS)
         glVertex3f (0, 0, 0.0);
@@ -401,7 +401,7 @@ class View2D(View,QtOpenGL.QGLWidget):
         glEnd ();
 
         height = 0.0
-        glColor3f(0.7,0.7,0.7);
+        glColor3f(0.9,0.9,0.9);
         for i in range(0,len(text)):
 #            self.renderText(float(img_width - max_width),height,0.0,text[i],font);
             self.renderText(pad,pad+height/self.zoom,0.0,text[i],font);
