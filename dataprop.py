@@ -93,76 +93,6 @@ class DataProp(QtGui.QWidget):
         hbox.addWidget(self.imageStackSubplots)
         self.imageStackBox.vbox.addLayout(hbox)
 
-        # properties: selected image
-        self.imageBox = QtGui.QGroupBox("Selected Image");
-        self.imageBox.vbox = QtGui.QVBoxLayout()
-
-        hbox = QtGui.QHBoxLayout()
-        hbox.addWidget(QtGui.QLabel("Image:"))
-        widget = QtGui.QLabel("None",parent=self)
-        hbox.addWidget(widget)
-        self.imageImg = widget
-
-        self.imageBox.vbox.addLayout(hbox)
-
-        hbox = QtGui.QHBoxLayout()
-        hbox.addWidget(QtGui.QLabel("View index:"))
-        widget = QtGui.QLabel("None",parent=self)
-        hbox.addWidget(widget)
-        self.imageViewIndex = widget
-        self.imageBox.vbox.addLayout(hbox)
-
-        hbox = QtGui.QHBoxLayout()
-        hbox.addWidget(QtGui.QLabel("Minimum value:"))
-        widget = QtGui.QLabel("None",parent=self)
-        hbox.addWidget(widget)
-        self.imageMin = widget
-        self.imageBox.vbox.addLayout(hbox)
-
-        hbox = QtGui.QHBoxLayout()
-        hbox.addWidget(QtGui.QLabel("Maximum value:"))
-        widget = QtGui.QLabel("None",parent=self)
-        hbox.addWidget(widget)
-        self.imageMax = widget
-        self.imageBox.vbox.addLayout(hbox)
-
-        hbox = QtGui.QHBoxLayout()
-        hbox.addWidget(QtGui.QLabel("Sum:"))
-        widget = QtGui.QLabel("None",parent=self)
-        hbox.addWidget(widget)
-        self.imageSum = widget
-        self.imageBox.vbox.addLayout(hbox)
-
-        hbox = QtGui.QHBoxLayout()
-        hbox.addWidget(QtGui.QLabel("Mean value:"))
-        widget = QtGui.QLabel("None",parent=self)
-        hbox.addWidget(widget)
-        self.imageMean = widget
-        self.imageBox.vbox.addLayout(hbox)
-
-        hbox = QtGui.QHBoxLayout()
-        hbox.addWidget(QtGui.QLabel("Std. deviation:"))
-        widget = QtGui.QLabel("None",parent=self)
-        hbox.addWidget(widget)
-        self.imageStd = widget
-        self.imageBox.vbox.addLayout(hbox)
-
-        hbox = QtGui.QHBoxLayout()
-        hbox.addStretch();
-        hbox.addWidget(QtGui.QLabel("No tags available"))
-        hbox.addStretch();
-        hbox.setSpacing(0);
-        widget = QtGui.QWidget()
-        widget.setFixedHeight(32)
-        hbox.setContentsMargins(0,0,0,0);
-        widget.setLayout(hbox)
-
-        self.imageBox.vbox.addWidget(widget)
-#        self.imageBox.vbox.addLayout(hbox)
-        self.tagsBox = hbox
-
-        self.imageBox.setLayout(self.imageBox.vbox)
-        self.imageBox.hide()
 
         self.pixelBox = QtGui.QGroupBox("Selected Pixel");
         self.pixelBox.vbox = QtGui.QVBoxLayout()
@@ -266,7 +196,6 @@ class DataProp(QtGui.QWidget):
         
         # add all widgets to main vbox
         self.vboxScroll.addWidget(self.generalBox)
-        self.vboxScroll.addWidget(self.imageBox)
         self.vboxScroll.addWidget(self.pixelBox)
         self.vboxScroll.addWidget(self.displayBox)
         #self.vboxScroll.addWidget(self.pixelStackBox)
@@ -350,13 +279,6 @@ class DataProp(QtGui.QWidget):
     # VIEW
     def onPixelClicked(self,info):
         if self.data != None and info != None:
-            self.imageViewIndex.setText(str(int(info["viewIndex"])))
-            self.imageImg.setText(str(int(info["img"])))
-            self.imageMin.setText("%.3e" % float(info["imageMin"]))
-            self.imageMax.setText("%.3e" % float(info["imageMax"]))
-            self.imageSum.setText("%.3e" % float(info["imageSum"]))
-            self.imageMean.setText("%.3e" % float(info["imageMean"]))
-            self.imageStd.setText("%.3e" % float(info["imageStd"]))
             self.pixelIx.setText(str(int(info["ix"])))
             self.pixelIy.setText(str(int(info["iy"])))
             self.pixelImageValue.setText("%.3f" % (info["imageValue"]))
@@ -364,7 +286,6 @@ class DataProp(QtGui.QWidget):
                 self.pixelMaskValue.setText("None")
             else:
                 self.pixelMaskValue.setText(str(int(info["maskValue"])))
-            self.imageBox.show()
             self.pixelBox.show()
             (hist,edges) = numpy.histogram(self.data.data(img=info["img"]),bins=100)
             self.displayBox.pixelClicked(hist,edges)
@@ -380,8 +301,6 @@ class DataProp(QtGui.QWidget):
             if(info["tagClicked"] != -1):
                 # Toggle tag
                 self.data.tagsItem.setTag(info["img"],info["tagClicked"],(self.data.tagsItem.tagMembers[info["tagClicked"],info["img"]]+1)%2)
-            
-            self.showTags(self.data)
             
             self.modelProperties.showParams()
             self.pattersonProperties.showParams()
@@ -577,43 +496,6 @@ class DataProp(QtGui.QWidget):
                 self.hide()
             else:
                 self.show()
-    def showTags(self,data):
-        img = self.viewer.view.view2D.selectedImage
-        if(img == None):
-            return
-        # clear layout
-        while True:
-            item = self.tagsBox.takeAt(0)
-            if(item):
-                if(item.widget()):                
-                    item.widget().deleteLater()
-            else:
-                break
-        group = QtGui.QButtonGroup(self)  
-        group.setExclusive(False)
-        for i in range(0,len(data.tagsItem.tags)):
-            pixmap = QtGui.QPixmap(32,32);
-            pixmap.fill(data.tagsItem.tags[i][1])
-            button = QtGui.QPushButton(pixmap,"")    
-            button.setFixedSize(32,32)
-            button.setFlat(True)
-            button.setCheckable(True)
-            button.setToolTip(data.tagsItem.tags[i][0])
-            if(data.tagsItem.tagMembers[i,img]):
-                button.setChecked(True)
-            else:
-                button.setChecked(False)
-            self.tagsBox.addWidget(button)
-            group.addButton(button,i)
-        group.buttonClicked[int].connect(self.tagClicked)
-        self.tagGroup = group
-    def tagClicked(self,id):
-        img = self.viewer.view.view2D.selectedImage
-        if(img == None):
-            return
-        value = self.tagGroup.button(id).isChecked()
-        self.data.tagItem.setTag(img,id,value)
-        self.viewer.tagsChanged = True
     def toggleTag(self,id):
         img = self.viewer.view.view2D.selectedImage
         if(img == None):
