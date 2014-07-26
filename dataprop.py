@@ -842,5 +842,246 @@ class FilterWidget(QtGui.QWidget):
         label = "Yield: %.2f%% - %i/%i" % (100*Nsel/(1.*Ntot),Nsel,Ntot)
         self.yieldLabel.setText(label)
         self.limitsChanged.emit(vmin,vmax)
-        
-    
+    def emitSelectedIndexChanged(self):
+        i = self.indexCombo.currentIndex()
+        self.dataItem.selectedIndex = i
+        self.selectedIndexChanged.emit(i)
+        self.refreshData(self.dataItem)
+
+
+class ModelProperties(QtGui.QGroupBox, modelProperties.Ui_ModelProperties):
+    def __init__(self,parent):
+        self.parent = parent
+        QtGui.QGroupBox.__init__(self,parent)
+        self.setupUi(self)
+        self.params = {}
+        self.setModelItem(None)
+        self.centerX.valueChanged.connect(self.setParams)
+        self.centerY.valueChanged.connect(self.setParams)
+        self.diameter.valueChanged.connect(self.setParams)
+        self.scaling.valueChanged.connect(self.setParams)
+        self.maskRadius.valueChanged.connect(self.setParams)
+        self.experiment.released.connect(self.onExperiment)
+        self.fitCenterPushButton.released.connect(self.calculateFitCenter)
+        self.fitModelPushButton.released.connect(self.calculateFitModel)
+        self.visibilitySlider.sliderMoved.connect(self.setParams)
+    def setModelItem(self,modelItem=None):
+        self.modelItem = modelItem
+        if modelItem == None:
+            paramsImg = None
+        else:
+            img = self.parent.viewer.view.view2D.selectedImage
+            if img == None:
+                paramsImg = None
+                self.showParams(paramsImg)
+            else:
+                paramsImg = self.modelItem.getParams(img)
+                self.showParams(paramsImg)
+                self.setParams()
+    def showParams(self,params=None):
+        img = self.parent.viewer.view.view2D.selectedImage
+        if img != None:
+            self.centerX.setReadOnly(False)
+            self.centerY.setReadOnly(False)
+            self.diameter.setReadOnly(False)
+            self.scaling.setReadOnly(False)
+            self.maskRadius.setReadOnly(False)
+            self.visibilitySlider.setEnabled(True)
+        else:
+            self.centerX.setReadOnly(True)
+            self.centerY.setReadOnly(True)
+            self.diameter.setReadOnly(True)
+            self.scaling.setReadOnly(True)
+            self.maskRadius.setReadOnly(True)
+            self.visibilitySlider.setEnabled(False)           
+        if self.modelItem == None:
+            self.centerX.setValue(0)
+            self.centerY.setValue(0)
+            self.diameter.setValue(0)
+            self.scaling.setValue(0)
+            self.maskRadius.setValue(0)
+            self.visibilitySlider.setValue(50)
+        else:
+            params = self.modelItem.getParams(img)
+            self.centerX.setValue(params["offCenterX"])
+            self.centerY.setValue(params["offCenterY"])
+            self.diameter.setValue(params["diameterNM"])
+            self.scaling.setValue(params["intensityMJUM2"])
+            self.maskRadius.setValue(params["maskRadius"])
+            self.visibilitySlider.setValue(params["_visibility"]*100)
+    def setParams(self):
+        params = {}
+        img = self.parent.viewer.view.view2D.selectedImage
+        params["offCenterX"] = self.centerX.value()
+        params["offCenterY"] = self.centerY.value()
+        params["diameterNM"] = self.diameter.value()
+        params["intensityMJUM2"] = self.scaling.value()
+        params["maskRadius"] = self.maskRadius.value()
+        params["_visibility"] = float(self.visibilitySlider.value()/100.)
+        if(img == None):
+            return
+        self.modelItem.setParams(img,params)
+        # max: needed at psusr to really refresh, works without on my mac
+        self.parent.viewer.view.view2D.paintImage(img)
+        self.parent.viewer.view.view2D.updateGL()
+    def onExperiment(self):
+        expDialog = ExperimentDialog(self)
+        expDialog.exec_()
+    def calculateFitCenter(self):
+        img = self.parent.viewer.view.view2D.selectedImage
+        self.modelItem.center(img)
+        self.showParams()
+    def calculateFitModel(self):
+        img = self.parent.viewer.view.view2D.selectedImage
+        self.modelItem.fit(img)
+        self.showParams()
+    def toggleVisible(self):
+        self.setVisible(not self.isVisible())
+
+
+class ExperimentDialog(QtGui.QDialog, experimentDialog.Ui_ExperimentDialog):
+    def __init__(self,modelProperties):
+        QtGui.QDialog.__init__(self,modelProperties,QtCore.Qt.WindowTitleHint)
+        self.setupUi(self)
+        self.modelProperties = modelProperties
+        self.materialType.addItems(fit.DICT_atomic_composition.keys())
+        params = self.modelProperties.modelItem.getParams(0)
+        self.wavelength.setValue(params["photonWavelengthNM"])
+        self.syncEnergy()
+        self.distance.setValue(params["detectorDistanceMM"])
+        self.pixelSize.setValue(params["detectorPixelSizeUM"])
+        self.quantumEfficiency.setValue(params["detectorQuantumEfficiency"])
+        self.ADUPhoton.setValue(params["detectorADUPhoton"])
+        allItems = [self.materialType.itemText(i) for i in range(self.materialType.count())]
+        self.materialType.setCurrentIndex(allItems.index(params["materialType"]))
+        self.wavelength.editingFinished.connect(self.syncEnergy)
+        self.energy.editingFinished.connect(self.syncWavelength)
+        self.buttonBox.accepted.connect(self.onOkButtonClicked)
+    def syncEnergy(self):
+        wl = self.wavelength.value()
+        h = fit.DICT_physical_constants['h']
+        c = fit.DICT_physical_constants['c']
+        qe = fit.DICT_physical_constants['e']
+        ey = h*c/wl/1.E-9/qe
+        self.energy.setValue(ey)
+    def syncWavelength(self):
+        ey = self.energy.value()
+        h = fit.DICT_physical_constants['h']
+        c = fit.DICT_physical_constants['c']
+        qe = fit.DICT_physical_constants['e']
+        wl = h*c/ey/1.E-9/qe
+        self.wavelength.setValue(wl)
+    def onOkButtonClicked(self):
+        params = {}
+        params["photonWavelengthNM"] = self.wavelength.value()
+        params["photonEnergyEV"] = self.energy.value()
+        params["detectorDistanceMM"] = self.distance.value()
+        params["detectorPixelSizeUM"] = self.pixelSize.value()
+        params["detectorQuantumEfficiency"] = self.quantumEfficiency.value()
+        params["detectorADUPhoton"] = self.ADUPhoton.value()
+        params["materialType"] = self.materialType.currentText()
+        self.modelProperties.modelItem.setParams(None,params)
+
+
+class PattersonProperties(QtGui.QGroupBox, pattersonProperties.Ui_PattersonProperties):
+    def __init__(self,parent):
+        self.parent = parent
+        QtGui.QGroupBox.__init__(self,parent)
+        self.setupUi(self)
+        self.params = {}
+        self.setPattersonItem(None)
+        self.smooth.valueChanged.connect(self.setParams)
+        self.darkfield.stateChanged.connect(self.setParams)
+        self.x.valueChanged.connect(self.setParams)
+        self.y.valueChanged.connect(self.setParams)
+        self.sigma.valueChanged.connect(self.setParams)
+        self.pattersonPushButton.clicked.connect(self.calculatePatterson)
+    def setPattersonItem(self,pattersonItem=None):
+        self.pattersonItem = pattersonItem
+        if pattersonItem == None:
+            paramsImg = None
+        else:
+            img = self.parent.viewer.view.view2D.selectedImage
+            if img == None:
+                paramsImg = None
+                self.showParams(paramsImg)
+            else:
+                paramsImg = self.pattersonItem.getParams(img)
+                self.showParams(paramsImg)
+                self.setParams()
+    def showParams(self,params=None):
+        img = self.parent.viewer.view.view2D.selectedImage
+        if self.pattersonItem == None or img == None:
+            self.smooth.setValue(0)
+            self.smooth.setReadOnly(True)
+            self.darkfield.setChecked(False)
+            self.darkfield.setEnabled(False)
+            self.x.setValue(0)
+            self.x.setReadOnly(True)
+            self.y.setValue(0)
+            self.y.setReadOnly(True)
+            self.sigma.setValue(0)
+            self.sigma.setReadOnly(True)
+        else:
+            params = self.pattersonItem.getParams(img)
+            self.smooth.setValue(params["smooth"])
+            self.smooth.setReadOnly(False)
+            self.darkfield.setChecked(params["darkfield"])
+            self.darkfield.setEnabled(True)
+            self.x.setValue(params["x"])
+            self.x.setReadOnly(False)
+            self.y.setValue(params["y"])
+            self.y.setReadOnly(False)
+            self.sigma.setValue(params["sigma"])
+            self.sigma.setReadOnly(False)
+            if img != params["_pattersonImg"]:
+                self.pattersonItem.patterson = None
+                self.pattersonItem.setParams(None,{"_pattersonImg":-1})
+    def setParams(self):
+        params = {}
+        img = self.parent.viewer.view.view2D.selectedImage
+        params["smooth"] = self.smooth.value()
+        params["darkfield"] = self.darkfield.isChecked()
+        params["x"] = self.x.value()
+        params["y"] = self.y.value()
+        params["sigma"] = self.sigma.value()
+        self.pattersonItem.setParams(img,params)
+        # max: needed at psusr to really refresh, works without on my mac
+        self.parent.viewer.view.view2D.updateGL()
+    def calculatePatterson(self):
+        img = self.parent.viewer.view.view2D.selectedImage
+        if img != None:
+            self.pattersonItem.requestPatterson(img)
+        # max: needed at psusr to really refresh, works without on my mac
+        self.parent.viewer.view.view2D.updateGL()
+    def toggleVisible(self):
+        self.setVisible(not self.isVisible())
+
+class DisplayBox(QtGui.QGroupBox, displayBox.Ui_displayBox):
+    def __init__(self,parent):
+
+        QtGui.QGroupBox.__init__(self,parent)
+        self.setupUi(self)
+        self.parent = parent
+        self.intensityHistogram.setSizePolicy(QtGui.QSizePolicy.Ignored,QtGui.QSizePolicy.Preferred)
+        self.intensityHistogram.hideAxis('left')
+        self.intensityHistogram.hideAxis('bottom')
+        self.intensityHistogram.setFixedHeight(50)
+        region = pyqtgraph.LinearRegionItem(values=[0,1],brush="#ffffff15")
+        self.intensityHistogram.addItem(region)
+        self.intensityHistogram.autoRange()
+        self.intensityHistogramRegion = region
+
+        self.displayMin.setValidator(QtGui.QDoubleValidator())
+        self.displayMax.setValidator(QtGui.QDoubleValidator())
+        self.displayColormap.setFixedSize(QtCore.QSize(100,30))
+        self.displayColormap.setMenu(self.parent.viewer.colormapMenu)
+    def pixelClicked(self,hist, edges):
+        self.intensityHistogram.clear()
+        edges = (edges[:-1]+edges[1:])/2.0
+        item = self.intensityHistogram.plot(edges,numpy.log10(hist+1),fillLevel=0,fillBrush=QtGui.QColor(255, 255, 255, 128),antialias=True)
+        self.intensityHistogram.getPlotItem().getViewBox().setMouseEnabled(x=False,y=False)
+        self.intensityHistogramRegion = pyqtgraph.LinearRegionItem(values=[float(self.displayMin.text()),float(self.displayMax.text())],brush="#ffffff15")
+        self.intensityHistogramRegion.sigRegionChangeFinished.connect(self.parent.onHistogramClicked)
+        self.intensityHistogram.addItem(self.intensityHistogramRegion)
+        self.intensityHistogram.autoRange()
