@@ -536,16 +536,25 @@ class View2D(View,QtOpenGL.QGLWidget):
             # If not mask is available load the default mask
             glBindTexture (GL_TEXTURE_2D, self.defaultMaskTexture);
 
-        if self.autorange or pattersonEnabled:
+        if self.autorange:
             glUniform1f(self.vminLoc,imageData.min())
             glUniform1f(self.vmaxLoc,imageData.max())
+        elif pattersonEnabled:
+            glUniform1f(self.vminLoc,0.)
+            glUniform1f(self.vmaxLoc,1.)            
         else:
             glUniform1f(self.vminLoc,self.normVmin)
             glUniform1f(self.vmaxLoc,self.normVmax)
-        glUniform1f(self.gammaLoc,self.normGamma)
-        glUniform1i(self.normLoc,self.normScalingValue)
-        glUniform1i(self.clampLoc,self.normClamp)
-        glUniform1f(self.maskedBitsLoc,self.maskOutBits)
+        if not pattersonEnabled:
+            glUniform1f(self.gammaLoc,self.normGamma)
+            glUniform1i(self.normLoc,self.normScalingValue)
+            glUniform1i(self.clampLoc,self.normClamp)
+            glUniform1f(self.maskedBitsLoc,self.maskOutBits)
+        else:
+            glUniform1f(self.gammaLoc,self.normGamma)
+            glUniform1i(self.normLoc,0)
+            glUniform1i(self.clampLoc,self.normClamp)
+            glUniform1f(self.maskedBitsLoc,self.maskOutBits)            
 
         # Model related variables
         glUniform1i(self.showModelLoc,self.modelView)
@@ -788,7 +797,7 @@ class View2D(View,QtOpenGL.QGLWidget):
         if self.pattersonView:
             pattersonParams = self.data.pattersonItem.getParams(img)
             if self.pattersonView and (img == self.selectedImage) and (pattersonParams["_pattersonImg"] == img) and not self.data.pattersonItem.textureLoaded:
-                print "generate patterson texture"
+                #print "generate patterson texture"
                 temp = abs(self.loaderThread.pattersonData)
                 P = numpy.ones(temp.shape,dtype=numpy.float32)
                 P[:] = temp[:]

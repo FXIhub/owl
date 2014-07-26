@@ -270,10 +270,10 @@ class DataItem:
             #self._shape.insert(0,self.H5Dataset.attrs.get("numEvents", (self.H5Dataset.shape))[0])
             shape = tuple(shape)
         return shape
-    def width(self,forceRefresh=False):
-        return self.shape(forceRefresh)[-1]
-    def height(self,forceRefresh=False):
-        return self.shape(forceRefresh)[-2]
+    def width(self):
+        return self.shape()[-1]
+    def height(self):
+        return self.shape()[-2]
     def deselectStack(self):
         if self.isSelectedStack:
             self.isSelectedStack = False
@@ -404,10 +404,10 @@ class ImageLoader(QtCore.QObject):
         #print "Emitting draw request %d " % (img)
         self.imageLoaded.emit(img)
     def loadPatterson(self,img):
-        data = self.view.data
-        mask = self.view.mask
-        PC = patterson.PattersonCreator(data,mask)
-        self.pattersonData = abs(PC.patterson(img))
+        params = self.view.data.pattersonItem.getParams(img)
+        I = self.view.data.data(img=img)
+        M = self.view.mask.data(img=img,binaryMask=True)
+        self.pattersonData = patterson.patterson(I,M,params,normalize=True)
         self.imageLoaded.emit(img)
     def loadedImages(self):
         return self.imageData.keys()
