@@ -157,6 +157,9 @@ class Viewer(QtGui.QMainWindow):
         else:
             if not settingsOwl.swmrSupported and (self.settings.value("fileMode") == "r*"):
                 self.settings.setValue("fileMode","r+")
+
+        if(not self.settings.contains("normGamma")):
+            self.settings.setValue("normGamma", "0.25");
                 
     def init_menus(self):
         self.fileMenu = self.menuBar().addMenu(self.tr("&File"));
