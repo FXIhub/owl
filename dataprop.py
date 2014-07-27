@@ -300,7 +300,8 @@ class DataProp(QtGui.QWidget):
             # Check if we clicked on a tag
             if(info["tagClicked"] != -1):
                 # Toggle tag
-                self.data.tagsItem.setTag(info["img"],info["tagClicked"],(self.data.tagsItem.tagMembers[info["tagClicked"],info["img"]]+1)%2)
+                self.toggleTag(info["img"],info["tagClicked"])
+#                self.data.tagsItem.setTag(info["img"],info["tagClicked"],(self.data.tagsItem.tagMembers[info["tagClicked"],info["img"]]+1)%2)
             
             self.modelProperties.showParams()
             self.pattersonProperties.showParams()
@@ -496,13 +497,16 @@ class DataProp(QtGui.QWidget):
                 self.hide()
             else:
                 self.show()
-    def toggleTag(self,id):
+    def toggleSelectedImageTag(self,id):
         img = self.viewer.view.view2D.selectedImage
         if(img == None):
             return
+        self.toggleTag(img,id)
+    def toggleTag(self,img,id):
         value = (self.data.tagsItem.tagMembers[id,img] + 1) % 2
         self.data.tagsItem.setTag(img,id,value)
         self.viewer.tagsChanged = True
+        self.viewer.view.view2D.updateGL()
 
                
 
