@@ -779,7 +779,6 @@ class Viewer(QtGui.QMainWindow):
                 tags = tagsDialog.getTags()
                 if(tags != self.view.view2D.data.tagsItem.tags):
                     self.view.view2D.data.tagsItem.setTags(tags)
-                    self.dataProp.showTags(self.view.view2D.data)
                     self.tagsChanged = True
         else:
             QtGui.QMessageBox.information(self,"Cannot set tags","Cannot set tags if no dataset is open.");

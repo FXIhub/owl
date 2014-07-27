@@ -500,11 +500,8 @@ class DataProp(QtGui.QWidget):
         img = self.viewer.view.view2D.selectedImage
         if(img == None):
             return
-        if(self.tagGroup.button(id) == None):
-            return
-        self.tagGroup.button(id).toggle()
-        value = self.tagGroup.button(id).isChecked()
-        self.data.tagItem.setTag(img,id,value)
+        value = (self.data.tagsItem.tagMembers[id,img] + 1) % 2
+        self.data.tagsItem.setTag(img,id,value)
         self.viewer.tagsChanged = True
 
                
