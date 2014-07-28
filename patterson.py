@@ -4,7 +4,7 @@ import scipy.signal
 import scipy.ndimage
 
 def patterson(I,M,params,normalize=False):
-    I[I<params["imageThreshold"]] = params["imageThreshold"]
+    I = numpy.clip(I - params["imageThreshold"], 0, numpy.inf)
     if not params["darkfield"]:
         K = kernel(M,params["maskSmooth"],params["maskThreshold"])
     else:
