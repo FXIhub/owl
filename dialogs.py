@@ -216,4 +216,4 @@ class FileModeDialog(QtGui.QDialog, fileModeDialog.Ui_FileModeDialog):
         elif mode == "r*":
             self.rswmr.setChecked(True)
         if not settingsOwl.swmrSupported:
-            self.rw.isEnabled(False)
+            self.rw.setEnabled(False)
