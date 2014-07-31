@@ -44,7 +44,7 @@ class FileLoader(QtCore.QObject):
         return self.openFile(self.fullFilename,self.mode)
     def loadFile(self,fullFilename):
         self.f = None
-        err =  self.openFile(fullFilename,"r*")
+        err =  self.openFile(fullFilename,"r+")
         if err == 1:
             print "Cannot open file. SWMR mode not supported by your h5py version. Please change file mode in the file menue and try again."
             return
