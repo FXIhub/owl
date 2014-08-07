@@ -3,7 +3,7 @@
 import sys
 
 if(len(sys.argv) < 2):
-    print "Usage: h5clearsb <hdf5 file>"
+    print "Usage: h5clearsb <hdf5 file> <-w>"
     sys.exit(0)
 
 f = open(sys.argv[1],'rb')
@@ -14,7 +14,8 @@ if(flags == 0):
 else:
     print "File consistency flags were %d. Resetting to 0." % flags
 f.close()
-f = open(sys.argv[1],'r+b')
-f.seek(20)
-f.write(chr(0))
-f.close()
+if(len(sys.argv) > 2):
+	f = open(sys.argv[1],'r+b')
+	f.seek(20)
+	f.write(chr(0))
+	f.close()
