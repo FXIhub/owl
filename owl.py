@@ -153,10 +153,10 @@ class Viewer(QtGui.QMainWindow):
                 shortcuts["Toggle "+str(i)+"th Tag"] = QtGui.QKeySequence(str(i)).toString()
             self.settings.setValue("Shortcuts",  shortcuts);
         if not self.settings.contains("fileMode"):
-            self.settings.setValue("fileMode","r+")
+            self.settings.setValue("fileMode","r")
         else:
             if not settingsOwl.swmrSupported and (self.settings.value("fileMode") == "r*"):
-                self.settings.setValue("fileMode","r+")
+                self.settings.setValue("fileMode","r")
 
         if(not self.settings.contains("normGamma")):
             self.settings.setValue("normGamma", "0.25");
@@ -420,6 +420,10 @@ class Viewer(QtGui.QMainWindow):
                 self.fileLoader.mode = "r*"
                 self.settings.setValue("fileMode","r*")
                 self.updateTimer.start()
+            elif diag.r.isChecked():
+                self.fileLoader.mode = "r"
+                self.settings.setValue("fileMode","r")
+                self.updateTimer.stop()
             if self.fileLoader.f != None:
                 self.fileLoader.reopenFile()
     def saveTagsClicked(self):

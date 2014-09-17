@@ -57,7 +57,7 @@ class AbstractParameterItem:
             img = img0
         # dynamically growing arrays for the case of SWMR operation
         if img >= self.numEvents:
-            for n,v in self.indParamsDef.items():
+            for n,v in self.paramsIndDef.items():
                 self.indParams[n] = numpy.append(self.indParams[n],numpy.ones(self.chunkSize)*v)
         ps = {}
         for n,p in self.genParams.items():
