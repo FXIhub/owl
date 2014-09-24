@@ -136,7 +136,9 @@ class FileLoader(QtCore.QObject):
             self.stackSize = N
             self.stackSizeChanged.emit(N)
     def ensureReadWriteModeActivated(self):
-        if self.f.mode != "r+":
+        if self.f.mode == "r+":
+            return 0
+        else:
             accepted = QtGui.QMessageBox.question(self.parent,"Change to read-write mode?",
                                                   "The file is currently opened in SWMR mode. Data can not be written to file in this mode. Do you like to reopen the file in read-write mode?",
                                                   QtGui.QMessageBox.Ok,QtGui.QMessageBox.Cancel) == QtGui.QMessageBox.Ok
