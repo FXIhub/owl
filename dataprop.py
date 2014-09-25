@@ -310,8 +310,8 @@ class DataProp(QtGui.QWidget):
             self.pixelBox.hide()
     def onHistogramClicked(self,region):
         (min,max) = region.getRegion()
-        self.displayBox.displayMin.setText("%5.3g" % (min))
-        self.displayBox.displayMax.setText("%5.3g" % (max))
+        self.displayBox.displayMin.setText("%0.1f" % (min))
+        self.displayBox.displayMax.setText("%0.1f" % (max))
         self.checkLimits()
         self.emitView2DProp()
     # NORM
