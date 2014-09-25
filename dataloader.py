@@ -122,7 +122,8 @@ class FileLoader(QtCore.QObject):
         for n,d in self.dataItems.items():
             if d.isSelectedStack:
                 if "numEvents" in self.f[n].attrs.keys():
-                    if not self.f.mode == "r+": # self.f.mode == None if opened in swmr mode. This is odd.
+                    ## if not self.f.mode == "r+": # self.f.mode == None if opened in swmr mode. This is odd.
+                    if self.f.mode == "r*": # This is to fix issues in r and r+ mode, does it also work with smwe now?
                         self.f[n].refresh()
                     N.append(self.f[n].attrs.get("numEvents")[0])
                     #print n,N
