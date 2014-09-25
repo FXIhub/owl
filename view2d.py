@@ -515,7 +515,6 @@ class View2D(View,QtOpenGL.QGLWidget):
         pattersonParams = self.data.pattersonItem.getParams(img)
         pattersonEnabled = (img == pattersonParams["_pattersonImg"]) and (img == self.selectedImage) and self.pattersonView and (img == self.pattersonTextureImg)
         if not pattersonEnabled:
-            print self.imageTextures.keys(), img
             imageTexture = self.imageTextures[img]
             imageData = self.loaderThread.imageData[img]
         else:

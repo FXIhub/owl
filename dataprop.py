@@ -776,12 +776,10 @@ class ModelProperties(QtGui.QGroupBox, modelProperties.Ui_ModelProperties):
         params["intensityMJUM2"] = self.scaling.value()
         params["maskRadius"] = self.maskRadius.value()
         params["_visibility"] = float(self.visibilitySlider.value()/100.)
-        print params, img
         if(img == None):
             return
         self.modelItem.setParams(img,params)
         # max: needed at psusr to really refresh, works without on my mac
-        print img.shape, img.dtype
         self.parent.viewer.view.view2D.paintImage(img)
         self.parent.viewer.view.view2D.updateGL()
     def onExperiment(self):
