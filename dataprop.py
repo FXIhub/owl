@@ -735,7 +735,7 @@ class ModelProperties(QtGui.QGroupBox, modelProperties.Ui_ModelProperties):
             else:
                 paramsImg = self.modelItem.getParams(img)
                 self.showParams(paramsImg)
-                self.setParams()
+                #self.setParams()  ## This breaks reloading of a dataset and viewing the model on selected images still works...
     def showParams(self,params=None):
         img = self.parent.viewer.view.view2D.selectedImage
         if img != None:
@@ -776,7 +776,7 @@ class ModelProperties(QtGui.QGroupBox, modelProperties.Ui_ModelProperties):
         params["intensityMJUM2"] = self.scaling.value()
         params["maskRadius"] = self.maskRadius.value()
         params["_visibility"] = float(self.visibilitySlider.value()/100.)
-        #print params
+        print params, img
         if(img == None):
             return
         self.modelItem.setParams(img,params)
