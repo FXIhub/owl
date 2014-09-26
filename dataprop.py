@@ -302,7 +302,6 @@ class DataProp(QtGui.QWidget):
                 # Toggle tag
                 self.toggleTag(info["img"],info["tagClicked"])
 #                self.data.tagsItem.setTag(info["img"],info["tagClicked"],(self.data.tagsItem.tagMembers[info["tagClicked"],info["img"]]+1)%2)
-            
             self.modelProperties.showParams()
             self.pattersonProperties.showParams()
         else:
@@ -735,7 +734,7 @@ class ModelProperties(QtGui.QGroupBox, modelProperties.Ui_ModelProperties):
             else:
                 paramsImg = self.modelItem.getParams(img)
                 self.showParams(paramsImg)
-                #self.setParams()  ## This breaks reloading of a dataset and viewing the model on selected images still works...
+                #self.setParams()  ## This breaks reloading of a dataset. Without this, viewing the model on selected images still works...
     def showParams(self,params=None):
         img = self.parent.viewer.view.view2D.selectedImage
         if img != None:
@@ -871,37 +870,40 @@ class PattersonProperties(QtGui.QGroupBox, pattersonProperties.Ui_PattersonPrope
                 self.setParams()
     def showParams(self,params=None):
         img = self.parent.viewer.view.view2D.selectedImage
-        if self.pattersonItem == None or img == None:
-            self.imageThreshold.setValue(0)
+        if img != None:
+            self.imageThreshold.setReadOnly(False)
+            self.maskSmooth.setReadOnly(False)
+            self.maskThreshold.setReadOnly(False)
+            self.darkfield.setEnabled(True)
+            self.darkfieldX.setReadOnly(False)
+            self.darkfieldY.setReadOnly(False)
+            self.darkfieldSigma.setReadOnly(False)
+        else:
             self.imageThreshold.setReadOnly(True)
-            self.maskSmooth.setValue(0)
             self.maskSmooth.setReadOnly(True)
-            self.maskThreshold.setValue(0)
             self.maskThreshold.setReadOnly(True)
-            self.darkfield.setChecked(0)
             self.darkfield.setEnabled(False)
-            self.darkfieldX.setValue(0)
             self.darkfieldX.setReadOnly(True)
-            self.darkfieldY.setValue(0)
             self.darkfieldY.setReadOnly(True)
-            self.darkfieldSigma.setValue(0)
             self.darkfieldSigma.setReadOnly(True)
+
+        if self.pattersonItem == None:
+            self.imageThreshold.setValue(0)
+            self.maskSmooth.setValue(0)
+            self.maskThreshold.setValue(0)
+            self.darkfield.setChecked(0)
+            self.darkfieldX.setValue(0)
+            self.darkfieldY.setValue(0)
+            self.darkfieldSigma.setValue(0)
         else:
             params = self.pattersonItem.getParams(img)
             self.imageThreshold.setValue(params["imageThreshold"])
-            self.imageThreshold.setReadOnly(False)
             self.maskSmooth.setValue(params["maskSmooth"])
-            self.maskSmooth.setReadOnly(False)
             self.maskThreshold.setValue(params["maskThreshold"])
-            self.maskThreshold.setReadOnly(False)
             self.darkfield.setChecked(params["darkfield"])
-            self.darkfield.setEnabled(True)
             self.darkfieldX.setValue(params["darkfieldX"])
-            self.darkfieldX.setReadOnly(False)
             self.darkfieldY.setValue(params["darkfieldY"])
-            self.darkfieldY.setReadOnly(False)
             self.darkfieldSigma.setValue(params["darkfieldSigma"])
-            self.darkfieldSigma.setReadOnly(False)
             if img != params["_pattersonImg"]:
                 self.pattersonItem.patterson = None
                 self.pattersonItem.setParams(None,{"_pattersonImg":-1})
@@ -915,6 +917,8 @@ class PattersonProperties(QtGui.QGroupBox, pattersonProperties.Ui_PattersonPrope
         params["darkfieldX"] = self.darkfieldX.value()
         params["darkfieldY"] = self.darkfieldY.value()
         params["darkfieldSigma"] = self.darkfieldSigma.value()
+        if img == None:
+            return
         self.pattersonItem.setParams(img,params)
         # max: needed at psusr to really refresh, works without on my mac
         self.parent.viewer.view.view2D.updateGL()
