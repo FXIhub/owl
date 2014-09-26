@@ -2,8 +2,8 @@
 
 # Form implementation generated from reading ui file 'pattersonProperties.ui'
 #
-# Created: Sat Jul 26 14:06:27 2014
-#      by: pyside-uic 0.2.14 running on PySide 1.1.2
+# Created: Fri Sep 26 15:18:52 2014
+#      by: pyside-uic 0.2.13 running on PySide 1.2.2
 #
 # WARNING! All changes made in this file will be lost!
 
@@ -41,6 +41,7 @@ class Ui_PattersonProperties(object):
         self.imageThreshold = QtGui.QDoubleSpinBox(PattersonProperties)
         self.imageThreshold.setDecimals(3)
         self.imageThreshold.setMaximum(100000.0)
+        self.imageThreshold.setProperty("value", 30.0)
         self.imageThreshold.setObjectName("imageThreshold")
         self.gridLayout.addWidget(self.imageThreshold, 0, 1, 1, 1)
         self.verticalLayout = QtGui.QVBoxLayout()
