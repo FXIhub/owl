@@ -1057,6 +1057,7 @@ class View2D(View,QtOpenGL.QGLWidget):
             projection = glGetDoublev(GL_PROJECTION_MATRIX)
             viewport = glGetIntegerv(GL_VIEWPORT);
             (x,y,z) =  gluUnProject(x, viewport[3]-y,z , model=modelview, proj=projection, view=viewport)
+            #print x,y
             (x,y) = (int(numpy.floor(x/(self.data.width()+self.subplotSceneBorder()))),int(numpy.floor(-y/(self.data.height()+self.subplotSceneBorder()))))
             if(clip and (x < 0 or x >= self.stackWidth or y < 0)):
                 return None            

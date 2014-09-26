@@ -1,32 +1,36 @@
 #!/usr/bin/env python
 
-
+# system related packages
 import sys,os
 sys.path.append(os.path.dirname(os.path.realpath(__file__)))
-#print (sys.version)
+
+# GUI related packages (OpenGL and Qt)
 from OpenGL.GL import *
 from OpenGL.GLU import *
-#from PyQt4 import QtGui, QtCore, QtOpenGL, Qt
 from PySide import QtGui, QtCore, QtOpenGL
 
-import numpy
-import math
+# internal modules
 import settingsOwl
-from geometry import *
-from indexprojector import *
-from dataprop import *
-from dataloader import *
-from cxitree import *
+import dialogs
+from geometry import Geometry
+from indexprojector import IndexProjector
+from dataprop import DataProp, paintColormapIcons
+from dataloader import FileLoader
+from cxitree import CXINavigation
 from view import *
 from viewsplitter import ViewSplitter
+
+# Some other helpful packages
 import logging
 import argparse
-import gc
 import time
-import dialogs
-
+import math
+import numpy
+import gc
 
 """
+This is a try to clean up and document this code by Benedikt J. Daurer (September 22, 2014).
+
 Wishes:
 
 Infinite subplots
@@ -34,48 +38,84 @@ Double click to zoom on image (double click again zoom back to width of column).
 View only tagged ones
 More precise browse to img. At the moment we end up somewhere close to the image of intrest but not exactly to it.
 """
-
         
 class Viewer(QtGui.QMainWindow):
     def __init__(self):
         QtGui.QMainWindow.__init__(self)
 
+        # logging
         self.logger = logging.getLogger("Viewer")
-        # If you want to see debug messages change level here
-        self.logger.setLevel(settingsOwl.loglev["Viewer"])
+        self.logger.setLevel(settingsOwl.loglev["Viewer"]) # If you want to see debug messages change level here
 
+        # status bar
         self.statusBar = self.statusBar()
         self.statusBar.showMessage("Initializing...")
+
+        # Initizialize settinga
         self.settings = QtCore.QSettings()
         self.init_settings()
-        self.splitter = QtGui.QSplitter(self)
-        self.splitter.setContentsMargins(0,0,0,0)
+
+        # Objects and menus
         self.indexProjector = IndexProjector()
         self.view = ViewSplitter(self,self.indexProjector)
         self.init_menus()
-
-        self.fileLoader = FileLoader(self)
         self.dataProp = DataProp(self,self.indexProjector)
         self.CXINavigation = CXINavigation(self)
+        self.fileLoader = FileLoader(self)
+
+        # GUI Splitter Layout
+        self.splitter = QtGui.QSplitter(self)
+        self.splitter.setContentsMargins(0,0,0,0)        
         self.splitter.addWidget(self.CXINavigation)
         self.splitter.addWidget(self.view)
         self.splitter.addWidget(self.dataProp)
-
         self.splitter.setStretchFactor(0,0)
         self.splitter.setStretchFactor(1,1)
         self.splitter.setStretchFactor(2,0)
         self.setCentralWidget(self.splitter)
+                
+        # GUI geometry
+        self.geometry = Geometry();
+        self.init_geometry()
+
+        # Timer
+        QtCore.QTimer.singleShot(0,self.after_show)
+        self.updateTimer = QtCore.QTimer()
+        self.init_timer()
+        
+        # Connections
+        self.init_connections()
+
+        # Stylesheet
+        self.setStyleSheetFromFilename()        
+
+        # Other inizializations
+        self.dataProp.emitView1DProp()
+        self.dataProp.emitView2DProp()
+        self.tagsChanged = False
+
+        # End of inizialization
         self.statusBar.showMessage("Initialization complete.",1000)
 
-        self.geometry = Geometry();
+    def after_show(self):
+        if(args.filename != ""):
+            self.openCXIFile(args.filename)
+
+    def openCXIFile(self,filename):
+	self.filename = filename
+        self.fileLoader.loadFile(filename)
+        self.CXINavigation.CXITree.buildTree(self.fileLoader)
+        self.CXINavigation.CXITree.loadData()
+
+    def init_geometry(self):
         self.resize(800,450)
         if(self.settings.contains("geometry")):
             self.restoreGeometry(self.settings.value("geometry"));
         if(self.settings.contains("windowState")):
             self.restoreState(self.settings.value("windowState"));
+        self.view.view1D.setWindowSize(float(self.settings.value("movingAverageSize")))
 
-        QtCore.QTimer.singleShot(0,self.after_show)
-        self.updateTimer = QtCore.QTimer()
+    def init_timer(self):
         self.updateTimer.setInterval(int(self.settings.value("updateTimer")))
         self.updateTimer.timeout.connect(self.fileLoader.updateStackSize)
         if self.settings.value("fileMode") == "r*":
@@ -83,37 +123,17 @@ class Viewer(QtGui.QMainWindow):
         else:
             self.updateTimer.stop()
 
-        self.view.view1D.setWindowSize(float(self.settings.value("movingAverageSize")))
-
-        self.initConnections()
-        self.dataProp.emitView1DProp()
-        self.dataProp.emitView2DProp()
-        self.setStyleSheetFromFilename()
-
-        self.tagsChanged = False
-    def after_show(self):
-        if(args.filename != ""):
-            self.openCXIFile(args.filename)
-    def openCXIFile(self,filename):
-	self.filename = filename
-        self.fileLoader.loadFile(filename)
-        self.CXINavigation.CXITree.buildTree(self.fileLoader)
-        self.CXINavigation.CXITree.loadData()
     def init_settings(self):
         if(not self.settings.contains("scrollDirection")):
             self.settings.setValue("scrollDirection", 1);
         if(not self.settings.contains("imageCacheSize")):
-            # Default to 1 GB
-            self.settings.setValue("imageCacheSize", 1024);
+            self.settings.setValue("imageCacheSize", 1024); # Default to 1 GB
         if(not self.settings.contains("phaseCacheSize")):
-            # Default to 1 GB
-            self.settings.setValue("phaseCacheSize", 1024);
+            self.settings.setValue("phaseCacheSize", 1024); # Default to 1 GB
         if(not self.settings.contains("maskCacheSize")):
-            # Default to 1 GB
-            self.settings.setValue("maskCacheSize", 1024);
+            self.settings.setValue("maskCacheSize", 1024); # Default to 1 GB
         if(not self.settings.contains("textureCacheSize")):
-            # Default to 256 MB
-            self.settings.setValue("textureCacheSize", 256);
+            self.settings.setValue("textureCacheSize", 256); # Default to 256 MB
         if(not self.settings.contains("updateTimer")):
             self.settings.setValue("updateTimer", 10000);
         if(not self.settings.contains("movingAverageSize")):
@@ -122,12 +142,12 @@ class Viewer(QtGui.QMainWindow):
             self.settings.setValue("PNGOutputPath", "./");
         if(not self.settings.contains("TagColors")):
             self.settings.setValue("TagColors",  [QtGui.QColor(52,102,164),
-                                             QtGui.QColor(245,121,0),
-                                             QtGui.QColor(117,80,123),
-                                             QtGui.QColor(115,210,22),
-                                             QtGui.QColor(204,0,0),
-                                             QtGui.QColor(193,125,17),
-                                             QtGui.QColor(237,212,0)]);        
+                                                  QtGui.QColor(245,121,0),
+                                                  QtGui.QColor(117,80,123),
+                                                  QtGui.QColor(115,210,22),
+                                                  QtGui.QColor(204,0,0),
+                                                  QtGui.QColor(193,125,17),
+                                                  QtGui.QColor(237,212,0)]);        
         if(not self.settings.contains("modelCenterX")):
             self.settings.setValue("modelCenterX", 0)
         if(not self.settings.contains("modelCenterY")):
@@ -138,8 +158,6 @@ class Viewer(QtGui.QMainWindow):
             self.settings.setValue("modelIntensity", 1)
         if(not self.settings.contains("modelMaskRadius")):
             self.settings.setValue("modelMaskRadius", 300)
-
-
         if(not self.settings.contains("Shortcuts")):
             shortcuts = {}
             shortcuts["Move Selection Right"] = QtGui.QKeySequence("Right").toString()
@@ -157,7 +175,6 @@ class Viewer(QtGui.QMainWindow):
         else:
             if not settingsOwl.swmrSupported and (self.settings.value("fileMode") == "r*"):
                 self.settings.setValue("fileMode","r")
-
         if(not self.settings.contains("normGamma")):
             self.settings.setValue("normGamma", "0.25");
                 
@@ -370,7 +387,7 @@ class Viewer(QtGui.QMainWindow):
         self.addAction(action)
         self.editMenu.moveSelectionDown = action
 
-    def initConnections(self):
+    def init_connections(self):
         self.CXINavigation.CXITree.dataClicked.connect(self.handleDataClicked)
         #self.view.view1D.needData.connect(self.handleNeedDataY1D)
         self.view.view1D.dataItemXChanged.connect(self.handleDataX1DChanged)
@@ -401,7 +418,6 @@ class Viewer(QtGui.QMainWindow):
         self.editMenu.moveSelectionLeft.triggered.connect(lambda: self.view.view2D.moveSelectionBy(-1,0))
         self.editMenu.moveSelectionUp.triggered.connect(lambda: self.view.view2D.moveSelectionBy(0,-1))
         self.editMenu.moveSelectionDown.triggered.connect(lambda: self.view.view2D.moveSelectionBy(0,1))
-
         self.fileLoader.stackSizeChanged.connect(self.onStackSizeChanged)
         self.fileLoader.fileLoaderExtended.connect(self.onFileLoaderExtended)
 
