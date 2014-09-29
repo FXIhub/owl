@@ -425,6 +425,7 @@ class Viewer(QtGui.QMainWindow):
         fileName = QtGui.QFileDialog.getOpenFileName(self,"Open CXI File", None, "CXI Files (*.cxi)");
         if(fileName[0]):
             self.openCXIFile(fileName[0])
+
     def fileModeClicked(self):
 	diag = dialogs.FileModeDialog(self)
         if(diag.exec_()):
@@ -442,24 +443,31 @@ class Viewer(QtGui.QMainWindow):
                 self.updateTimer.stop()
             if self.fileLoader.f != None:
                 self.fileLoader.reopenFile()
+
     def saveTagsClicked(self):
         self.fileLoader.saveTags()
+
     def saveModelsClicked(self):
         self.fileLoader.saveModels()
+
     def savePattersonsClicked(self):
         self.fileLoader.savePattersons()
+
     def setStyleSheetFromFilename(self,fn="stylesheets/default.stylesheet"):
         styleFile=os.path.join(os.path.split(__file__)[0],fn)
         with open(styleFile,"r") as fh:
             self.setStyleSheet(fh.read())
+
     def toggleCXIStyleSheet(self):
         if self.CXIStyleAction.isChecked():
             self.setStyleSheetFromFilename("stylesheets/dark.stylesheet")
         else:
             self.setStyleSheetFromFilename()
             #self.setStyle("")
+
     def assembleGeometryClicked(self):
         self.geometry.assemble_detectors(self.CXINavigation.CXITreeTop.f)
+
     def viewClicked(self):
         viewName = self.sender().text()
         checked = self.viewActions[viewName].isChecked()
@@ -477,11 +485,13 @@ class Viewer(QtGui.QMainWindow):
             self.statusBar.showMessage("Hiding %s" % viewName,1000)
             for box in boxes:
                 box.hide()
+
     def toggleFullScreen(self):
         if self.windowState() & QtCore.Qt.WindowFullScreen:
             self.showNormal()
         else:
             self.showFullScreen()
+
     def closeEvent(self,event):
         if self.tagsChanged:
             if QtGui.QMessageBox.question(self,"Save tag changes?",
@@ -507,6 +517,7 @@ class Viewer(QtGui.QMainWindow):
         self.settings.setValue("normVmax", self.dataProp.view2DProp['normVmax'])
         self.settings.setValue("fileMode", self.fileLoader.mode)
         QtGui.QMainWindow.closeEvent(self,event)
+
     def preferencesClicked(self):
 	diag = dialogs.PreferencesDialog(self)
         if(diag.exec_()):
@@ -559,7 +570,9 @@ class Viewer(QtGui.QMainWindow):
             self.settings.setValue("modelDiameter",diag.modelDiameter.text())
             self.settings.setValue("modelIntensity",diag.modelIntensity.text())
             self.settings.setValue("modelMaskRadius",diag.modelMaskRadius.text())
+
     def handleNeedDataImage(self,dataName=None):
+        print "here", dataName
         if dataName == "" or dataName == None:
             self.CXINavigation.CXITree.loadData()
             return
@@ -584,9 +597,11 @@ class Viewer(QtGui.QMainWindow):
             elif group+"/mask_shared" in self.CXINavigation.CXITree.fileLoader.dataItems.keys():
                 self.handleNeedDataMask(group+"/mask_shared")
         self.view.view2DScrollWidget.update()
+
     def handleNeedDataIntegratedImage(self,integrationMode):
 	self.view.view2D.integrationMode = integrationMode
 	self.view.view2D.clearTextures()
+
     def handleNeedDataMask(self,dataName=None):
         if dataName == "" or dataName == None:
             self.view.view2D.setMask()
@@ -611,10 +626,12 @@ class Viewer(QtGui.QMainWindow):
                 self.statusBar.showMessage("Loaded mask: %s" % dataName,1000)
         # needed?
         self.handleMaskOutBitsChanged()
+
     def handleMaskOutBitsChanged(self,action=None):
         self.view.view2D.setMaskOutBits(self.CXINavigation.dataMenus["mask"].getMaskOutBits())
         #self.view.view2D.clearTextures()
         self.view.view2D.updateGL()
+
     def handleNeedDataFilter(self,dataName):
         senderBox = self.sender().dataBox
         # add or replace first filter
@@ -662,6 +679,7 @@ class Viewer(QtGui.QMainWindow):
                 self.dataProp.view2DPropChanged.emit(self.dataProp.view2DProp)
                 targetBox.button.setName(dataName)
                 self.statusBar.showMessage("Loaded filter data: %s" % dataName,1000)
+
     def handleNeedDataSorting(self,dataName):
         if dataName == "" or dataName == None:
             self.CXINavigation.dataBoxes["sort"].button.setName()
@@ -683,6 +701,7 @@ class Viewer(QtGui.QMainWindow):
                 self.statusBar.showMessage("Loaded sorting data: %s" % dataName,1000)
             else:
                 self.statusBar.showMessage("Data has inadequate shape for sorting stack: %s" % dataName,1000)
+
     def handleNeedDataX1D(self,dataName):
         if dataName == "" or dataName == None:
             self.view.view1D.setDataItemX(None)
@@ -697,6 +716,7 @@ class Viewer(QtGui.QMainWindow):
             self.view.view1D.refreshPlot()
             #self.CXINavigation.dataBoxes["plot X"].button.setName(dataName)
             self.statusBar.showMessage("Loaded X data for plot: %s" % dataName,1000)
+
     def handleNeedDataY1D(self,dataName):
         if dataName == "" or dataName == None:
             self.view.view1D.setDataItemY(None)
@@ -733,12 +753,16 @@ class Viewer(QtGui.QMainWindow):
             self.viewActions["View 1D"].setChecked(False)
             self.view.view1D.hide()
             self.dataProp.plotBox.hide()
+
     def handleView2DPropChanged(self,prop):
         self.view.view2D.refreshDisplayProp(prop)
+
     def handleView1DPropChanged(self,prop):
         self.view.view1D.refreshDisplayProp(prop)
+
     def handleDataClicked(self,dataName):
         dataItem = self.CXINavigation.CXITree.fileLoader.dataItems[dataName]
+        print "clicked ", dataItem.format, dataItem.isStack
         if (dataItem.format == 0 and dataItem.isStack) or (dataItem.format == 1 and not dataItem.isStack):
             self.handleNeedDataY1D(dataName)
         elif dataItem.format == 2:
@@ -746,18 +770,21 @@ class Viewer(QtGui.QMainWindow):
                 self.handleNeedDataMask(dataName)
             else:
                 self.handleNeedDataImage(dataName)
+
     def handleDataX1DChanged(self,dataItem):
         n = None
         if dataItem != None:
             if hasattr(dataItem,"fullName"):
                 n = dataItem.fullName
         self.CXINavigation.dataBoxes["plot X"].button.setName(n)
+
     def handleDataY1DChanged(self,dataItem):
         n = None
         if dataItem != None:
             if hasattr(dataItem,"fullName"):
                 n = dataItem.fullName
         self.CXINavigation.dataBoxes["plot Y"].button.setName(n)
+
     def handleData2DChanged(self,dataItemImage,dataItemMask):
         if dataItemImage == None:
             self.dataProp.modelProperties.setModelItem(None)
@@ -776,25 +803,31 @@ class Viewer(QtGui.QMainWindow):
                 if hasattr(item,"fullName"):
                     n = item.fullName
             self.CXINavigation.dataBoxes[k].button.setName(n)
+
     def onStackSizeChanged(self,newStackSize=0):
         self.indexProjector.onStackSizeChanged(newStackSize)
         self.view.view2D.onStackSizeChanged(newStackSize)
         self.view.view1D.onStackSizeChanged(newStackSize)
         self.dataProp.onStackSizeChanged(newStackSize)
+
     def handleMask2DChanged(self,dataItem):
         n = None
         if dataItem != None:
             if hasattr(dataItem,"fullName"):
                 n = dataItem.fullName
         self.CXINavigation.dataBoxes["image"].button.setName(n)
+
     def handleViewIndexSelected(self,index):
         self.view.view2D.browseToViewIndex(index)
+
     def toggleModelView(self):
         self.view.view2D.toggleModelView()
         self.dataProp.modelProperties.toggleVisible()
+
     def togglePattersonView(self):
         self.view.view2D.togglePattersonView()
         self.dataProp.pattersonProperties.toggleVisible()
+
     def tagsClicked(self):
         if(self.view.view2D.data):
             tagsDialog = dialogs.TagsDialog(self,self.view.view2D.data.tagsItem.tags);
@@ -821,7 +854,6 @@ def exceptionHandler(type, value, traceback):
     sys.__excepthook__(type,value,traceback)
     app.exit()
     sys.exit(-1)
-
     
 logging.basicConfig()
 QtCore.QCoreApplication.setOrganizationName("CXIDB");
