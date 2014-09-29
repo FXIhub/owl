@@ -427,6 +427,9 @@ class ImageLoader(QtCore.QObject):
         #        print "Debug b min %f max %f %s %s" % (numpy.amin(self.imageData[img]), numpy.amax(self.imageData[img]), self.imageData[img].shape, self.imageData[img].dtype)
         #print "Emitting draw request %d " % (img)
         self.imageLoaded.emit(img)
+    def loadGeometry(self,img):
+        pass
+
     def loadPatterson(self,img):
         params = self.view.data.pattersonItem.getParams(img)
         I = self.view.data.data(img=img)
@@ -442,4 +445,5 @@ class ImageLoader(QtCore.QObject):
         self.imageData = ArrayCache(1024*1024*int(QtCore.QSettings().value("imageCacheSize")))
         self.phaseData = ArrayCache(1024*1024*int(QtCore.QSettings().value("phaseCacheSize")))
         self.maskData = ArrayCache(1024*1024*int(QtCore.QSettings().value("maskCacheSize")))
+        self.geometryData = ArrayCache(1024*1024*int(QtCore.QSettings().value("geometryCacheSize")))
         self.pattersonData = None

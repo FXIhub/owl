@@ -159,6 +159,7 @@ class PreferencesDialog(QtGui.QDialog, preferencesDialog.Ui_PreferencesDialog):
             self.traditional.setChecked(True)
         self.imageCacheSpin.setValue(int(settings.value("imageCacheSize")))
         self.maskCacheSpin.setValue(int(settings.value("maskCacheSize")))
+        self.geometryCacheSpin.setValue(int(settings.value("geometryCacheSize")))
         self.textureCacheSpin.setValue(int(settings.value("textureCacheSize")))
         self.updateTimerSpin.setValue(int(settings.value("updateTimer")))
         self.movingAverageSizeSpin.setValue(float(settings.value("movingAverageSize")))

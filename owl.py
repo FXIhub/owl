@@ -132,6 +132,8 @@ class Viewer(QtGui.QMainWindow):
             self.settings.setValue("phaseCacheSize", 1024); # Default to 1 GB
         if(not self.settings.contains("maskCacheSize")):
             self.settings.setValue("maskCacheSize", 1024); # Default to 1 GB
+        if(not self.settings.contains("geometryCacheSize")):
+            self.settings.setValue("geometryCacheSize", 10); # Default to 10 MB
         if(not self.settings.contains("textureCacheSize")):
             self.settings.setValue("textureCacheSize", 256); # Default to 256 MB
         if(not self.settings.contains("updateTimer")):
@@ -534,6 +536,9 @@ class Viewer(QtGui.QMainWindow):
             v = diag.maskCacheSpin.value()
             self.settings.setValue("maskCacheSize",v)
             self.view.view2D.loaderThread.maskData.setSizeInBytes(v*1024*1024)
+            v = diag.geometryCacheSpin.value()
+            self.settings.setValue("geometryCacheSize",v)
+            self.view.view2D.loaderThread.geometryData.setSizeInBytes(v*1024*1024)
             v = diag.textureCacheSpin.value()
             self.settings.setValue("textureCacheSize",v)
             self.view.view2D.imageTextures.setSizeInBytes(v*1024*1024)
