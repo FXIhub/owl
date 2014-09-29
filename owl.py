@@ -579,7 +579,7 @@ class Viewer(QtGui.QMainWindow):
         if not dataItem.isPresentable:
             self.statusBar.showMessage("Data not presentable.")
             return
-        if dataItem.format == 2:
+        if (dataItem.format == 2) or (dataItem.format == 3):
             self.CXINavigation.dataBoxes["image"].button.setName(dataName)
             self.view.view2D.clear()
             self.view.view2D.loadStack(dataItem)
@@ -595,7 +595,7 @@ class Viewer(QtGui.QMainWindow):
                 self.handleNeedDataMask(group+"/mask")
             elif group+"/mask_shared" in self.CXINavigation.CXITree.fileLoader.dataItems.keys():
                 self.handleNeedDataMask(group+"/mask_shared")
-        self.view.view2DScrollWidget.update()
+        self.view.view2DScrollWidget.update()  # Depricated?
 
     def handleNeedDataIntegratedImage(self,integrationMode):
 	self.view.view2D.integrationMode = integrationMode

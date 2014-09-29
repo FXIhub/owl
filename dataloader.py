@@ -229,6 +229,7 @@ class DataItem:
         self.logger = logging.getLogger("DataItem")
         self.logger.setLevel(settingsOwl.loglev["DataItem"])
         self.isSelectedStack = False
+
         # check whether or not it is a stack
         if len(self.fileLoader.f[self.fullName].attrs.items()) > 0 and "axes" in self.fileLoader.f[self.fullName].attrs.keys():
             axes_attrs = self.fileLoader.f[self.fullName].attrs.get("axes")[0].split(":")
@@ -244,16 +245,19 @@ class DataItem:
         else:
             self.isStack = False
             self.stackDim = None
+
         # check whether or not it is text
         self.isText = (str(self.fileLoader.f[self.fullName].dtype.name).find("string") != -1)
+
         # presentable as values
         self.isPresentable = (self.isText == False)
+
         # shape?
         self.format = len(self.shape())
+
         # image stack?
         if self.isStack: 
             self.format -= 1
-            # image stack has modules?
             if self.stackHasModules:
                 self.format -= 1
 
@@ -283,6 +287,8 @@ class DataItem:
             shape = list(shape)
             shape.pop(0)
             shape.insert(0,self.fileLoader.stackSize)
+            if not self.stackHasModules:
+                shape.insert(1,1)
             #self._shape.insert(0,self.H5Dataset.attrs.get("numEvents", (self.H5Dataset.shape))[0])
             shape = tuple(shape)
         return shape
@@ -290,6 +296,8 @@ class DataItem:
         return self.shape()[-1]
     def height(self):
         return self.shape()[-2]
+    def length(self):
+        return self.shape()[-3]
     def deselectStack(self):
         if self.isSelectedStack:
             self.isSelectedStack = False
@@ -397,7 +405,7 @@ class ImageLoader(QtCore.QObject):
         data = self.view.getData(img)
         phase = self.view.getPhase(img)
         mask = self.view.getMask(img)
-        self.imageData[img] = numpy.ones((self.view.data.height(),self.view.data.width()),dtype=numpy.float32)
+        self.imageData[img] = numpy.ones((self.view.data.length(),self.view.data.height(),self.view.data.width()),dtype=numpy.float32)
         self.imageData[img][:] = data[:]
         if phase != None:
             self.phaseData[img] = numpy.ones((self.view.data.height(),self.view.data.width()),dtype=numpy.float32)
@@ -410,7 +418,7 @@ class ImageLoader(QtCore.QObject):
         else:
             self.maskData[img] = None
 
-        shape = (min(self.imageData[img].shape[0], 8192), min(self.imageData[img].shape[1], 8192))
+        shape = (min(self.imageData[img].shape[1], 8192), min(self.imageData[img].shape[2], 8192))
         if (shape[1] == 1):
             shape = (shape[0], shape[0])
 

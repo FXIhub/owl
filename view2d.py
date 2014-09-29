@@ -676,7 +676,7 @@ class View2D(View,QtOpenGL.QGLWidget):
                 img_width = self.getImgWidth("scene",False)
                 img_height = self.getImgHeight("scene",False)
                 visible = self.visibleImages()
-                print "paintGL: ", img_width, img_height, visible
+                #print "paintGL: ", img_width, img_height, visible
                 self.updateTextures(visible)
                 for i,img in enumerate(set.intersection(set(self.imageTextures.keys()),set(visible),set(self.loaderThread.loadedImages()))):
                     self.paintImage(img)
