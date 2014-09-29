@@ -572,7 +572,6 @@ class Viewer(QtGui.QMainWindow):
             self.settings.setValue("modelMaskRadius",diag.modelMaskRadius.text())
 
     def handleNeedDataImage(self,dataName=None):
-        print "here", dataName
         if dataName == "" or dataName == None:
             self.CXINavigation.CXITree.loadData()
             return
@@ -762,7 +761,6 @@ class Viewer(QtGui.QMainWindow):
 
     def handleDataClicked(self,dataName):
         dataItem = self.CXINavigation.CXITree.fileLoader.dataItems[dataName]
-        print "clicked ", dataItem.format, dataItem.isStack
         if (dataItem.format == 0 and dataItem.isStack) or (dataItem.format == 1 and not dataItem.isStack):
             self.handleNeedDataY1D(dataName)
         elif dataItem.format == 2:

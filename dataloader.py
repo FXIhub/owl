@@ -231,8 +231,16 @@ class DataItem:
         self.isSelectedStack = False
         # check whether or not it is a stack
         if len(self.fileLoader.f[self.fullName].attrs.items()) > 0 and "axes" in self.fileLoader.f[self.fullName].attrs.keys():
+            axes_attrs = self.fileLoader.f[self.fullName].attrs.get("axes")[0].split(":")
             self.isStack = True
-            self.stackDim = self.fileLoader.f[self.fullName].attrs.get("axes")[0].split(":").index("experiment_identifier")
+            self.stackDim = axes_attrs.index("experiment_identifier")
+            # check wheter or not a stack has modules
+            if "module_identifier" in axes_attrs:
+                self.stackHasModules = True
+                self.moduleDim = axes_attrs.index("module_identifier")
+            else:
+                self.stackHasModules = False
+                self.moduleDim = None
         else:
             self.isStack = False
             self.stackDim = None
@@ -243,7 +251,12 @@ class DataItem:
         # shape?
         self.format = len(self.shape())
         # image stack?
-        if self.isStack: self.format -= 1
+        if self.isStack: 
+            self.format -= 1
+            # image stack has modules?
+            if self.stackHasModules:
+                self.format -= 1
+
         # complex?
         self.isComplex = (str(self.fileLoader.f[self.fullName].dtype.name).lower().find("complex") != -1)
 
