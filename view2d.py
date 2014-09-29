@@ -114,6 +114,7 @@ class View2D(View,QtOpenGL.QGLWidget):
             return None
         elif self.mask.isStack:
             #if self.integrationMode == None:
+            print self.mask.shape()
             return self.mask.data(img=img)
             #else:
             #return numpy.zeros(shape=(self.data.shape()[-2],self.data.shape()[-1]))
@@ -358,9 +359,9 @@ class View2D(View,QtOpenGL.QGLWidget):
         if(self.indexProjector.indexToImg(self.lastHoveredViewIndex) == img):
             ix = self.hoveredPixel[0]
             iy = self.hoveredPixel[1]
-            if self.loaderThread.maskData[img] != None:
-                text.append("Mask: %5.3g" % (self.loaderThread.maskData[img][iy,ix]))
-            text.append("Value: %5.3g" % (self.loaderThread.imageData[img][iy,ix]))
+            if self.loaderThread.maskData[img][0] != None:
+                text.append("Mask: %5.3g" % (self.loaderThread.maskData[img][0,iy,ix]))
+            text.append("Value: %5.3g" % (self.loaderThread.imageData[img][0,iy,ix]))
             text.append("Pixel: (%d,%d)" % (ix,iy))
 
         text.append("Std Dev: %-5.3g" % numpy.std(self.loaderThread.imageData[img]))
@@ -516,7 +517,7 @@ class View2D(View,QtOpenGL.QGLWidget):
         pattersonEnabled = (img == pattersonParams["_pattersonImg"]) and (img == self.selectedImage) and self.pattersonView and (img == self.pattersonTextureImg)
         if not pattersonEnabled:
             imageTexture = self.imageTextures[img]
-            imageData = self.loaderThread.imageData[img]
+            imageData = self.loaderThread.imageData[img][0]
         else:
             imageTexture = self.pattersonTexture
             imageData = self.loaderThread.pattersonData
@@ -654,7 +655,6 @@ class View2D(View,QtOpenGL.QGLWidget):
         '''
         Drawing routine
         '''
-
 #        self.time2 = time.time()
         time3 = time.time()
 #        print '%s function took %0.3f ms' % ("Non paintGL", (self.time2-self.time1)*1000.0)
@@ -673,10 +673,9 @@ class View2D(View,QtOpenGL.QGLWidget):
         startTimer = False
         if(self.has_data):
             if(self.data.format == 2):
-                img_width = self.getImgWidth("scene",False)
-                img_height = self.getImgHeight("scene",False)
+                img_width = self.getImgWidth("scene",False)  #deprecated?
+                img_height = self.getImgHeight("scene",False) #deprecated?
                 visible = self.visibleImages()
-                #print "paintGL: ", img_width, img_height, visible
                 self.updateTextures(visible)
                 for i,img in enumerate(set.intersection(set(self.imageTextures.keys()),set(visible),set(self.loaderThread.loadedImages()))):
                     self.paintImage(img)
@@ -771,8 +770,8 @@ class View2D(View,QtOpenGL.QGLWidget):
         # If we already have the texture we just return
         if not (img in self.imageTextures):
             self.logger.debug("Generating image texture %d"  % (img))
-            imageData = self.loaderThread.imageData[img]
-            maskData = self.loaderThread.maskData[img]
+            imageData = self.loaderThread.imageData[img][0]
+            maskData = self.loaderThread.maskData[img][0]
             texture = glGenTextures(1)
             glBindTexture(GL_TEXTURE_2D, texture)
             glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
@@ -935,15 +934,15 @@ class View2D(View,QtOpenGL.QGLWidget):
         info = {}
         info["ix"] = ix
         info["iy"] = iy
-        if ix >= self.loaderThread.imageData[img].shape[1] or iy >= self.loaderThread.imageData[img].shape[0] or ix < 0 or iy < 0:
+        if ix >= self.loaderThread.imageData[img].shape[2] or iy >= self.loaderThread.imageData[img].shape[1] or ix < 0 or iy < 0:
             return None
         info["img"] = img
         info["viewIndex"] = self.indexProjector.imgToIndex(img)
-        info["imageValue"] = self.loaderThread.imageData[img][iy,ix]
-        if self.loaderThread.maskData[img] == None:
+        info["imageValue"] = self.loaderThread.imageData[img][0,iy,ix]
+        if self.loaderThread.maskData[img][0] == None:
             info["maskValue"] = None
         else:
-            info["maskValue"] = self.loaderThread.maskData[img][iy,ix]
+            info["maskValue"] = self.loaderThread.maskData[img][0,iy,ix]
         info["imageMin"] = numpy.min(self.loaderThread.imageData[img])
         info["imageMax"] = numpy.max(self.loaderThread.imageData[img])
         info["imageSum"] = numpy.sum(self.loaderThread.imageData[img])
@@ -964,8 +963,8 @@ class View2D(View,QtOpenGL.QGLWidget):
         img = self.windowToImage(x,y,0)
         if img in self.loaderThread.imageData.keys():
             (ix,iy) = self.windowToImageCoordinates(x,y,0)            
-            if (ix < self.loaderThread.imageData[img].shape[1] and
-                iy < self.loaderThread.imageData[img].shape[0] and
+            if (ix < self.loaderThread.imageData[img].shape[2] and
+                iy < self.loaderThread.imageData[img].shape[1] and
                 ix >= 0 and iy >= 0):
                 self.hoveredPixel = [ix,iy]
                 self.updateGL()
