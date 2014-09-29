@@ -867,7 +867,7 @@ class PattersonProperties(QtGui.QGroupBox, pattersonProperties.Ui_PattersonPrope
             else:
                 paramsImg = self.pattersonItem.getParams(img)
                 self.showParams(paramsImg)
-                self.setParams()
+                #self.setParams() ## This causes problems when datasets are reloaded (or new datasets loaded) and even without this line, the patterson params are still set properly
     def showParams(self,params=None):
         img = self.parent.viewer.view.view2D.selectedImage
         if img != None:
