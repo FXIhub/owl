@@ -1,6 +1,6 @@
 import h5py
 import parameters
-import dataloader
+from dataitem import DataItem
 
 class GroupItem:
     def __init__(self,parent,fileLoader,fullName):
@@ -20,4 +20,4 @@ class GroupItem:
         for k in H5Group.keys():
             item = H5Group[k]
             if isinstance(item,h5py.Dataset):
-                self.children[k] = dataloader.DataItem(self,self.fileLoader,self.fullName+"/"+k)
+                self.children[k] = DataItem(self,self.fileLoader,self.fullName+"/"+k)

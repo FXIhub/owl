@@ -2,8 +2,8 @@ from PySide import QtGui, QtCore
 import numpy
 import h5py
 import settingsOwl
-import dataloader
-import groupitem
+from groupitem import GroupItem
+from dataitem import DataItem
 
 class FileLoader(QtCore.QObject):
     stackSizeChanged = QtCore.Signal(int)
@@ -63,17 +63,17 @@ class FileLoader(QtCore.QObject):
         for k in H5Group.keys():
             item = H5Group[k]
             if isinstance(item,h5py.Dataset):
-                self.children[k] = dataloader.DataItem(self,self,"/"+k)
+                self.children[k] = DataItem(self,self,"/"+k)
             elif isinstance(item,h5py.Group):
-                self.children[k] = groupitem.GroupItem(self,self,"/"+k)
+                self.children[k] = GroupItem(self,self,"/"+k)
         self.collectItems(self.children)
         self.stackSize = None
     def collectItems(self,item):
         for k in item.keys():
             child = item[k]
-            if isinstance(child,dataloader.DataItem):
+            if isinstance(child,DataItem):
                 self.dataItems[child.fullName] = child
-            elif isinstance(child,groupitem.GroupItem):
+            elif isinstance(child,GroupItem):
                 self.groupItems[child.fullName] = child
                 self.tagsItems[child.fullName] = child.tagsItem
                 self.modelItems[child.fullName] = child.modelItem
@@ -89,13 +89,13 @@ class FileLoader(QtCore.QObject):
         def addGroupRecursively(group,children):
             for n,c in children.items():
                 if c.fullName == path:
-                    g = groupitem.GroupItem(c,self,name)
+                    g = GroupItem(c,self,name)
                     c.children[name[name.rindex('/')+1:]] = g
                     self.groupItems[name] = g
                     self.modelItems[name] = g.modelItem
                     self.pattersonItems[name] = g.pattersonItem
                     #print "add group",self.groupItems.keys(),name0
-                elif isinstance(c,groupitem.GroupItem):                  
+                elif isinstance(c,GroupItem):                  
                     addGroupRecursively(c,c.children)
 
         addGroupRecursively(self,self.children)
@@ -106,10 +106,10 @@ class FileLoader(QtCore.QObject):
         def addDatasetRecursively(group,children):
             for n,c in children.items():
                 if c.fullName == path:
-                    d = dataloader.DataItem(group,self,"/"+name)
+                    d = DataItem(group,self,"/"+name)
                     c.children[name[name.rindex('/')+1:]] = d
                     self.dataItems[name] = d
-                elif isinstance(c,groupitem.GroupItem):                  
+                elif isinstance(c,GroupItem):                  
                     addDatasetRecursively(c,c.children)
 
         addDatasetRecursively(self,self.children)
