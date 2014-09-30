@@ -24,6 +24,7 @@ import argparse
 import gc
 import time
 import dialogs
+from fileloader import FileLoader
 
 
 """
