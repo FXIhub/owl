@@ -1,5 +1,6 @@
 from PySide import QtGui, QtCore
 import numpy
+from IPython.core.debugger import Tracer
 
 class TagsItem:
     def __init__(self,parent,fileLoader,path):
@@ -54,6 +55,7 @@ class TagsItem:
         self.tagMembers = newMembers
         self.tags = tags
     def saveTags(self):
+        Tracer()()
         # Do we really have to write anything? If not just return.
         if (self.tags == []) or (self.tagsDirty == False):
             return

@@ -58,14 +58,7 @@ class FileLoader(QtCore.QObject):
         self.tagsItems = {}
         self.modelItems = {}
         self.pattersonItems = {}
-        self.children = {}
-        H5Group = self.f[self.fullName]
-        for k in H5Group.keys():
-            item = H5Group[k]
-            if isinstance(item,h5py.Dataset):
-                self.children[k] = DataItem(self,self,"/"+k)
-            elif isinstance(item,h5py.Group):
-                self.children[k] = GroupItem(self,self,"/"+k)
+        self.children = GroupItem(self,self,'/').children
         self.collectItems(self.children)
         self.stackSize = None
     def collectItems(self,item):
