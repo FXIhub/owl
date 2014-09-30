@@ -51,22 +51,15 @@ class FileLoader(QtCore.QObject):
         self.fullFilename = fullFilename
         self.filename = QtCore.QFileInfo(fullFilename).fileName()
         self.fullName = self.name = "/"
-        self.tagsItem = None
-        self.modelItem = None
-        self.pattersonItem = None
+        #self.tagsItem = None
+        #self.modelItem = None
+        #self.pattersonItem = None
         self.dataItems = {}
         self.groupItems = {}
         self.tagsItems = {}
         self.modelItems = {}
         self.pattersonItems = {}
-        self.children = {}
-        H5Group = self.f[self.fullName]
-        for k in H5Group.keys():
-            item = H5Group[k]
-            if isinstance(item,h5py.Dataset):
-                self.children[k] = DataItem(self,self,"/"+k)
-            elif isinstance(item,h5py.Group):
-                self.children[k] = GroupItem(self,self,"/"+k)
+        self.children = GroupItem(self, self, "/").children
         self.collectItems(self.children)
         self.stackSize = None
     def collectItems(self,item):
@@ -95,7 +88,7 @@ class FileLoader(QtCore.QObject):
                     self.groupItems[name] = g
                     self.modelItems[name] = g.modelItem
                     self.pattersonItems[name] = g.pattersonItem
-                    #print "add group",self.groupItems.keys(),name0
+                    print "add group",self.groupItems.keys(),name0
                 elif isinstance(c,GroupItem):                  
                     addGroupRecursively(c,c.children)
 
@@ -123,7 +116,7 @@ class FileLoader(QtCore.QObject):
             if d.isSelectedStack:
                 if "numEvents" in self.f[n].attrs.keys():
                     ## if not self.f.mode == "r+": # self.f.mode == None if opened in swmr mode. This is odd.
-                    if self.f.mode == "r*": # This is to fix issues in r and r+ mode, does it also work with smwe now?
+                    if self.f.mode == "r*": # This is to fix issues in r and r+ mode, does it also work with smwr now?
                         self.f[n].refresh()
                     N.append(self.f[n].attrs.get("numEvents")[0])
                     #print n,N
@@ -216,6 +209,35 @@ PIXEL_IS_MISSING = 512
 PIXEL_IS_IN_HALO = 1024
 PIXEL_IS_ARTIFACT_CORRECTED = 2048
 PIXEL_IS_IN_MASK = PIXEL_IS_INVALID |  PIXEL_IS_SATURATED | PIXEL_IS_HOT | PIXEL_IS_DEAD | PIXEL_IS_SHADOWED | PIXEL_IS_IN_PEAKMASK | PIXEL_IS_TO_BE_IGNORED | PIXEL_IS_BAD | PIXEL_IS_MISSING
+
+
+
+class AbstractDataItem:
+    def __init__(self, parent, fileLoader, fullName):
+        self.parent = parent
+        self.fileLoader = fileLoader
+        self.fullName = fullName
+        self.name = fullName.split("/")[-1]
+        self.dtypeName = self.fileLoader.f[self.fullName].dtype.name
+        self.dtypeItemsize = self.fileLoader.f[self.fullName].dtype.itemsize
+        self.logger = logging.getLogger("DataItem")
+        self.logger.setLevel(settingsOwl.loglev["DataItem"])
+        self.isText = (str(self.fileLoader.f[self.fullName].dtype.name).find("string") != -1)
+        self.isPresentable = (self.isText == False)
+    def shape(self,forceRefresh=False):
+        shape = self.fileLoader.f[self.fullName].shape
+        return shape
+    def width(self):
+        return self.shape()[-1]
+    def height(self):
+        return self.shape()[-2]
+    def length(self):
+        return self.shape()[-3]
+
+
+
+
+
 
 class DataItem:
     def __init__(self,parent,fileLoader,fullName):
@@ -426,10 +448,14 @@ class ImageLoader(QtCore.QObject):
         self.imageData[img].resize(shape)
         #        print "Debug b min %f max %f %s %s" % (numpy.amin(self.imageData[img]), numpy.amax(self.imageData[img]), self.imageData[img].shape, self.imageData[img].dtype)
         #print "Emitting draw request %d " % (img)
+        self.loadGeometry(img)
         self.imageLoaded.emit(img)
     def loadGeometry(self,img):
-        pass
-
+        cornerPos = self.view.getCornerPos(img)
+        basisVec = self.view.getBasisVec(img)
+        self.geometryData[img] = numpy.ones((self.view.data.length(), 3, 3), dtype=numpy.float32)
+        self.geometryData[img][:,0] = cornerPos[:]
+        self.geometryData[img][:,1:] = basisVec[:]
     def loadPatterson(self,img):
         params = self.view.data.pattersonItem.getParams(img)
         I = self.view.data.data(img=img)
