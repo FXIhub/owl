@@ -34,8 +34,7 @@ class FileLoader(QtCore.QObject):
     def reopenFile(self):
         # IMPORTANT NOTE:
         # Reopening the file is required after groups (/ datasets?) are created, otherwise we corrupt the file.
-        # As we have to do this from time to time never rely on direct pointers to HDF5 datatsets. 
-        # You better access data only via the HDF5 file object fileLoader.f[datasetname].
+        # As we have to do this from time to time never rely on direct pointers to HDF5 datatsets. You better access data only via the HDF5 file object fileLoader.f[datasetname].
         if self.mode == "r*":
             self.parent.updateTimer.start()
         elif self.mode == "r+":
@@ -58,7 +57,14 @@ class FileLoader(QtCore.QObject):
         self.tagsItems = {}
         self.modelItems = {}
         self.pattersonItems = {}
-        self.children = GroupItem(self,self,'/').children
+        self.children = {}
+        H5Group = self.f[self.fullName]
+        for k in H5Group.keys():
+            item = H5Group[k]
+            if isinstance(item,h5py.Dataset):
+                self.children[k] = DataItem(self,self,"/"+k)
+            elif isinstance(item,h5py.Group):
+                self.children[k] = GroupItem(self,self,"/"+k)
         self.collectItems(self.children)
         self.stackSize = None
     def collectItems(self,item):
@@ -133,8 +139,7 @@ class FileLoader(QtCore.QObject):
             return 0
         else:
             accepted = QtGui.QMessageBox.question(self.parent,"Change to read-write mode?",
-                                                  "The file is currently opened in SWMR mode. Data can "+
-                                                  "not be written to file in this mode. Do you like to reopen the file in read-write mode?",
+                                                  "The file is currently opened in SWMR mode. Data can not be written to file in this mode. Do you like to reopen the file in read-write mode?",
                                                   QtGui.QMessageBox.Ok,QtGui.QMessageBox.Cancel) == QtGui.QMessageBox.Ok
             if accepted:
                 self.mode = "r+"
