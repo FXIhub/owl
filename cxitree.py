@@ -4,7 +4,8 @@ import h5py
 from operator import mul
 import numpy
 import sys,os
-from dataloader import *
+from groupitem import GroupItem
+from cxi import CXI
 
 class DataButton(QtGui.QPushButton):
     needData = QtCore.Signal(str)    
@@ -61,18 +62,18 @@ class DataMaskMenu(DataMenu):
     def __init__(self,parent=None):
         DataMenu.__init__(self,parent)
         self.addSeparator()
-        self.PIXELMASK_BITS = {'perfect' : PIXEL_IS_PERFECT,
-                               'invalid' : PIXEL_IS_INVALID,
-                               'saturated' : PIXEL_IS_SATURATED,
-                               'hot' : PIXEL_IS_HOT,
-                               'dead' : PIXEL_IS_DEAD,
-                               'shadowed' : PIXEL_IS_SHADOWED,
-                               'peakmask' : PIXEL_IS_IN_PEAKMASK,
-                               'ignore' : PIXEL_IS_TO_BE_IGNORED,
-                               'bad' : PIXEL_IS_BAD,
-                               'resolution' : PIXEL_IS_OUT_OF_RESOLUTION_LIMITS,
-                               'missing' : PIXEL_IS_MISSING,
-                               'halo' : PIXEL_IS_IN_HALO}
+        self.PIXELMASK_BITS = {'perfect' : CXI.PIXEL_IS_PERFECT,
+                               'invalid' : CXI.PIXEL_IS_INVALID,
+                               'saturated' : CXI.PIXEL_IS_SATURATED,
+                               'hot' : CXI.PIXEL_IS_HOT,
+                               'dead' : CXI.PIXEL_IS_DEAD,
+                               'shadowed' : CXI.PIXEL_IS_SHADOWED,
+                               'peakmask' : CXI.PIXEL_IS_IN_PEAKMASK,
+                               'ignore' : CXI.PIXEL_IS_TO_BE_IGNORED,
+                               'bad' : CXI.PIXEL_IS_BAD,
+                               'resolution' : CXI.PIXEL_IS_OUT_OF_RESOLUTION_LIMITS,
+                               'missing' : CXI.PIXEL_IS_MISSING,
+                               'halo' : CXI.PIXEL_IS_IN_HALO}
         self.maskActions = {}
         for key in self.PIXELMASK_BITS.keys():
             self.maskActions[key] = self.addAction(key)

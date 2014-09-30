@@ -3,6 +3,7 @@ import numpy
 import h5py
 import settingsOwl
 import dataloader
+import groupitem
 
 class FileLoader(QtCore.QObject):
     stackSizeChanged = QtCore.Signal(int)
@@ -64,7 +65,7 @@ class FileLoader(QtCore.QObject):
             if isinstance(item,h5py.Dataset):
                 self.children[k] = dataloader.DataItem(self,self,"/"+k)
             elif isinstance(item,h5py.Group):
-                self.children[k] = dataloader.GroupItem(self,self,"/"+k)
+                self.children[k] = groupitem.GroupItem(self,self,"/"+k)
         self.collectItems(self.children)
         self.stackSize = None
     def collectItems(self,item):
@@ -72,7 +73,7 @@ class FileLoader(QtCore.QObject):
             child = item[k]
             if isinstance(child,dataloader.DataItem):
                 self.dataItems[child.fullName] = child
-            elif isinstance(child,dataloader.GroupItem):
+            elif isinstance(child,groupitem.GroupItem):
                 self.groupItems[child.fullName] = child
                 self.tagsItems[child.fullName] = child.tagsItem
                 self.modelItems[child.fullName] = child.modelItem
@@ -88,13 +89,13 @@ class FileLoader(QtCore.QObject):
         def addGroupRecursively(group,children):
             for n,c in children.items():
                 if c.fullName == path:
-                    g = dataloader.GroupItem(c,self,name)
+                    g = groupitem.GroupItem(c,self,name)
                     c.children[name[name.rindex('/')+1:]] = g
                     self.groupItems[name] = g
                     self.modelItems[name] = g.modelItem
                     self.pattersonItems[name] = g.pattersonItem
                     #print "add group",self.groupItems.keys(),name0
-                elif isinstance(c,dataloader.GroupItem):                  
+                elif isinstance(c,groupitem.GroupItem):                  
                     addGroupRecursively(c,c.children)
 
         addGroupRecursively(self,self.children)
@@ -108,7 +109,7 @@ class FileLoader(QtCore.QObject):
                     d = dataloader.DataItem(group,self,"/"+name)
                     c.children[name[name.rindex('/')+1:]] = d
                     self.dataItems[name] = d
-                elif isinstance(c,dataloader.GroupItem):                  
+                elif isinstance(c,groupitem.GroupItem):                  
                     addDatasetRecursively(c,c.children)
 
         addDatasetRecursively(self,self.children)

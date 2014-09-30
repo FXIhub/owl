@@ -6,43 +6,7 @@ import h5py
 import settingsOwl
 import parameters
 import patterson
-
-
-class GroupItem:
-    def __init__(self,parent,fileLoader,fullName):
-        self.parent = parent
-        self.fileLoader = fileLoader
-        self.fullName = fullName
-        self.name = fullName.split("/")[-1]
-        self.tagsItem = parameters.TagsItem(self,fileLoader,fullName+"/")
-        self.children = {}
-        H5Group = self.fileLoader.f[self.fullName]
-        for k in H5Group.keys():
-            item = H5Group[k]
-            if isinstance(item,h5py.Group):
-                self.children[k] = GroupItem(self,self.fileLoader,self.fullName+"/"+k)
-        self.modelItem = parameters.ModelItem(self,self.fileLoader)
-        self.pattersonItem = parameters.PattersonItem(self,self.fileLoader)
-        for k in H5Group.keys():
-            item = H5Group[k]
-            if isinstance(item,h5py.Dataset):
-                self.children[k] = DataItem(self,self.fileLoader,self.fullName+"/"+k)
-
-# CXI pixelmask bits
-PIXEL_IS_PERFECT = 0
-PIXEL_IS_INVALID = 1
-PIXEL_IS_SATURATED = 2
-PIXEL_IS_HOT = 4
-PIXEL_IS_DEAD = 8
-PIXEL_IS_SHADOWED = 16
-PIXEL_IS_IN_PEAKMASK = 32
-PIXEL_IS_TO_BE_IGNORED = 64
-PIXEL_IS_BAD = 128
-PIXEL_IS_OUT_OF_RESOLUTION_LIMITS = 256
-PIXEL_IS_MISSING = 512
-PIXEL_IS_IN_HALO = 1024
-PIXEL_IS_ARTIFACT_CORRECTED = 2048
-PIXEL_IS_IN_MASK = PIXEL_IS_INVALID |  PIXEL_IS_SATURATED | PIXEL_IS_HOT | PIXEL_IS_DEAD | PIXEL_IS_SHADOWED | PIXEL_IS_IN_PEAKMASK | PIXEL_IS_TO_BE_IGNORED | PIXEL_IS_BAD | PIXEL_IS_MISSING
+from cxi import CXI
 
 class DataItem:
     def __init__(self,parent,fileLoader,fullName):
@@ -141,7 +105,7 @@ class DataItem:
         else:
             d = numpy.array(self.fileLoader.f[self.fullName])
         if kwargs.get("binaryMask",False):
-            d = (d & PIXEL_IS_IN_MASK) == 0
+            d = (d & CXI.PIXEL_IS_IN_MASK) == 0
 
         windowSize = kwargs.get("windowSize",None)
         if windowSize != None:
