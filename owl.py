@@ -637,13 +637,6 @@ class Viewer(QtGui.QMainWindow):
         #self.view.view2D.clearTextures()
         self.view.view2D.updateGL()
 
-#    def handleNeedDataGeometry(self, dataName == None):
-#        if dataName == "" or dataName == None:
-#            self.view.view2D.setGeometry()
-#        else:
-#            geometryItem = 
-
-
     def handleNeedDataFilter(self,dataName):
         senderBox = self.sender().dataBox
         # add or replace first filter

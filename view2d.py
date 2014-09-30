@@ -40,7 +40,6 @@ class View2D(View,QtOpenGL.QGLWidget):
         #self.setFocusPolicy(QtCore.Qt.ClickFocus)
         self.data = None
         self.mask = None
-        self.geometry = None
         self.ix = 0
         self.iy = 0
         self.texturesLoading = {}
@@ -110,13 +109,6 @@ class View2D(View,QtOpenGL.QGLWidget):
         self.dataItemChanged.emit(self.data,self.mask)
     def setMaskOutBits(self,maskOutBits=0):
         self.maskOutBits = maskOutBits
-    def setGeometry(self, geometryItem=None):
-        if self.geometry != None:
-            self.geometry.deselectStack()
-        self.geometry = geometryItem
-        if self.geometry != None:
-            self.geometry.selectStack()
-        self.geometryItemChanged.emit(self.geometry)
     def getMask(self,img=0):
         if self.mask == None:
             return None
@@ -134,10 +126,6 @@ class View2D(View,QtOpenGL.QGLWidget):
         return self.data.data(img=img,complex_mode="phase")
     def getPatterson(self):
         return self.data.pattersonItem.patterson
-    def getCornerPos(self, img=0):
-        return self.geometry.cornerPos(img=img)
-    def getBasisVec(self, img=0):
-        return self.geometry.basisVec(img=img)
     def stopThreads(self):
         while(self.imageLoader.isRunning()):
             self.imageLoader.quit()
