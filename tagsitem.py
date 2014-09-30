@@ -58,7 +58,7 @@ class TagsItem:
         # Do we really have to write anything? If not just return.
         if (self.tags == []) or (self.tagsDirty == False):
             return
-
+        Tracer()()
         # Is a tag dataset already existing
         if('tags' in self.fileLoader.f[self.path]):
             ds = self.fileLoader.f[self.path+"tags"]
