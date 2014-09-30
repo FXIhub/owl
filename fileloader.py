@@ -34,8 +34,7 @@ class FileLoader(QtCore.QObject):
     def reopenFile(self):
         # IMPORTANT NOTE:
         # Reopening the file is required after groups (/ datasets?) are created, otherwise we corrupt the file.
-        # As we have to do this from time to time never rely on direct pointers to HDF5 datatsets. 
-        # You better access data only via the HDF5 file object fileLoader.f[datasetname].
+        # As we have to do this from time to time never rely on direct pointers to HDF5 datatsets. You better access data only via the HDF5 file object fileLoader.f[datasetname].
         if self.mode == "r*":
             self.parent.updateTimer.start()
         elif self.mode == "r+":
@@ -50,15 +49,15 @@ class FileLoader(QtCore.QObject):
         self.fullFilename = fullFilename
         self.filename = QtCore.QFileInfo(fullFilename).fileName()
         self.fullName = self.name = "/"
-        self.tagsItem = None
-        self.modelItem = None
-        self.pattersonItem = None
+        #self.tagsItem = None
+        #self.modelItem = None
+        #self.pattersonItem = None
         self.dataItems = {}
         self.groupItems = {}
         self.tagsItems = {}
         self.modelItems = {}
         self.pattersonItems = {}
-        self.children = GroupItem(self,self,'/').children
+        self.children = GroupItem(self, self, "/").children
         self.collectItems(self.children)
         self.stackSize = None
     def collectItems(self,item):
@@ -87,7 +86,7 @@ class FileLoader(QtCore.QObject):
                     self.groupItems[name] = g
                     self.modelItems[name] = g.modelItem
                     self.pattersonItems[name] = g.pattersonItem
-                    #print "add group",self.groupItems.keys(),name0
+                    print "add group",self.groupItems.keys(),name0
                 elif isinstance(c,GroupItem):                  
                     addGroupRecursively(c,c.children)
 
@@ -115,7 +114,7 @@ class FileLoader(QtCore.QObject):
             if d.isSelectedStack:
                 if "numEvents" in self.f[n].attrs.keys():
                     ## if not self.f.mode == "r+": # self.f.mode == None if opened in swmr mode. This is odd.
-                    if self.f.mode == "r*": # This is to fix issues in r and r+ mode, does it also work with smwe now?
+                    if self.f.mode == "r*": # This is to fix issues in r and r+ mode, does it also work with smwr now?
                         self.f[n].refresh()
                     N.append(self.f[n].attrs.get("numEvents")[0])
                     #print n,N
@@ -133,8 +132,7 @@ class FileLoader(QtCore.QObject):
             return 0
         else:
             accepted = QtGui.QMessageBox.question(self.parent,"Change to read-write mode?",
-                                                  "The file is currently opened in SWMR mode. Data can "+
-                                                  "not be written to file in this mode. Do you like to reopen the file in read-write mode?",
+                                                  "The file is currently opened in SWMR mode. Data can not be written to file in this mode. Do you like to reopen the file in read-write mode?",
                                                   QtGui.QMessageBox.Ok,QtGui.QMessageBox.Cancel) == QtGui.QMessageBox.Ok
             if accepted:
                 self.mode = "r+"
