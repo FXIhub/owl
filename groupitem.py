@@ -1,6 +1,7 @@
 import h5py
 import parameters
 from dataitem import DataItem
+from tagsitem import TagsItem
 
 class GroupItem:
     def __init__(self,parent,fileLoader,fullName):
@@ -8,7 +9,7 @@ class GroupItem:
         self.fileLoader = fileLoader
         self.fullName = fullName
         self.name = fullName.split("/")[-1]
-        self.tagsItem = parameters.TagsItem(self,fileLoader,fullName+"/")
+        self.tagsItem = TagsItem(self,fileLoader,fullName+"/")
         self.children = {}
         H5Group = self.fileLoader.f[self.fullName]
         for k in H5Group.keys():
