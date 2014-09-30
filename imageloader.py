@@ -36,20 +36,20 @@ class ImageLoader(QtCore.QObject):
         data = self.view.getData(img)
         phase = self.view.getPhase(img)
         mask = self.view.getMask(img)
-        self.imageData[img] = numpy.ones((self.view.data.length(),self.view.data.height(),self.view.data.width()),dtype=numpy.float32)
+        self.imageData[img] = numpy.ones((self.view.data.height(),self.view.data.width()),dtype=numpy.float32)
         self.imageData[img][:] = data[:]
         if phase != None:
-            self.phaseData[img] = numpy.ones((self.view.data.length(), self.view.data.height(),self.view.data.width()),dtype=numpy.float32)
+            self.phaseData[img] = numpy.ones((self.view.data.height(),self.view.data.width()),dtype=numpy.float32)
             self.phaseData[img][:] = phase[:]
         else:
             self.phaseData[img] = None
         if mask != None:
-            self.maskData[img] = numpy.ones((self.view.data.length(), self.view.data.height(),self.view.data.width()),dtype=numpy.float32)
-            self.maskData[img][:] = mask[:]
+            self.maskData[img] = numpy.ones((self.view.data.height(),self.view.data.width()),dtype=numpy.float32)
+            self.maskData[img] = mask[:]
         else:
             self.maskData[img] = None
 
-        shape = (self.view.data.length(), min(self.imageData[img].shape[1], 8192), min(self.imageData[img].shape[2], 8192))
+        shape = (min(self.imageData[img].shape[0], 8192), min(self.imageData[img].shape[1], 8192))
         if (shape[1] == 1):
             shape = (shape[0], shape[0])
 
@@ -57,14 +57,7 @@ class ImageLoader(QtCore.QObject):
         self.imageData[img].resize(shape)
         #        print "Debug b min %f max %f %s %s" % (numpy.amin(self.imageData[img]), numpy.amax(self.imageData[img]), self.imageData[img].shape, self.imageData[img].dtype)
         #print "Emitting draw request %d " % (img)
-        self.loadGeometry(img)
         self.imageLoaded.emit(img)
-    def loadGeometry(self,img):
-        cornerPos = self.view.getCornerPos(img)
-        basisVec = self.view.getBasisVec(img)
-        self.geometryData[img] = numpy.ones((self.view.data.length(), 3, 3), dtype=numpy.float32)
-        self.geometryData[img][:,0] = cornerPos[:]
-        self.geometryData[img][:,1:] = basisVec[:]
     def loadPatterson(self,img):
         params = self.view.data.pattersonItem.getParams(img)
         I = self.view.data.data(img=img)
@@ -80,5 +73,4 @@ class ImageLoader(QtCore.QObject):
         self.imageData = ArrayCache(1024*1024*int(QtCore.QSettings().value("imageCacheSize")))
         self.phaseData = ArrayCache(1024*1024*int(QtCore.QSettings().value("phaseCacheSize")))
         self.maskData = ArrayCache(1024*1024*int(QtCore.QSettings().value("maskCacheSize")))
-        self.geometryData = ArrayCache(1024*1024*int(QtCore.QSettings().value("geometryCacheSize")))
         self.pattersonData = None
