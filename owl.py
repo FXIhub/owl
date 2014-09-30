@@ -19,6 +19,7 @@ from dataloader import FileLoader
 from cxitree import CXINavigation
 from view import *
 from viewsplitter import ViewSplitter
+from fileloader import FileLoader
 
 # Some other helpful packages
 import logging
