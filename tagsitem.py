@@ -55,10 +55,10 @@ class TagsItem:
         self.tagMembers = newMembers
         self.tags = tags
     def saveTags(self):
-        Tracer()()
         # Do we really have to write anything? If not just return.
         if (self.tags == []) or (self.tagsDirty == False):
             return
+        Tracer()()
         # Is a tag dataset already existing
         if('tags' in self.fileLoader.f[self.path]):
             ds = self.fileLoader.f[self.path+"tags"]
@@ -66,9 +66,9 @@ class TagsItem:
             #del self.fileLoader.f[self.path+'tags']
             oldShape = ds.shape
             newShape = self.tagMembers.shape
-            if (oldShape[0] == newShape[0]) and (oldShape[1] == newShape[1]):
+            if (oldShape[0] != newShape[0]) or (oldShape[1] != newShape[1]):
                 ds.resize(newShape)
-                ds[:,:] = self.tagMembers[:,:]
+            ds[:,:] = self.tagMembers[:,:]
         else:
             ds = self.fileLoader.f[self.path].create_dataset('tags',self.tagMembers.shape,maxshape=(None,None),chunks=(1,10000),data=self.tagMembers)
             ds.attrs.modify("axes",["tag:experiment_identifier"])
