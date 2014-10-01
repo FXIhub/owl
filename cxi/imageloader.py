@@ -37,20 +37,20 @@ class ImageLoader(QtCore.QObject):
         data = self.view.getData(img)
         phase = self.view.getPhase(img)
         mask = self.view.getMask(img)
-        self.imageData[img] = numpy.ones((self.view.data.length(),self.view.data.height(),self.view.data.width()),dtype=numpy.float32)
+        self.imageData[img] = numpy.ones((self.view.data.height(),self.view.data.width()),dtype=numpy.float32)
         self.imageData[img][:] = data[:]
         if phase != None:
-            self.phaseData[img] = numpy.ones((self.view.data.length(), self.view.data.height(),self.view.data.width()),dtype=numpy.float32)
+            self.phaseData[img] = numpy.ones((self.view.data.height(),self.view.data.width()),dtype=numpy.float32)
             self.phaseData[img][:] = phase[:]
         else:
             self.phaseData[img] = None
         if mask != None:
-            self.maskData[img] = numpy.ones((self.view.data.length(), self.view.data.height(),self.view.data.width()),dtype=numpy.float32)
+            self.maskData[img] = numpy.ones((self.view.data.height(),self.view.data.width()),dtype=numpy.float32)
             self.maskData[img][:] = mask[:]
         else:
             self.maskData[img] = None
 
-        shape = (self.view.data.length(), min(self.imageData[img].shape[1], 8192), min(self.imageData[img].shape[2], 8192))
+        shape = (min(self.imageData[img].shape[0], 8192), min(self.imageData[img].shape[1], 8192))
         if (shape[1] == 1):
             shape = (shape[0], shape[0])
 

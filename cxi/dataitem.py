@@ -74,8 +74,8 @@ class DataItem:
             shape = list(shape)
             shape.pop(0)
             shape.insert(0,self.fileLoader.stackSize)
-            if not self.stackHasModules and self.format == 2:
-                shape.insert(1,1)
+            #if not self.stackHasModules and self.format == 2:
+            #    shape.insert(1,1)
             #self._shape.insert(0,self.H5Dataset.attrs.get("numEvents", (self.H5Dataset.shape))[0])
             shape = tuple(shape)
         return shape
