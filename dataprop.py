@@ -633,7 +633,7 @@ class FilterWidget(QtGui.QWidget):
         i = self.indexCombo.currentIndex()
         self.dataItem.selectedIndex = i
         self.selectedIndexChanged.emit(i)
-        self.refreshData(self.dataItem)
+        #self.refreshData(self.dataItem)  #BJD: This adds new items to indexCombo, however the labels in the filterBox are not updated now. 
 
 
 class ModelProperties(QtGui.QGroupBox, ui.modelProperties.Ui_ModelProperties):
