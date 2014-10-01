@@ -18,15 +18,14 @@ import numpy
 import gc
 
 # internal modules
+from cxi.fileloader import FileLoader
+from cxitree import CXINavigation
+from dataprop import DataProp, paintColormapIcons
+from geometry import Geometry
 import settingsOwl
 import ui.dialogs
-from geometry import Geometry
 from view.indexprojector import IndexProjector
-from dataprop import DataProp, paintColormapIcons
-from cxitree import CXINavigation
-from view.view import *
 from view.viewsplitter import ViewSplitter
-from cxi.fileloader import FileLoader
 
 
 """
