@@ -139,7 +139,7 @@ class SelectIndexDialog(QtGui.QDialog, ui.selectIndexDialog.Ui_SelectIndexDialog
         for i in range(nDims):
             self.labels.append("%i" % i)
         if isTags:
-            for i,tag in zip(range(nDims),self.dataItem.tags):
+            for i,tag in zip(range(nDims),self.dataItem.tagsItem.tags):
                 title = tag[0]
                 self.labels[i] += " " + title
         self.comboBox.addItems(self.labels)

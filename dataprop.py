@@ -574,7 +574,7 @@ class FilterWidget(QtGui.QWidget):
         for i in range(nDims):
             labels.append("%i" % i)
         if self.isTags:
-            for i,tag in zip(range(nDims),self.dataItem.tags):
+            for i,tag in zip(range(nDims),self.dataItem.tagsItem.tags):
                 title = tag[0]
                 labels[i] += " " + title
         self.indexCombo.addItems(labels)
