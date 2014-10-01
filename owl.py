@@ -284,15 +284,19 @@ class Viewer(QtGui.QMainWindow):
                             "View 1D"            : QtGui.QAction("View 1D",self),
                             "View 2D"            : QtGui.QAction("View 2D",self),
                             "Display Properties" : QtGui.QAction("Display Properties",self),
-                            "Tags"               : QtGui.QAction("Tags",self),}
+                            "Tags"               : QtGui.QAction("Tags",self),
+                            "Model"              : QtGui.QAction("Model",self),
+                            "Patterson"          : QtGui.QAction("Patterson",self),}
 
         viewShortcuts = {"File Tree"          : "Ctrl+T",
                          "View 1D"            : "Ctrl+1",
                          "View 2D"            : "Ctrl+2",
                          "Display Properties" : "Ctrl+D",
-                         "Tags"               : "Ctrl+G",}
+                         "Tags"               : "Ctrl+G",
+                         "Model"              : "Ctrl+M",
+                         "Patterson"          : "Ctrl+P",}
 
-        viewNames = ["File Tree", "Display Properties","View 1D","View 2D","Tags"]
+        viewNames = ["File Tree", "Display Properties","View 1D","View 2D","Tags", "Model", "Patterson"]
       
         actions = {}
         for viewName in viewNames:
@@ -303,9 +307,13 @@ class Viewer(QtGui.QMainWindow):
             actions[viewName].setShortcut(QtGui.QKeySequence(viewShortcuts[viewName]))
             if(viewName == "Tags"):
                 actions[viewName].triggered.connect(self.view.view2D.toggleTagView)
+            elif(viewName == "Model"):
+                 actions[viewName].triggered.connect(self.toggleModelView)
+            elif(viewName == "Patterson"):
+                 actions[viewName].triggered.connect(self.togglePattersonView)
             else:
                 actions[viewName].triggered.connect(self.viewClicked)
-            if viewName in ["View 1D"]:
+            if viewName in ["View 1D", "Model", "Patterson"]:
                 actions[viewName].setChecked(False)
             else:
                 actions[viewName].setChecked(True)
@@ -349,16 +357,10 @@ class Viewer(QtGui.QMainWindow):
     def init_menu_analysis(self):
         self.analysisMenu = self.menuBar().addMenu(self.tr("&Analysis"));
 
-        act = QtGui.QAction("Sizing",self)
-        act.setCheckable(True)
-        act.triggered.connect(self.toggleModelView)
-        self.analysisMenu.addAction(act)
+        self.sizingAction = QtGui.QAction("Sizing",self)
+        self.analysisMenu.addAction(self.sizingAction)
+        self.sizingAction.triggered.connect(self.sizingClicked)
 
-        act = QtGui.QAction("Autocorrelation",self)
-        act.setCheckable(True)
-        act.triggered.connect(self.togglePattersonView)
-        self.analysisMenu.addAction(act)
-        
     def init_shortcuts(self):
         shortcuts = self.settings.value('Shortcuts')
         self.editMenu.toggleTag = []
@@ -855,6 +857,9 @@ class Viewer(QtGui.QMainWindow):
                     self.tagsChanged = True
         else:
             QtGui.QMessageBox.information(self,"Cannot set tags","Cannot set tags if no dataset is open.");
+    def sizingClicked(self):
+        pass
+
     def onFileLoaderExtended(self):
         self.CXINavigation.CXITree.updateTree()
 

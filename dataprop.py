@@ -649,7 +649,8 @@ class ModelProperties(QtGui.QGroupBox, ui.modelProperties.Ui_ModelProperties):
         self.scaling.valueChanged.connect(self.setParams)
         self.maskRadius.valueChanged.connect(self.setParams)
         self.experiment.released.connect(self.onExperiment)
-        self.fitCenterPushButton.released.connect(self.calculateFitCenter)
+        self.findCenterPushButton.released.connect(self.calculateFindCenter)
+        self.findRadiusPushButton.released.connect(self.calculateFindRadius)
         self.fitModelPushButton.released.connect(self.calculateFitModel)
         self.visibilitySlider.sliderMoved.connect(self.setParams)
     def setModelItem(self,modelItem=None):
@@ -714,7 +715,11 @@ class ModelProperties(QtGui.QGroupBox, ui.modelProperties.Ui_ModelProperties):
     def onExperiment(self):
         expDialog = ExperimentDialog(self)
         expDialog.exec_()
-    def calculateFitCenter(self):
+    def calculateFindCenter(self):
+        img = self.parent.viewer.view.view2D.selectedImage
+        self.modelItem.center(img)
+        self.showParams()
+    def calculateFindRadius(self):
         img = self.parent.viewer.view.view2D.selectedImage
         self.modelItem.center(img)
         self.showParams()
