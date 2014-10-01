@@ -18,6 +18,7 @@ class FitModel:
     def center(self,img,params):
         I = self.dataItemImage.data(img=img)
         M = self.dataItemMask.data(img=img,binaryMask=True)
+        params = center_initial(I,M,params,params["maskRadius"])
         params = center(I,M,params,5,params["maskRadius"])
         return params
     def fit(self,img,params):
@@ -26,6 +27,25 @@ class FitModel:
         params = fit(I,M,params,params["maskRadius"],downsampling=5,do_brute=True)
         params = fit(I,M,params,params["maskRadius"],downsampling=1,do_brute=False)
         return params
+
+class GaussModel:
+    def __init__(self, shape):
+        yy,xx = numpy.indices(shape)
+        self.yy = yy - shape[0]/2
+        self.xx = xx - shape[1]/2
+    def model(self, A, mux, muy, s):
+        return A * numpy.exp(- ((self.xx-mux)**2) / (2* (s**2))) * numpy.exp(- ((self.yy-muy)**2) / (2* (s**2)))
+    def error(self, p, m, y):
+        return m.flatten()*(self.model(p[0], p[1], p[2],p[3]).flatten() - y.flatten())
+
+def center_initial(img, msk, params, r_max):
+    p0 = numpy.array([1., 0., 0., 20.])
+    GM = GaussModel(img.shape)
+    p, ier = leastsq(GM.error, p0, args=(msk, img))
+    center = numpy.array([p[1], p[2]])
+    params["offCenterX"] = p[1]
+    params["offCenterY"] = p[2]
+    return params
 
 def center(img,msk,params,dc_max,r_max):
     s = img.shape
@@ -187,7 +207,7 @@ def fit(image,mask,params,r_max,downsampling=1,do_brute=True):
     if(do_brute):
         pixel_size = (D*wavelength/(p * image.shape[0]))
         range = [(pixel_size, pixel_size*image.shape[0]/(40))]
-        Ns = 2 * range[0][1]/range[0][0]
+        Ns = 10 * range[0][1]/range[0][0]
         r = scipy.optimize.brute(err, range, Ns=Ns)[0]
     # End with least square
     # r, success = leastsq(err, r, maxfev=maxfev,xtol=1e-3)
