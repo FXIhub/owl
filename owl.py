@@ -60,6 +60,7 @@ class Viewer(QtGui.QMainWindow):
         self.indexProjector = IndexProjector()
         self.view = ViewSplitter(self,self.indexProjector)
         self.init_menus()
+        self.init_shortcuts()
         self.dataProp = DataProp(self,self.indexProjector)
         self.CXINavigation = CXINavigation(self)
         self.fileLoader = FileLoader(self)
@@ -182,6 +183,14 @@ class Viewer(QtGui.QMainWindow):
             self.settings.setValue("normGamma", "0.25");
                 
     def init_menus(self):
+        self.init_menu_file()
+        self.init_menu_edit()
+        self.init_menu_go()
+        self.init_menu_save()
+        self.init_menu_view()
+        self.init_menu_analysis()
+
+    def init_menu_file(self):
         self.fileMenu = self.menuBar().addMenu(self.tr("&File"));
 
         self.openFile = QtGui.QAction("Open",self)
@@ -212,26 +221,27 @@ class Viewer(QtGui.QMainWindow):
         self.fileMenu.addAction(self.preferences)
         self.preferences.triggered.connect(self.preferencesClicked)
 
-        #self.geometryMenu = self.menuBar().addMenu(self.tr("&Geometry"));
-        #self.assembleGeometry = QtGui.QAction("Assemble",self)
-        #self.geometryMenu.addAction(self.assembleGeometry)
-        #self.assembleGeometry.triggered.connect(self.assembleGeometryClicked)
-        
+    def init_menu_edit(self):
         self.editMenu = self.menuBar().addMenu(self.tr("&Edit"));
+
         self.tagsAction = QtGui.QAction("Tags...",self)
         self.editMenu.addAction(self.tagsAction)
         self.tagsAction.triggered.connect(self.tagsClicked)
 
+    def init_menu_go(self):
         self.goMenu = self.menuBar().addMenu(self.tr("&Go"));
+
         act = QtGui.QAction("Previous Row",self)
         act.setShortcut(QtGui.QKeySequence.MoveToPreviousPage)
         self.goMenu.previousRow = act
         self.goMenu.addAction(act)
+
         act = QtGui.QAction("Next Row",self)
         act.setShortcut(QtGui.QKeySequence.MoveToNextPage)
         self.goMenu.nextRow = act
         self.goMenu.addAction(act)
 
+    def init_menu_save(self):
         self.saveMenu = self.menuBar().addMenu(self.tr("&Save"));
 
         act = QtGui.QAction("To PNG",self)
@@ -239,6 +249,7 @@ class Viewer(QtGui.QMainWindow):
         self.saveMenu.toPNG = act
         self.saveMenu.addAction(act)
 
+    def init_menu_view(self):
         self.viewMenu = self.menuBar().addMenu(self.tr("&View"));
 
         self.CXIStyleAction = QtGui.QAction("CXI Style",self)
@@ -252,7 +263,6 @@ class Viewer(QtGui.QMainWindow):
         act = QtGui.QAction("Full Screen",self)
         act.setShortcut(QtGui.QKeySequence("Ctrl+F"))
         act.setCheckable(True)
-
         act.triggered.connect(self.toggleFullScreen)
         self.viewMenu.addAction(act)
 
@@ -270,25 +280,19 @@ class Viewer(QtGui.QMainWindow):
 
         self.viewMenu.addSeparator()
 
-        self.viewActions = {"File Tree" : QtGui.QAction("File Tree",self),
-                            "View 1D" : QtGui.QAction("View 1D",self),
-                            "View 2D" : QtGui.QAction("View 2D",self),
+        self.viewActions = {"File Tree"          : QtGui.QAction("File Tree",self),
+                            "View 1D"            : QtGui.QAction("View 1D",self),
+                            "View 2D"            : QtGui.QAction("View 2D",self),
                             "Display Properties" : QtGui.QAction("Display Properties",self),
-                            "Tags" : QtGui.QAction("Tags",self),
-                            "Model" : QtGui.QAction("Model",self),
-                            "Patterson" : QtGui.QAction("Patterson",self),
-                        }
+                            "Tags"               : QtGui.QAction("Tags",self),}
 
-        viewShortcuts = {"File Tree" : "Ctrl+T",
-                         "View 1D" : "Ctrl+1",
-                         "View 2D" : "Ctrl+2",
+        viewShortcuts = {"File Tree"          : "Ctrl+T",
+                         "View 1D"            : "Ctrl+1",
+                         "View 2D"            : "Ctrl+2",
                          "Display Properties" : "Ctrl+D",
-                         "Tags" : "Ctrl+G",
-                         "Model" : "Ctrl+M",
-                         "Patterson" : "Ctrl+P",
-                     }
+                         "Tags"               : "Ctrl+G",}
 
-        viewNames = ["File Tree", "Display Properties","View 1D","View 2D","Tags","Model","Patterson"]
+        viewNames = ["File Tree", "Display Properties","View 1D","View 2D","Tags"]
       
         actions = {}
         for viewName in viewNames:
@@ -299,13 +303,9 @@ class Viewer(QtGui.QMainWindow):
             actions[viewName].setShortcut(QtGui.QKeySequence(viewShortcuts[viewName]))
             if(viewName == "Tags"):
                 actions[viewName].triggered.connect(self.view.view2D.toggleTagView)
-            elif(viewName == "Model"):
-                actions[viewName].triggered.connect(self.toggleModelView)
-            elif(viewName == "Patterson"):
-                actions[viewName].triggered.connect(self.togglePattersonView)
             else:
                 actions[viewName].triggered.connect(self.viewClicked)
-            if viewName in ["View 1D"] or viewName == "Model" or viewName == "Patterson":
+            if viewName in ["View 1D"]:
                 actions[viewName].setChecked(False)
             else:
                 actions[viewName].setChecked(True)
@@ -346,6 +346,20 @@ class Viewer(QtGui.QMainWindow):
         action.triggered.connect(self.setPowerExponent)
         self.viewMenu.addAction(action)
 
+    def init_menu_analysis(self):
+        self.analysisMenu = self.menuBar().addMenu(self.tr("&Analysis"));
+
+        act = QtGui.QAction("Sizing",self)
+        act.setCheckable(True)
+        act.triggered.connect(self.toggleModelView)
+        self.analysisMenu.addAction(act)
+
+        act = QtGui.QAction("Autocorrelation",self)
+        act.setCheckable(True)
+        act.triggered.connect(self.togglePattersonView)
+        self.analysisMenu.addAction(act)
+        
+    def init_shortcuts(self):
         shortcuts = self.settings.value('Shortcuts')
         self.editMenu.toggleTag = []
 
