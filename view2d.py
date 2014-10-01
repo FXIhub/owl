@@ -3,7 +3,7 @@ from PySide import QtGui, QtCore, QtOpenGL
 from matplotlib import colors
 from matplotlib import cm
 from view import View
-from dataloader import ImageLoader
+from imageloader import ImageLoader
 from OpenGL.GL import *
 from OpenGL.GLU import *
 import OpenGL.GL.ARB.texture_float

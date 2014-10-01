@@ -15,7 +15,6 @@ import settingsOwl
 from geometry import *
 from indexprojector import *
 from dataprop import *
-from dataloader import *
 from cxitree import *
 from view import *
 from viewsplitter import ViewSplitter
