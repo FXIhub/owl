@@ -1153,8 +1153,6 @@ class View2D(View,QtOpenGL.QGLWidget):
             self.setStackWidth(prop["imageStackSubplotsValue"])
             self.indexProjector.setProjector(prop["sortingDataItem"],prop["sortingInverted"])
             #self.imageStackN = prop["N"]
-            if prop["img"] != None:
-                self.scrollToImage(prop["img"])
         self.updateGL()
     def saveToPNG(self):
         try:

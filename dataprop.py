@@ -61,26 +61,11 @@ class DataProp(QtGui.QWidget):
         self.datasize = QtGui.QLabel("Data Size:", parent=self)
         self.dataform = QtGui.QLabel("Data Form:", parent=self)
 
-        self.currentViewIndex = QtGui.QLabel("Central Index:", parent=self)
-
-        self.currentImg = QtGui.QLineEdit(self)
-        self.currentImg.setMaximumWidth(100)
-        self.currentImg.validator = QtGui.QIntValidator()
-        self.currentImg.validator.setBottom(0)
-        self.currentImg.setValidator(self.currentImg.validator)
-        self.currentImg.hbox = QtGui.QHBoxLayout()
-        self.currentImg.label = QtGui.QLabel("Central Image:", parent=self)
-        self.currentImg.hbox.addWidget(self.currentImg.label)
-        self.currentImg.hbox.addStretch()
-        self.currentImg.hbox.addWidget(self.currentImg)
-        self.currentImg.edited = False
-
         self.generalBox.vbox.addWidget(self.shape)
         self.generalBox.vbox.addWidget(self.datatype)
         self.generalBox.vbox.addWidget(self.datasize)
         self.generalBox.vbox.addWidget(self.dataform)
-        self.generalBox.vbox.addLayout(self.currentImg.hbox)
-        self.generalBox.vbox.addWidget(self.currentViewIndex)
+
         # properties: image stack
         self.imageStackBox = QtGui.QGroupBox("Image Stack");
         self.imageStackBox.vbox = QtGui.QVBoxLayout()
@@ -93,41 +78,7 @@ class DataProp(QtGui.QWidget):
 #       self.imageStackSubplots.setMaximum(5)
         hbox.addWidget(self.imageStackSubplots)
         self.imageStackBox.vbox.addLayout(hbox)
-
-
-        self.pixelBox = QtGui.QGroupBox("Selected Pixel");
-        self.pixelBox.vbox = QtGui.QVBoxLayout()
-
-        hbox = QtGui.QHBoxLayout()
-        hbox.addWidget(QtGui.QLabel("X:"))
-        widget = QtGui.QLabel("None",parent=self)
-        hbox.addWidget(widget)
-        self.pixelIx = widget
-        self.pixelBox.vbox.addLayout(hbox)
-
-        hbox = QtGui.QHBoxLayout()
-        hbox.addWidget(QtGui.QLabel("Y:"))
-        widget = QtGui.QLabel("None",parent=self)
-        hbox.addWidget(widget)
-        self.pixelIy = widget
-        self.pixelBox.vbox.addLayout(hbox)
-
-        hbox = QtGui.QHBoxLayout()
-        hbox.addWidget(QtGui.QLabel("Image value:"))
-        widget = QtGui.QLabel("None",parent=self)
-        hbox.addWidget(widget)
-        self.pixelImageValue = widget
-        self.pixelBox.vbox.addLayout(hbox)
-
-        hbox = QtGui.QHBoxLayout()
-        hbox.addWidget(QtGui.QLabel("Mask value:"))
-        widget = QtGui.QLabel("None",parent=self)
-        hbox.addWidget(widget)
-        self.pixelMaskValue = widget
-        self.pixelBox.vbox.addLayout(hbox)
-
-        self.pixelBox.setLayout(self.pixelBox.vbox)
-        self.pixelBox.hide()
+        
         # DISPLAY PROPERTIES
         self.displayBox = DisplayBox(self)
 
@@ -197,9 +148,7 @@ class DataProp(QtGui.QWidget):
         
         # add all widgets to main vbox
         self.vboxScroll.addWidget(self.generalBox)
-        self.vboxScroll.addWidget(self.pixelBox)
         self.vboxScroll.addWidget(self.displayBox)
-        #self.vboxScroll.addWidget(self.pixelStackBox)
         self.vboxScroll.addWidget(self.imageStackBox)
         self.vboxScroll.addWidget(self.sortingBox)
         self.vboxScroll.addWidget(self.filterBox)
@@ -224,7 +173,6 @@ class DataProp(QtGui.QWidget):
         self.plotLinesCheckBox.toggled.connect(self.emitView1DProp)
         self.plotPointsCheckBox.toggled.connect(self.emitView1DProp)
         self.plotNBinsEdit.editingFinished.connect(self.emitView1DProp)
-        self.currentImg.editingFinished.connect(self.onCurrentImg)
     def clear(self):
         self.clearView2DProp()
         self.clearData()
@@ -280,34 +228,16 @@ class DataProp(QtGui.QWidget):
     # VIEW
     def onPixelClicked(self,info):
         if self.data != None and info != None:
-            self.pixelIx.setText(str(int(info["ix"])))
-            self.pixelIy.setText(str(int(info["iy"])))
-            self.pixelImageValue.setText("%.3f" % (info["imageValue"]))
-            if info["maskValue"] == None:
-                self.pixelMaskValue.setText("None")
-            else:
-                self.pixelMaskValue.setText(str(int(info["maskValue"])))
-            self.pixelBox.show()
             (hist,edges) = numpy.histogram(self.data.data(img=info["img"]),bins=100)
             self.displayBox.pixelClicked(hist,edges)
-            # self.intensityHistogram.clear()
-            # edges = (edges[:-1]+edges[1:])/2.0
-            # item = self.intensityHistogram.plot(edges,numpy.log10(hist+1),fillLevel=0,fillBrush=QtGui.QColor(255, 255, 255, 128),antialias=True)
-            # self.intensityHistogram.getPlotItem().getViewBox().setMouseEnabled(x=False,y=False)
-            # self.intensityHistogramRegion = pyqtgraph.LinearRegionItem(values=[float(self.displayMin.text()),float(self.displayMax.text())],brush="#ffffff15")
-            # self.intensityHistogramRegion.sigRegionChangeFinished.connect(self.onHistogramClicked)
-            # self.intensityHistogram.addItem(self.intensityHistogramRegion)
-            # self.intensityHistogram.autoRange()
             # Check if we clicked on a tag
             if(info["tagClicked"] != -1):
                 # Toggle tag
                 self.toggleTag(info["img"],info["tagClicked"])
-#                self.data.tagsItem.setTag(info["img"],info["tagClicked"],(self.data.tagsItem.tagMembers[info["tagClicked"],info["img"]]+1)%2)
             self.modelProperties.showParams()
             self.pattersonProperties.showParams()
         else:
             self.imageBox.hide()
-            self.pixelBox.hide()
     def onHistogramClicked(self,region):
         (min,max) = region.getRegion()
         self.displayBox.displayMin.setText("%0.1f" % (min))
@@ -484,7 +414,6 @@ class DataProp(QtGui.QWidget):
         self.setSorting()
         self.setFilters()
         #self.setImageStackN()
-        self.setCurrentImg()
         self.view2DPropChanged.emit(self.view2DProp)
     def checkLimits(self):
         self.displayBox.displayMax.validator().setBottom(float(self.displayBox.displayMin.text()))
