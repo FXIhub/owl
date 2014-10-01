@@ -114,7 +114,7 @@ class View2D(View,QtOpenGL.QGLWidget):
             return None
         elif self.mask.isStack:
             #if self.integrationMode == None:
-            print self.mask.shape()
+            #print self.mask.shape()
             return self.mask.data(img=img)
             #else:
             #return numpy.zeros(shape=(self.data.shape()[-2],self.data.shape()[-1]))

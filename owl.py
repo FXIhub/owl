@@ -15,7 +15,6 @@ import dialogs
 from geometry import Geometry
 from indexprojector import IndexProjector
 from dataprop import DataProp, paintColormapIcons
-#from dataloader import FileLoader
 from cxitree import CXINavigation
 from view import *
 from viewsplitter import ViewSplitter
