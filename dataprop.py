@@ -6,11 +6,12 @@ import h5py
 from matplotlib import colors
 from matplotlib import cm
 import pyqtgraph
-import modelProperties
-import pattersonProperties
 import fit
-import experimentDialog
-import displayBox
+import ui.experimentDialog
+import ui.displayBox
+import ui.modelProperties
+import ui.pattersonProperties
+
 
 def sizeof_fmt(num):
     for x in ['bytes','kB','MB','GB']:
@@ -706,7 +707,7 @@ class FilterWidget(QtGui.QWidget):
         self.refreshData(self.dataItem)
 
 
-class ModelProperties(QtGui.QGroupBox, modelProperties.Ui_ModelProperties):
+class ModelProperties(QtGui.QGroupBox, ui.modelProperties.Ui_ModelProperties):
     def __init__(self,parent):
         self.parent = parent
         QtGui.QGroupBox.__init__(self,parent)
@@ -796,7 +797,7 @@ class ModelProperties(QtGui.QGroupBox, modelProperties.Ui_ModelProperties):
         self.setVisible(not self.isVisible())
 
 
-class ExperimentDialog(QtGui.QDialog, experimentDialog.Ui_ExperimentDialog):
+class ExperimentDialog(QtGui.QDialog, ui.experimentDialog.Ui_ExperimentDialog):
     def __init__(self,modelProperties):
         QtGui.QDialog.__init__(self,modelProperties,QtCore.Qt.WindowTitleHint)
         self.setupUi(self)
@@ -840,7 +841,7 @@ class ExperimentDialog(QtGui.QDialog, experimentDialog.Ui_ExperimentDialog):
         self.modelProperties.modelItem.setParams(None,params)
 
 
-class PattersonProperties(QtGui.QGroupBox, pattersonProperties.Ui_PattersonProperties):
+class PattersonProperties(QtGui.QGroupBox, ui.pattersonProperties.Ui_PattersonProperties):
     def __init__(self,parent):
         self.parent = parent
         QtGui.QGroupBox.__init__(self,parent)
@@ -931,7 +932,7 @@ class PattersonProperties(QtGui.QGroupBox, pattersonProperties.Ui_PattersonPrope
     def toggleVisible(self):
         self.setVisible(not self.isVisible())
 
-class DisplayBox(QtGui.QGroupBox, displayBox.Ui_displayBox):
+class DisplayBox(QtGui.QGroupBox, ui.displayBox.Ui_displayBox):
     def __init__(self,parent):
 
         QtGui.QGroupBox.__init__(self,parent)
