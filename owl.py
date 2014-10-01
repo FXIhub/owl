@@ -30,8 +30,6 @@ from cxi.fileloader import FileLoader
 
 
 """
-This is a try to clean up and document this code by Benedikt J. Daurer (September 22, 2014).
-
 Wishes:
 
 Infinite subplots
