@@ -9,17 +9,6 @@ from OpenGL.GL import *
 from OpenGL.GLU import *
 from PySide import QtGui, QtCore, QtOpenGL
 
-# internal modules
-import settingsOwl
-import dialogs
-from geometry import Geometry
-from indexprojector import IndexProjector
-from dataprop import DataProp, paintColormapIcons
-from cxitree import CXINavigation
-from view import *
-from viewsplitter import ViewSplitter
-from fileloader import FileLoader
-
 # Some other helpful packages
 import logging
 import argparse
@@ -27,6 +16,18 @@ import time
 import math
 import numpy
 import gc
+
+# internal modules
+import settingsOwl
+import ui.dialogs
+from geometry import Geometry
+from view.indexprojector import IndexProjector
+from dataprop import DataProp, paintColormapIcons
+from cxitree import CXINavigation
+from view.view import *
+from view.viewsplitter import ViewSplitter
+from cxi.fileloader import FileLoader
+
 
 """
 This is a try to clean up and document this code by Benedikt J. Daurer (September 22, 2014).
@@ -429,7 +430,7 @@ class Viewer(QtGui.QMainWindow):
             self.openCXIFile(fileName[0])
 
     def fileModeClicked(self):
-	diag = dialogs.FileModeDialog(self)
+	diag = ui.dialogs.FileModeDialog(self)
         if(diag.exec_()):
             if diag.rw.isChecked():
                 self.fileLoader.mode = "r+"
@@ -521,7 +522,7 @@ class Viewer(QtGui.QMainWindow):
         QtGui.QMainWindow.closeEvent(self,event)
 
     def preferencesClicked(self):
-	diag = dialogs.PreferencesDialog(self)
+	diag = ui.dialogs.PreferencesDialog(self)
         if(diag.exec_()):
             if(diag.natural.isChecked()):
                 self.settings.setValue("scrollDirection",-1)
@@ -656,7 +657,7 @@ class Viewer(QtGui.QMainWindow):
                         targetBox.button.setName(dataName)
                         targetBox.button.needData.connect(self.handleNeedDataFilter)
                     else:
-                        selIndDialog = dialogs.SelectIndexDialog(self,dataItem)
+                        selIndDialog = ui.dialogs.SelectIndexDialog(self,dataItem)
                         if(selIndDialog.exec_() == QtGui.QDialog.Accepted):
                             while dataItem.selectedIndex == None: time.sleep(0.1)
                             targetBox = self.CXINavigation.addFilterBox()
@@ -733,7 +734,7 @@ class Viewer(QtGui.QMainWindow):
             dataItem = self.CXINavigation.CXITree.fileLoader.dataItems[dataName]
             nDims = len(dataItem.shape())
             if dataItem.isStack and (nDims == 3):
-                selIndDialog = dialogs.SelectIndexDialog(self,dataItem)
+                selIndDialog = ui.dialogs.SelectIndexDialog(self,dataItem)
                 selIndDialog.exec_() 
             if not dataItem.isPresentable:
                 self.statusBar.showMessage("Data not presentable.")
@@ -833,7 +834,7 @@ class Viewer(QtGui.QMainWindow):
 
     def tagsClicked(self):
         if(self.view.view2D.data):
-            tagsDialog = dialogs.TagsDialog(self,self.view.view2D.data.tagsItem.tags);
+            tagsDialog = ui.dialogs.TagsDialog(self,self.view.view2D.data.tagsItem.tags);
             if(tagsDialog.exec_() == QtGui.QDialog.Accepted):
                 tags = tagsDialog.getTags()
                 if(tags != self.view.view2D.data.tagsItem.tags):

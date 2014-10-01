@@ -3,7 +3,7 @@ from PySide import QtGui, QtCore, QtOpenGL
 from matplotlib import colors
 from matplotlib import cm
 from view import View
-from imageloader import ImageLoader
+from cxi.imageloader import ImageLoader
 from OpenGL.GL import *
 from OpenGL.GLU import *
 import OpenGL.GL.ARB.texture_float
@@ -12,7 +12,7 @@ import math
 from shaderprogram import compileProgram, compileShader
 import logging
 import time
-from cache import GLCache
+from cxi.cache import GLCache
 import fit
         
 class View2D(View,QtOpenGL.QGLWidget):

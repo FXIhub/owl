@@ -562,7 +562,7 @@ def unpickle_scattering_factors():
     global DICT_scattering_factors
     DICT_scattering_factors = {}
     this_dir = os.path.dirname(os.path.realpath(__file__))
-    ELEMENTS_FILE = open('%s/elements.dat' % this_dir,'r')
+    ELEMENTS_FILE = open('%s/data/elements.dat' % this_dir,'r')
     DICT_atomic_mass,DICT_scattering_factors = pickle.load(ELEMENTS_FILE)
     F_MIN_ENERGY_EV = 0
     F_MAX_ENERGY_EV = 0

@@ -11,9 +11,12 @@ import numpy
 import math
 import logging
 import settingsOwl
-import tagsDialog,selectIndexDialog,preferencesDialog,fileModeDialog
+import ui.tagsDialog
+import ui.selectIndexDialog
+import ui.preferencesDialog
+import ui.fileModeDialog
 
-class TagsDialog(QtGui.QDialog, tagsDialog.Ui_TagsDialog):
+class TagsDialog(QtGui.QDialog, ui.tagsDialog.Ui_TagsDialog):
     def __init__(self,parent,tags):
         QtGui.QDialog.__init__(self,parent,QtCore.Qt.WindowTitleHint)
         self.setupUi(self)
@@ -117,7 +120,7 @@ class TagsDialog(QtGui.QDialog, tagsDialog.Ui_TagsDialog):
     def deleteTag(self):
         self.tagsTable.removeColumn(self.tagsTable.currentColumn())
 
-class SelectIndexDialog(QtGui.QDialog, selectIndexDialog.Ui_SelectIndexDialog):
+class SelectIndexDialog(QtGui.QDialog, ui.selectIndexDialog.Ui_SelectIndexDialog):
     def __init__(self,parent,dataItem):
         QtGui.QDialog.__init__(self,parent,QtCore.Qt.WindowTitleHint)
         self.setupUi(self)
@@ -146,7 +149,7 @@ class SelectIndexDialog(QtGui.QDialog, selectIndexDialog.Ui_SelectIndexDialog):
         self.accept()        
                 
 
-class PreferencesDialog(QtGui.QDialog, preferencesDialog.Ui_PreferencesDialog):
+class PreferencesDialog(QtGui.QDialog, ui.preferencesDialog.Ui_PreferencesDialog):
     def __init__(self,parent):
         QtGui.QDialog.__init__(self,parent,QtCore.Qt.WindowTitleHint)
         self.setupUi(self)
@@ -206,7 +209,7 @@ class PreferencesDialog(QtGui.QDialog, preferencesDialog.Ui_PreferencesDialog):
 
 
 
-class FileModeDialog(QtGui.QDialog, fileModeDialog.Ui_FileModeDialog):
+class FileModeDialog(QtGui.QDialog, ui.fileModeDialog.Ui_FileModeDialog):
     def __init__(self,parent):
         QtGui.QDialog.__init__(self,parent,QtCore.Qt.WindowTitleHint)
         self.setupUi(self)

@@ -4,8 +4,8 @@ import h5py
 from operator import mul
 import numpy
 import sys,os
-from groupitem import GroupItem
-from cxi import CXI
+from cxi.groupitem import GroupItem
+from cxi.cxi import CXI
 
 class DataButton(QtGui.QPushButton):
     needData = QtCore.Signal(str)    
