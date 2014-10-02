@@ -853,9 +853,15 @@ class Viewer(QtGui.QMainWindow):
                     self.view.view2D.data.tagsItem.setTags(tags)
                     self.tagsChanged = True
         else:
-            QtGui.QMessageBox.information(self,"Cannot set tags","Cannot set tags if no dataset is open.");
+            QtGui.QMessageBox.information(self,"Cannot set tags","Cannot set tags if no dataset is open.")
+
     def sizingClicked(self):
-        pass
+        if(self.view.view2D.data):
+            sizingDialog = ui.dialogs.SizingDialog(self, self.view.view2D.data.modelItem)
+            if(sizingDialog.exec_() == QtGui.QDialog.Accepted):
+                print "accepted"
+        else:
+            QtGui.QMessageBox.information(self,"Cannot do sizing","Cannot do sizing if no dataset is open.")
 
     def onFileLoaderExtended(self):
         self.CXINavigation.CXITree.updateTree()

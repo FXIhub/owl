@@ -11,10 +11,13 @@ import numpy
 import math
 import logging
 import settingsOwl
+import fit
 import ui.tagsDialog
 import ui.selectIndexDialog
 import ui.preferencesDialog
 import ui.fileModeDialog
+import ui.sizingDialog
+import ui.experimentDialog
 
 class TagsDialog(QtGui.QDialog, ui.tagsDialog.Ui_TagsDialog):
     def __init__(self,parent,tags):
@@ -223,3 +226,56 @@ class FileModeDialog(QtGui.QDialog, ui.fileModeDialog.Ui_FileModeDialog):
             self.r.setChecked(True)
         if not settingsOwl.swmrSupported:
             self.rswmr.setEnabled(False)
+
+
+class ExperimentDialog(QtGui.QDialog, ui.experimentDialog.Ui_ExperimentDialog):
+    def __init__(self,parent, modelItem):
+        QtGui.QDialog.__init__(self,parent,QtCore.Qt.WindowTitleHint)
+        self.setupUi(self)
+        self.modelItem = modelItem
+        self.materialType.addItems(fit.DICT_atomic_composition.keys())
+        params = self.modelItem.getParams(0)
+        print params
+        self.wavelength.setValue(params["photonWavelengthNM"])
+        self.syncEnergy()
+        self.distance.setValue(params["detectorDistanceMM"])
+        self.pixelSize.setValue(params["detectorPixelSizeUM"])
+        self.quantumEfficiency.setValue(params["detectorQuantumEfficiency"])
+        self.ADUPhoton.setValue(params["detectorADUPhoton"])
+        allItems = [self.materialType.itemText(i) for i in range(self.materialType.count())]
+        self.materialType.setCurrentIndex(allItems.index(params["materialType"]))
+        self.wavelength.editingFinished.connect(self.syncEnergy)
+        self.energy.editingFinished.connect(self.syncWavelength)
+        self.buttonBox.accepted.connect(self.onOkButtonClicked)
+    def syncEnergy(self):
+        wl = self.wavelength.value()
+        h = fit.DICT_physical_constants['h']
+        c = fit.DICT_physical_constants['c']
+        qe = fit.DICT_physical_constants['e']
+        ey = h*c/wl/1.E-9/qe
+        self.energy.setValue(ey)
+    def syncWavelength(self):
+        ey = self.energy.value()
+        h = fit.DICT_physical_constants['h']
+        c = fit.DICT_physical_constants['c']
+        qe = fit.DICT_physical_constants['e']
+        wl = h*c/ey/1.E-9/qe
+        self.wavelength.setValue(wl)
+    def onOkButtonClicked(self):
+        params = {}
+        params["photonWavelengthNM"] = self.wavelength.value()
+        params["photonEnergyEV"] = self.energy.value()
+        params["detectorDistanceMM"] = self.distance.value()
+        params["detectorPixelSizeUM"] = self.pixelSize.value()
+        params["detectorQuantumEfficiency"] = self.quantumEfficiency.value()
+        params["detectorADUPhoton"] = self.ADUPhoton.value()
+        params["materialType"] = self.materialType.currentText()
+        self.modelItem.setParams(None,params)
+
+
+class SizingDialog(QtGui.QDialog, ui.sizingDialog.Ui_SizingDialog):
+    def __init__(self, parent, modelItem):
+        QtGui.QDialog.__init__(self,parent,QtCore.Qt.WindowTitleHint)
+        self.setupUi(self)
+        self.modelItem = modelItem
+        print modelItem

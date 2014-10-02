@@ -7,7 +7,7 @@ from matplotlib import colors
 from matplotlib import cm
 import pyqtgraph
 import fit
-import ui.experimentDialog
+from ui.dialogs import ExperimentDialog
 import ui.displayBox
 import ui.modelProperties
 import ui.pattersonProperties
@@ -713,7 +713,7 @@ class ModelProperties(QtGui.QGroupBox, ui.modelProperties.Ui_ModelProperties):
         self.parent.viewer.view.view2D.paintImage(img)
         self.parent.viewer.view.view2D.updateGL()
     def onExperiment(self):
-        expDialog = ExperimentDialog(self)
+        expDialog = ExperimentDialog(self, self.modelItem)
         expDialog.exec_()
     def calculateFindCenter(self):
         img = self.parent.viewer.view.view2D.selectedImage
@@ -729,50 +729,6 @@ class ModelProperties(QtGui.QGroupBox, ui.modelProperties.Ui_ModelProperties):
         self.showParams()
     def toggleVisible(self):
         self.setVisible(not self.isVisible())
-
-
-class ExperimentDialog(QtGui.QDialog, ui.experimentDialog.Ui_ExperimentDialog):
-    def __init__(self,modelProperties):
-        QtGui.QDialog.__init__(self,modelProperties,QtCore.Qt.WindowTitleHint)
-        self.setupUi(self)
-        self.modelProperties = modelProperties
-        self.materialType.addItems(fit.DICT_atomic_composition.keys())
-        params = self.modelProperties.modelItem.getParams(0)
-        self.wavelength.setValue(params["photonWavelengthNM"])
-        self.syncEnergy()
-        self.distance.setValue(params["detectorDistanceMM"])
-        self.pixelSize.setValue(params["detectorPixelSizeUM"])
-        self.quantumEfficiency.setValue(params["detectorQuantumEfficiency"])
-        self.ADUPhoton.setValue(params["detectorADUPhoton"])
-        allItems = [self.materialType.itemText(i) for i in range(self.materialType.count())]
-        self.materialType.setCurrentIndex(allItems.index(params["materialType"]))
-        self.wavelength.editingFinished.connect(self.syncEnergy)
-        self.energy.editingFinished.connect(self.syncWavelength)
-        self.buttonBox.accepted.connect(self.onOkButtonClicked)
-    def syncEnergy(self):
-        wl = self.wavelength.value()
-        h = fit.DICT_physical_constants['h']
-        c = fit.DICT_physical_constants['c']
-        qe = fit.DICT_physical_constants['e']
-        ey = h*c/wl/1.E-9/qe
-        self.energy.setValue(ey)
-    def syncWavelength(self):
-        ey = self.energy.value()
-        h = fit.DICT_physical_constants['h']
-        c = fit.DICT_physical_constants['c']
-        qe = fit.DICT_physical_constants['e']
-        wl = h*c/ey/1.E-9/qe
-        self.wavelength.setValue(wl)
-    def onOkButtonClicked(self):
-        params = {}
-        params["photonWavelengthNM"] = self.wavelength.value()
-        params["photonEnergyEV"] = self.energy.value()
-        params["detectorDistanceMM"] = self.distance.value()
-        params["detectorPixelSizeUM"] = self.pixelSize.value()
-        params["detectorQuantumEfficiency"] = self.quantumEfficiency.value()
-        params["detectorADUPhoton"] = self.ADUPhoton.value()
-        params["materialType"] = self.materialType.currentText()
-        self.modelProperties.modelItem.setParams(None,params)
 
 
 class PattersonProperties(QtGui.QGroupBox, ui.pattersonProperties.Ui_PattersonProperties):
