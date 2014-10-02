@@ -1,5 +1,5 @@
 
-class CXI:
+class PixelMask:
     # CXI pixelmask bits
     PIXEL_IS_PERFECT = 0
     PIXEL_IS_INVALID = 1

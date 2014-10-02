@@ -2,7 +2,7 @@ from PySide import QtGui, QtCore
 import numpy,cmath
 import logging
 import settingsOwl
-from cxi import CXI
+from cxi.pixelmask import PixelMask
 
 class DataItem:
     def __init__(self,parent,fileLoader,fullName):
@@ -122,7 +122,7 @@ class DataItem:
         else:
             d = numpy.array(self.fileLoader.f[self.fullName])
         if kwargs.get("binaryMask",False):
-            d = (d & CXI.PIXEL_IS_IN_MASK) == 0
+            d = (d & PixelMask.PIXEL_IS_IN_MASK) == 0
 
         windowSize = kwargs.get("windowSize",None)
         if windowSize != None:

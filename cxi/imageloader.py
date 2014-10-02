@@ -1,7 +1,7 @@
 from PySide import QtGui, QtCore
 import numpy
 import logging
-from cxi.cache import ArrayCache
+from cache import ArrayCache
 import settingsOwl
 import patterson
 
