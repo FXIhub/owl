@@ -278,4 +278,8 @@ class SizingDialog(QtGui.QDialog, ui.sizingDialog.Ui_SizingDialog):
         QtGui.QDialog.__init__(self,parent,QtCore.Qt.WindowTitleHint)
         self.setupUi(self)
         self.modelItem = modelItem
-        print modelItem
+        self.experimentButton.released.connect(self.onExperiment)
+    def onExperiment(self):
+        expDialog = ExperimentDialog(self, self.modelItem)
+        expDialog.exec_()
+        
