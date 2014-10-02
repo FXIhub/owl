@@ -421,10 +421,12 @@ class View2D(View,QtOpenGL.QGLWidget):
         cy = self.centerY
         sides = 200    
         radius = self.maskRadius
-        glBegin(GL_LINE_LOOP)    
+        glBegin(GL_LINE_LOOP)
         for i in range(sides):    
             x = radius * numpy.cos(i*2*numpy.pi/sides) + cx*imgWidth/self.zoom
             y = radius * numpy.sin(i*2*numpy.pi/sides) + (1-cy)*imgHeight/self.zoom
+            x = max(0, min(x, imgWidth/self.zoom))
+            y = max(0, min(y, imgHeight/self.zoom))
             glVertex2f(x,y)
         glEnd ();
         glPopMatrix()
@@ -558,44 +560,45 @@ class View2D(View,QtOpenGL.QGLWidget):
             glUniform1f(self.maskedBitsLoc,self.maskOutBits)            
 
         # Model related variables
-        glUniform1i(self.showModelLoc,self.modelView)
-        params = self.data.modelItem.getParams(img)
-        s = imageData.shape
-        self.centerX = ((s[1]-1)/2.+params["offCenterX"])/(s[1]-1)
-        self.centerY = ((s[0]-1)/2.+params["offCenterY"])/(s[0]-1)
-        glUniform1f(self.modelCenterXLoc,self.centerX)
-        glUniform1f(self.modelCenterYLoc,self.centerY)
-        p = params["detectorPixelSizeUM"]*1.E-6
-        D = params["detectorDistanceMM"]*1.E-3
-        wl = params["photonWavelengthNM"]*1.E-9
-        h = fit.DICT_physical_constants['h']
-        c = fit.DICT_physical_constants['c']
-        qe = fit.DICT_physical_constants['e']
-        ey_J = h*c/wl
-        r = params["diameterNM"]*1.E-9/2.
-        V = 4/3.*numpy.pi*r**3
-        I_0 = params["intensityMJUM2"]*1.E-3/ey_J*1.E12
-        rho_e = fit.Material(material_type=params["materialType"]).get_electron_density()
-        QE = params["detectorQuantumEfficiency"]
-        ADUP = params["detectorADUPhoton"]
-        # k = 2 pi / wavelength
-        # q = coordinate * (k p / D)
-        # s = q modelRadius = coordinate * modelSize
-        # modelSize = q modelRadius / coordinate = modelRadius * k p / D
-        k = 2*numpy.pi/wl
-        modelSize = r*k*p/D
-        glUniform1f(self.modelSizeLoc,modelSize)
-        # scale = K * QE * ADUP
-        # K = I_0 (rho_e p/D r_0 V)^2
-        K = I_0*(rho_e*p/D*fit.DICT_physical_constants["re"]*V)**2
-        scale = K * QE * ADUP      
+        if(self.modelView):
+            glUniform1i(self.showModelLoc,self.modelView)
+            params = self.data.modelItem.getParams(img)
+            s = imageData.shape
+            self.centerX = ((s[1]-1)/2.+params["offCenterX"])/(s[1]-1)
+            self.centerY = ((s[0]-1)/2.+params["offCenterY"])/(s[0]-1)
+            glUniform1f(self.modelCenterXLoc,self.centerX)
+            glUniform1f(self.modelCenterYLoc,self.centerY)
+            p = params["detectorPixelSizeUM"]*1.E-6
+            D = params["detectorDistanceMM"]*1.E-3
+            wl = params["photonWavelengthNM"]*1.E-9
+            h = fit.DICT_physical_constants['h']
+            c = fit.DICT_physical_constants['c']
+            qe = fit.DICT_physical_constants['e']
+            ey_J = h*c/wl
+            r = params["diameterNM"]*1.E-9/2.
+            V = 4/3.*numpy.pi*r**3
+            I_0 = params["intensityMJUM2"]*1.E-3/ey_J*1.E12
+            rho_e = fit.Material(material_type=params["materialType"]).get_electron_density()
+            QE = params["detectorQuantumEfficiency"]
+            ADUP = params["detectorADUPhoton"]
+            # k = 2 pi / wavelength
+            # q = coordinate * (k p / D)
+            # s = q modelRadius = coordinate * modelSize
+            # modelSize = q modelRadius / coordinate = modelRadius * k p / D
+            k = 2*numpy.pi/wl
+            modelSize = r*k*p/D
+            glUniform1f(self.modelSizeLoc,modelSize)
+            # scale = K * QE * ADUP
+            # K = I_0 (rho_e p/D r_0 V)^2
+            K = I_0*(rho_e*p/D*fit.DICT_physical_constants["re"]*V)**2
+            scale = K * QE * ADUP      
 
-        glUniform1f(self.modelScaleLoc,scale)
-        glUniform1f(self.imageShapeXLoc,imageData.shape[1])
-        glUniform1f(self.imageShapeYLoc,imageData.shape[0])
-        glUniform1f(self.modelVisibilityLoc,params["_visibility"])
-        self.maskRadius = params["maskRadius"]
-
+            glUniform1f(self.modelScaleLoc,scale)
+            glUniform1f(self.imageShapeXLoc,imageData.shape[1])
+            glUniform1f(self.imageShapeYLoc,imageData.shape[0])
+            glUniform1f(self.modelVisibilityLoc,params["_visibility"])
+            self.maskRadius = params["maskRadius"]
+ 
         glBegin (GL_QUADS);
         glTexCoord2f (0.0, 0.0);
         glVertex3f (0, img_height, 0.0);
@@ -610,11 +613,13 @@ class View2D(View,QtOpenGL.QGLWidget):
         glActiveTexture(GL_TEXTURE0)  
 
         glUseProgram(0)
+        if(self.modelView):
+            self.paintCircleFitMask()
+
         if(img == self.selectedImage):
             self.paintSelectedImageBorder(img_width,img_height)
             self.paintImageProperties(img)
-        if(self.modelView):
-            self.paintCircleFitMask()
+
         if(self.data and self.tagView and self.data.tagsItem.tags and self.data.tagsItem.tags != []):
             tag_size = self.tagSize()
             tag_pad = self.tagPad()
