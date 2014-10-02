@@ -18,9 +18,9 @@ from cxitree import CXINavigation
 from dataprop import DataProp, paintColormapIcons
 import settingsOwl
 import ui.dialogs
+import ui.widgets
 from view.indexprojector import IndexProjector
 from view.viewsplitter import ViewSplitter
-
 
 
 # Wishes:
@@ -957,11 +957,22 @@ class Viewer(QtGui.QMainWindow):
         TODO FM: move to view2D?
         """
         if(self.view.view2D.data):
-            sizingDialog = ui.dialogs.SizingDialog(self, self.view.view2D)
-            if(sizingDialog.exec_() == QtGui.QDialog.Accepted):
-                print "accepted"
+            self.sizingWidget = ui.widgets.SizingWidget(self, self.view.view2D)
+            self.dataProp.vboxScroll.addWidget(self.sizingWidget)
+            self.sizingWidget.sizing.sizingDone.connect(self.sizingDestroyWidget)
         else:
             QtGui.QMessageBox.information(self, "Cannot do sizing", "Cannot do sizing if no dataset is open.")
+
+    def sizingDestroyWidget(self):
+        """Slot triggered when sizing analysis is done
+
+        TODO: BD: move to view2D?
+        """
+        self.sizingWidget.sizingThread.quit()
+        QtCore.QThread.sleep(1)
+        self.dataProp.vboxScroll.removeWidget(self.sizingWidget)
+        self.sizingWidget.deleteLater()
+        self.sizingWidget = None            
 
     def onFileLoaderExtended(self):
         """Slot triggered when fileLoader emits onFileLoaderExtended

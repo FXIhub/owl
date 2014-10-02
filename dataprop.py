@@ -12,14 +12,12 @@ import ui.displayBox
 import ui.modelProperties
 import ui.pattersonProperties
 
-
 def sizeof_fmt(num):
     for x in ['bytes','kB','MB','GB']:
         if num < 1024.0:
             return "%3.1f %s" % (num, x)
         num /= 1024.0
     return "%3.1f %s" % (num, 'TB')
-
 
 class DataProp(QtGui.QWidget):
     view2DPropChanged = QtCore.Signal(dict)
@@ -138,7 +136,6 @@ class DataProp(QtGui.QWidget):
 
         self.plotBox.setLayout(self.plotBox.vbox)
         self.plotBox.hide()
-
 
         self.modelProperties = ModelProperties(self)
         self.modelProperties.hide()
