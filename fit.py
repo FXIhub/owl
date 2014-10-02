@@ -227,7 +227,6 @@ def fit(image,mask,params,r_max,downsampling=1,do_brute=True):
 
     K = I0 * ( rho_e*p/D*DICT_physical_constants["re"]*V )**2
 
-
     err = lambda v: 1-scipy.stats.pearsonr(i_fit_m([K,v]),fitimg)[0]
     maxfev=1000 
 
@@ -242,7 +241,7 @@ def fit(image,mask,params,r_max,downsampling=1,do_brute=True):
     # End with least square
     # r, success = leastsq(err, r, maxfev=maxfev,xtol=1e-3)
     r, cov_r, infodict, mesg, ier = leastsq(err, r, maxfev=maxfev,xtol=1e-3, full_output=1)
-#    print infodict
+    # print infodict
     r = r[0]
 
     # Now fit the intensity

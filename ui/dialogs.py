@@ -10,13 +10,11 @@ import numpy
 import math
 import logging
 import settingsOwl
-from analysis import Sizing
 import fit
 import ui.tagsDialog
 import ui.selectIndexDialog
 import ui.preferencesDialog
 import ui.fileModeDialog
-import ui.sizingDialog
 import ui.experimentDialog
 
 class TagsDialog(QtGui.QDialog, ui.tagsDialog.Ui_TagsDialog):
@@ -270,31 +268,3 @@ class ExperimentDialog(QtGui.QDialog, ui.experimentDialog.Ui_ExperimentDialog):
         params["detectorADUPhoton"] = self.ADUPhoton.value()
         params["materialType"] = self.materialType.currentText()
         self.modelItem.setParams(None,params)
-
-class SizingDialog(QtGui.QDialog, ui.sizingDialog.Ui_SizingDialog):
-    def __init__(self, parent, view):
-        QtGui.QDialog.__init__(self,parent,QtCore.Qt.WindowTitleHint)
-        self.setupUi(self)
-        self.view = view
-        self.modelItem = self.view.data.modelItem
-        self.imgs = self.view.indexProjector.imgs
-        self.experimentButton.released.connect(self.onExperiment)
-        self.sizing = Sizing(None, self.modelItem, self.imgs)
-        self.sizing.sizingDone.connect(self.closeSizingDialog)
-        self.sizing.sizingProgress.connect(self.updateProgress)
-        self.startButton.released.connect(self.sizing.startSizing)
-
-        self.sizingThread = QtCore.QThread()
-        self.sizing.moveToThread(self.sizingThread)
-        self.sizingThread.start()
-        
-    def onExperiment(self):
-        expDialog = ExperimentDialog(self, self.modelItem)
-        expDialog.exec_()
-            
-    def updateProgress(self, status, status_msg):
-        self.progressBar.setValue(status)
-        self.progressLabel.setText(status_msg)
-
-    def closeSizingDialog(self, done):
-        if done: self.accept()

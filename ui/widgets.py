@@ -1,0 +1,34 @@
+from PySide import QtGui, QtCore, QtOpenGL
+import ui.sizingWidget
+from analysis import Sizing
+
+class SizingWidget(QtGui.QGroupBox, ui.sizingWidget.Ui_SizingWidget):
+    def __init__(self, parent, view):
+        QtGui.QGroupBox.__init__(self,parent)
+        self.setupUi(self)
+        self.view = view
+        self.modelItem = self.view.data.modelItem
+        self.sizing = Sizing(None, self.modelItem)
+        self.sizingThread = QtCore.QThread()
+        self.sizing.moveToThread(self.sizingThread)
+        self.sizingThread.start()
+        self.setData()
+        
+        # Connect signals
+        self.experimentButton.released.connect(self.onExperiment)
+        self.setdataButton.released.connect(self.setData)
+        self.startButton.released.connect(self.sizing.startSizing)
+        self.sizing.sizingProgress.connect(self.updateProgress)
+
+    def onExperiment(self):
+        expDialog = ExperimentDialog(self, self.modelItem)
+        expDialog.exec_()
+
+    def setData(self):
+        imgs = self.view.indexProjector.imgs
+        self.sizing.setImgs(imgs)
+        self.progressLabel.setText("Ready for sizing (%d patterns)" % len(imgs))
+
+    def updateProgress(self, status, status_msg):
+        self.progressBar.setValue(status)
+        self.progressLabel.setText(status_msg)
