@@ -857,7 +857,7 @@ class Viewer(QtGui.QMainWindow):
 
     def sizingClicked(self):
         if(self.view.view2D.data):
-            sizingDialog = ui.dialogs.SizingDialog(self, self.view.view2D.data.modelItem)
+            sizingDialog = ui.dialogs.SizingDialog(self, self.view.view2D)
             if(sizingDialog.exec_() == QtGui.QDialog.Accepted):
                 print "accepted"
         else:

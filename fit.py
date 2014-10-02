@@ -5,6 +5,12 @@ import logging
 import scipy.signal
 from scipy.optimize import leastsq
 import scipy.stats
+try:
+    import spimage
+    HAS_SPIMAGE = True
+except:
+    HAS_SPIMAGE = False
+
 
 class FitModel:
     def __init__(self,dataItemImage,dataItemMask):
@@ -18,9 +24,10 @@ class FitModel:
     def center(self,img,params):
         I = self.dataItemImage.data(img=img)
         M = self.dataItemMask.data(img=img,binaryMask=True)
-        params = center_initial(I,M,params,params["maskRadius"])
-        params = center(I,M,params,5,params["maskRadius"])
-        return params
+        C = FindCenter(I,M,params,5, params["maskRadius"])
+        C.center_initial()
+        C.center_refine()
+        return C.params
     def fit(self,img,params):
         I = self.dataItemImage.data(img=img)
         M = self.dataItemMask.data(img=img,binaryMask=True)
@@ -38,16 +45,37 @@ class GaussModel:
     def error(self, p, m, y):
         return m.flatten()*(self.model(p[0], p[1], p[2],p[3]).flatten() - y.flatten())
 
-def center_initial(img, msk, params, r_max):
-    p0 = numpy.array([1., 0., 0., 20.])
-    GM = GaussModel(img.shape)
-    p, ier = leastsq(GM.error, p0, args=(msk, img))
-    center = numpy.array([p[1], p[2]])
-    params["offCenterX"] = p[1]
-    params["offCenterY"] = p[2]
-    return params
+class FindCenter:
+    def __init__(self, img, msk, params, dc_max, r_max):
+        self.img = img
+        self.msk = msk
+        self.params = params
+        self.dc_max = dc_max
+        self.r_max = r_max
 
-def center(img,msk,params,dc_max,r_max):
+    def center_initial(self): 
+        p0 = numpy.array([1., 0., 0., 20.])
+        GM = GaussModel(self.img.shape)
+        p, ier = leastsq(GM.error, p0, args=(self.msk, self.img))
+        self.params["offCenterX"] = p[1]
+        self.params["offCenterY"] = p[2]
+
+    def center_refine(self):
+        if HAS_SPIMAGE:
+            self.center_refine_fast()
+        else:
+            print "No libspimage"
+            
+    def center_refine_fast(self):
+        I = spimage.sp_image_alloc(self.img.shape[1], self.img.shape[0], 1)
+        I.image[:] = self.img
+        I.mask[:]  = self.msk
+        I.detector.image_center[:] = numpy.array([self.params["offCenterY"] + self.img.shape[0]/2, self.params["offCenterX"] + self.img.shape[1]/2, 0 ])
+        success = spimage.sp_find_center_refine(I, self.dc_max, 0, None)
+        self.params["offCenterX"] = I.detector.image_center[1] - self.img.shape[1]/2
+        self.params["offCenterY"] = I.detector.image_center[0] - self.img.shape[1]/2
+        
+def center_refine_slow(img,msk,params,dc_max,r_max):
     s = img.shape
     cx_g = (s[1]-1)/2.+params["offCenterX"]
     cy_g = (s[0]-1)/2.+params["offCenterY"]
