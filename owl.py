@@ -19,8 +19,8 @@ from dataprop import DataProp, paintColormapIcons
 import settingsOwl
 import ui.dialogs
 import ui.widgets
-from view.indexprojector import IndexProjector
-from view.viewsplitter import ViewSplitter
+from views.indexprojector import IndexProjector
+from views.viewsplitter import ViewSplitter
 
 
 # Wishes:
