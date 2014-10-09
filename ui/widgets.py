@@ -1,5 +1,6 @@
 from PySide import QtGui, QtCore, QtOpenGL
 import ui.sizingWidget
+import ui.dialogs
 from analysis import Sizing
 
 class SizingWidget(QtGui.QGroupBox, ui.sizingWidget.Ui_SizingWidget):
@@ -21,7 +22,7 @@ class SizingWidget(QtGui.QGroupBox, ui.sizingWidget.Ui_SizingWidget):
         self.sizing.sizingProgress.connect(self.updateProgress)
 
     def onExperiment(self):
-        expDialog = ExperimentDialog(self, self.modelItem)
+        expDialog = ui.dialogs.ExperimentDialog(self, self.modelItem)
         expDialog.exec_()
 
     def setData(self):

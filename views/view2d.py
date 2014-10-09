@@ -614,11 +614,12 @@ class View2D(View, QtOpenGL.QGLWidget):
             GL.glUniform1i(self.clampLoc, self.normClamp)
             GL.glUniform1f(self.maskedBitsLoc, self.maskOutBits)
 
+        GL.glUniform1i(self.showModelLoc, self.modelView)
+
         # Model related variables
         if(self.modelView):
             # TODO FM: All this physics knowledge should not be here.
             # It has to be moved out of here, possibly even out of owl
-            GL.glUniform1i(self.showModelLoc, self.modelView)
             params = self.data.modelItem.getParams(img)
             s = imageData.shape
             self.centerX = ((s[1]-1)/2.+params["offCenterX"])/(s[1]-1)

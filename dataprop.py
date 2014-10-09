@@ -639,7 +639,7 @@ class ModelProperties(QtGui.QGroupBox, ui.modelProperties.Ui_ModelProperties):
         QtGui.QGroupBox.__init__(self,parent)
         self.setupUi(self)
         self.params = {}
-        self.setModelItem(None)
+        self.setModelItem()
         self.centerX.valueChanged.connect(self.setParams)
         self.centerY.valueChanged.connect(self.setParams)
         self.diameter.valueChanged.connect(self.setParams)
@@ -707,7 +707,7 @@ class ModelProperties(QtGui.QGroupBox, ui.modelProperties.Ui_ModelProperties):
             return
         self.modelItem.setParams(img,params)
         # max: needed at psusr to really refresh, works without on my mac
-        self.parent.viewer.view.view2D.paintImage(img)
+        #self.parent.viewer.view.view2D._paintImage(img)
         self.parent.viewer.view.view2D.updateGL()
     def onExperiment(self):
         expDialog = ExperimentDialog(self, self.modelItem)

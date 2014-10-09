@@ -881,7 +881,7 @@ class Viewer(QtGui.QMainWindow):
         self.cxiNavigation.dataBoxes["plot Y"].button.setName(n)
 
     def handleData2DChanged(self, dataItemImage, dataItemMask):
-        """Slot triggered when view1D emits dataItemYChanged
+        """Slot triggered when view2D emits dataItemChanged
 
         TODO FM: move to dataProp
         """
