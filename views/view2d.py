@@ -459,6 +459,30 @@ class View2D(View, QtOpenGL.QGLWidget):
 
         GL.glPopMatrix()
 
+
+    def _paintFitModelMinima(self):
+        GL.glPushMatrix()
+        GL.glShadeModel(GL.GL_FLAT)
+        GL.glColor3f(0.5, 0.5, 0.5)
+        GL.glLineWidth(1./self.zoom)
+        imgWidth = self._getImgWidth("window", False)
+        imgHeight = self.getImgHeight("window", False)
+        cx = self.centerX
+        cy = self.centerY
+        sides = 200
+        for a in [4.49, 7.725, 10.9]:
+            GL.glBegin(GL.GL_LINE_LOOP)
+            radius = a/self.modelSize
+            for i in range(sides):
+                x = radius * numpy.cos(i*2*numpy.pi/sides) + cx*imgWidth/self.zoom
+                y = radius * numpy.sin(i*2*numpy.pi/sides) + (1-cy)*imgHeight/self.zoom
+                x = max(0, min(x, imgWidth/self.zoom))
+                y = max(0, min(y, imgHeight/self.zoom))
+                GL.glVertex2f(x, y)
+            GL.glEnd()
+        GL.glPopMatrix()
+
+
     def _paintCircleFitMask(self):
         GL.glPushMatrix()
         GL.glShadeModel(GL.GL_FLAT)
@@ -644,8 +668,8 @@ class View2D(View, QtOpenGL.QGLWidget):
             # s = q modelRadius = coordinate * modelSize
             # modelSize = q modelRadius / coordinate = modelRadius * k p / D
             k = 2*numpy.pi/wl
-            modelSize = r*k*p/D
-            GL.glUniform1f(self.modelSizeLoc, modelSize)
+            self.modelSize = r*k*p/D
+            GL.glUniform1f(self.modelSizeLoc, self.modelSize)
             # scale = K * QE * ADUP
             # K = I_0 (rho_e p/D r_0 V)^2
             K = I_0*(rho_e*p/D*fit.DICT_physical_constants["re"]*V)**2
@@ -673,6 +697,7 @@ class View2D(View, QtOpenGL.QGLWidget):
         GL.glUseProgram(0)
         if(self.modelView):
             self._paintCircleFitMask()
+            self._paintFitModelMinima()
 
         if(img == self.selectedImage):
             self._paintSelectedImageBorder(img_width, img_height)
