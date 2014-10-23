@@ -471,15 +471,15 @@ class View2D(View, QtOpenGL.QGLWidget):
         cy = self.centerY
         sides = 200
         for a in [4.49, 7.725, 10.9]:
-            GL.glBegin(GL.GL_LINE_LOOP)
             radius = a/self.modelSize
             for i in range(sides):
+                if not i % 4: GL.glBegin(GL.GL_LINE_LOOP)
                 x = radius * numpy.cos(i*2*numpy.pi/sides) + cx*imgWidth/self.zoom
                 y = radius * numpy.sin(i*2*numpy.pi/sides) + (1-cy)*imgHeight/self.zoom
                 x = max(0, min(x, imgWidth/self.zoom))
                 y = max(0, min(y, imgHeight/self.zoom))
                 GL.glVertex2f(x, y)
-            GL.glEnd()
+                if not (i + 3) % 4: GL.glEnd()
         GL.glPopMatrix()
 
 
