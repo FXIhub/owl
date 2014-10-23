@@ -10,7 +10,7 @@ try:
     HAS_SPIMAGE = True
 except:
     HAS_SPIMAGE = False
-
+#test
 
 class FitModel:
     def __init__(self,dataItemImage,dataItemMask):
