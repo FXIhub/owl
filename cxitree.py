@@ -72,13 +72,16 @@ class DataMaskMenu(DataMenu):
                                'bad' : PIXEL_IS_BAD,
                                'resolution' : PIXEL_IS_OUT_OF_RESOLUTION_LIMITS,
                                'missing' : PIXEL_IS_MISSING,
-                               'halo' : PIXEL_IS_IN_HALO}
+                               'halo' : PIXEL_IS_IN_HALO,
+                               'corrected' : PIXEL_IS_ARTIFACT_CORRECTED,
+                               'non-corrected' : PIXEL_FAILED_ARTIFACT_CORRECTION}
         self.maskActions = {}
         for key in self.PIXELMASK_BITS.keys():
             self.maskActions[key] = self.addAction(key)
             self.maskActions[key].setCheckable(True)
             self.maskActions[key].setChecked(True)
         self.maskActions["resolution"].setChecked(False)
+        self.maskActions["corrected"].setChecked(False)
     def getMaskOutBits(self):
         maskOutBits=0
         for key in self.maskActions:
