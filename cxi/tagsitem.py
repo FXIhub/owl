@@ -39,7 +39,7 @@ class TagsItem:
     def setTags(self,tags):
         self.tagsDirty = True
         newMembers = numpy.zeros((len(tags),self.fileLoader.stackSize),dtype=numpy.int8)
-        if(self.tagMembers != None):
+        if(self.tagMembers is not None):
             # Copy old members to new members
             for i in range(0,len(tags)):
                 # Check if the new tag is an old tag

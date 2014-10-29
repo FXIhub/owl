@@ -24,7 +24,7 @@ class AbstractParameterItem:
         self.initParams()
     def initParams(self):
         # return if we do not even know the stack size
-        if self.fileLoader.stackSize == None:
+        if self.fileLoader.stackSize is None:
             self.numEvents = self.chunkSize
         else:
             self.numEvents = self.fileLoader.stackSize - self.fileLoader.stackSize % self.chunkSize + self.chunkSize
@@ -51,7 +51,7 @@ class AbstractParameterItem:
     def getParams(self,img0):
         if (self.genParams == {}) or (self.indParams == {}):
             self.initParams()
-        if img0 == None:
+        if img0 is None:
             img = 0
         else:
             img = img0

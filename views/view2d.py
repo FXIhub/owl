@@ -97,10 +97,10 @@ class View2D(View, QtOpenGL.QGLWidget):
         As such this kind of functions should be moved to some other place
         which manages what's currently being viewed.
         """
-        if self.data != None:
+        if self.data is not None:
             self.data.deselectStack()
         self.data = dataItem
-        if self.data != None:
+        if self.data is not None:
             self.data.selectStack()
             self.has_data = True
         else:
@@ -114,10 +114,10 @@ class View2D(View, QtOpenGL.QGLWidget):
         As such this kind of functions should be moved to some other place
         which manages what's currently being viewed.
         """
-        if self.mask != None:
+        if self.mask is not None:
             self.mask.deselectStack()
         self.mask = dataItem
-        if self.mask != None:
+        if self.mask is not None:
             self.mask.selectStack()
         self.dataItemChanged.emit(self.data, self.mask)
 
@@ -137,10 +137,10 @@ class View2D(View, QtOpenGL.QGLWidget):
         As such this kind of functions should be moved to some other place
         which manages what's currently being viewed.
         """
-        if self.mask == None:
+        if self.mask is None:
             return None
         elif self.mask.isStack:
-            #if self.integrationMode == None:
+            #if self.integrationMode is None:
             #print self.mask.shape()
             return self.mask.data(img=img)
             #else:
@@ -418,7 +418,7 @@ class View2D(View, QtOpenGL.QGLWidget):
         if(self.indexProjector.indexToImg(self.lastHoveredViewIndex) == img):
             ix = self.hoveredPixel[0]
             iy = self.hoveredPixel[1]
-            if self.loaderThread.maskData[img] != None:
+            if self.loaderThread.maskData[img] is not None:
                 text.append("Mask: %5.3g" % (self.loaderThread.maskData[img][iy, ix]))
             text.append("Value: %5.3g" % (self.loaderThread.imageData[img][iy, ix]))
             text.append("Pixel: (%d, %d)" % (ix, iy))
@@ -807,7 +807,7 @@ class View2D(View, QtOpenGL.QGLWidget):
         if not self.data.isStack:
             return 1
         else:
-            if self.indexProjector.imgs == None:
+            if self.indexProjector.imgs is None:
                 return self._getNImages()
             else:
                 return len(self.indexProjector.imgs)
@@ -817,7 +817,7 @@ class View2D(View, QtOpenGL.QGLWidget):
 
         TODO FM: Called once from view2DScrollWidget. Why?
         """
-        if self.data != None:
+        if self.data is not None:
             imgHeight = self.data.height()
             if border == True:
                 imgHeight += self._subplotSceneBorder()
@@ -1001,7 +1001,7 @@ class View2D(View, QtOpenGL.QGLWidget):
     def _nextSlideRow(self):
         self.nextRow(wrap=True)
         info = self._getPixelInfo(self.centralImg, self.ix, self.iy)
-        if info == None:
+        if info is None:
             return
         self.selectedImage = info["img"]
         self.pixelClicked.emit(info)
@@ -1028,7 +1028,7 @@ class View2D(View, QtOpenGL.QGLWidget):
     def _browseToLastIfAuto(self):
         """Scroll to the last position if autoLast is true"""
         if self.autoLast:
-            if self.data != None:
+            if self.data is not None:
                 self.browseToViewIndex(self.indexProjector.getNViewIndices()-1)
 
     def mouseReleaseEvent(self, event):
@@ -1056,7 +1056,7 @@ class View2D(View, QtOpenGL.QGLWidget):
         if img in self.loaderThread.imageData.keys():
             (self.ix, self.iy) = self._windowToImageCoordinates(x, y, 0)
             info = self._getPixelInfo(img, self.ix, self.iy)
-            if info == None:
+            if info is None:
                 return
             self.selectedImage = info["img"]
             self.pixelClicked.emit(info)
@@ -1072,7 +1072,7 @@ class View2D(View, QtOpenGL.QGLWidget):
         info["img"] = img
         info["viewIndex"] = self.indexProjector.imgToIndex(img)
         info["imageValue"] = self.loaderThread.imageData[img][iy, ix]
-        if self.loaderThread.maskData[img] == None:
+        if self.loaderThread.maskData[img] is None:
             info["maskValue"] = None
         else:
             info["maskValue"] = self.loaderThread.maskData[img][iy, ix]
@@ -1281,7 +1281,7 @@ class View2D(View, QtOpenGL.QGLWidget):
 
     def refreshDisplayProp(self, prop):
         """Redraws the image properties hovering display"""
-        if prop != None:
+        if prop is not None:
             self.normScaling = prop["normScaling"]
             if(self.normScaling == 'lin'):
                 self.normScalingValue = 0
@@ -1335,7 +1335,7 @@ class View2D(View, QtOpenGL.QGLWidget):
     def onStackSizeChanged(self, newStackSize):
         """Triggered when the size of the stack changes"""
         # not sure if this is needed
-        if self.data != None:
+        if self.data is not None:
             self.has_data = True
         else:
             self.has_data = False
@@ -1359,7 +1359,7 @@ class View2D(View, QtOpenGL.QGLWidget):
         """Moves current selection"""
         if(abs(x) > 1 or abs(y) > 1):
             raise AssertionError('moveSelection only supports moves <= 1 in x and y')
-        if(self.selectedImage == None):
+        if(self.selectedImage is None):
             return
         viewIndex = self.indexProjector.imgToIndex(self.selectedImage)
         img = self.indexProjector.indexToImg(viewIndex+x+y*self.stackWidth)
@@ -1375,7 +1375,7 @@ class View2D(View, QtOpenGL.QGLWidget):
         self.selectedImage = img
         if img in self.loaderThread.imageData.keys():
             info = self._getPixelInfo(img, 0, 0)
-            if info == None:
+            if info is None:
                 return
             self.pixelClicked.emit(info)
 

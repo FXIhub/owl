@@ -68,9 +68,9 @@ class DataItem:
         #print self.fullName
         #print self.fileLoader.f[self.fullName]
         shape = self.fileLoader.f[self.fullName].shape
-        if self.isSelectedStack and self.fileLoader.stackSize != None:
+        if self.isSelectedStack and self.fileLoader.stackSize is not None:
         # MFH: Isnn't the following line be more logical than what we have currently?
-        #if self.isStack and self.fileLoader.stackSize != None:
+        #if self.isStack and self.fileLoader.stackSize is not None:
             shape = list(shape)
             shape.pop(0)
             shape.insert(0,self.fileLoader.stackSize)
@@ -100,21 +100,21 @@ class DataItem:
         
     def data(self,**kwargs):
         complex_mode = kwargs.get("complex_mode",None)
-        if self.isComplex == False and complex_mode != None:
+        if self.isComplex == False and complex_mode is not None:
             return None
         img = kwargs.get("img",None)
         if self.isStack and self.format == 2:
             d = numpy.array(self.fileLoader.f[self.fullName][img])
         elif self.isStack and self.format == 1:
-            if img != None:
+            if img is not None:
                 d = numpy.array(self.fileLoader.f[self.fullName])[img][:]
-            elif self.fileLoader.stackSize == None:
+            elif self.fileLoader.stackSize is None:
                 d = numpy.array(self.fileLoader.f[self.fullName])[:,:]
             else:
                 d = numpy.array(self.fileLoader.f[self.fullName])[:self.fileLoader.stackSize,:]
 
         elif self.isStack and self.format == 0:
-            if self.fileLoader.stackSize == None:
+            if self.fileLoader.stackSize is None:
                 d = numpy.array(self.fileLoader.f[self.fullName])
             else:
                 d = numpy.array(self.fileLoader.f[self.fullName])[:self.fileLoader.stackSize]
@@ -125,7 +125,7 @@ class DataItem:
             d = (d & PixelMask.PIXEL_IS_IN_MASK) == 0
 
         windowSize = kwargs.get("windowSize",None)
-        if windowSize != None:
+        if windowSize is not None:
             # Running average by convolution with an exponentially decaying weight kernel in respect to time.
             # d12: decay half-time
             # The total window size is two times d12, defining the absolute length of the memory.

@@ -80,7 +80,7 @@ class TagsDialog(QtGui.QDialog, ui.tagsDialog.Ui_TagsDialog):
         self.tagsTable.insertColumn(self.tagsTable.columnCount())
 
         # The Tag name
-        if(title == None):
+        if(title is None):
             title = "Tag "+str(self.colorIndex)
         item = QtGui.QTableWidgetItem(title)
         item.setTextAlignment(QtCore.Qt.AlignHCenter|QtCore.Qt.AlignVCenter)
@@ -90,7 +90,7 @@ class TagsDialog(QtGui.QDialog, ui.tagsDialog.Ui_TagsDialog):
         # The Tag color
         item = QtGui.QTableWidgetItem()
         item.setFlags(QtCore.Qt.ItemIsEnabled)
-        if(color == None):
+        if(color is None):
             color = self.colors[self.colorIndex%len(self.colors)]
         self.colorIndex += 1
         item.setBackground(color)

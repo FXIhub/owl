@@ -15,7 +15,7 @@ class FileLoader(QtCore.QObject):
         self.stackSize = None
         self.mode = parent.settings.value("fileMode")
     def openFile(self,fullFilename,mode0=None):
-        if mode0 != None:
+        if mode0 is not None:
             self.mode = mode0
         mode = self.mode
         if mode == "r*" and not settingsOwl.swmrSupported:
@@ -114,13 +114,13 @@ class FileLoader(QtCore.QObject):
         addDatasetRecursively(self,self.children)
     def updateStackSize(self):
         #print "update"
-        if self.f == None:
+        if self.f is None:
             return
         N = []
         for n,d in self.dataItems.items():
             if d.isSelectedStack:
                 if "numEvents" in self.f[n].attrs.keys():
-                    ## if not self.f.mode == "r+": # self.f.mode == None if opened in swmr mode. This is odd.
+                    ## if not self.f.mode == "r+": # self.f.mode is None if opened in swmr mode. This is odd.
                     if self.f.mode == "r*": # This is to fix issues in r and r+ mode, does it also work with smwe now?
                         self.f[n].refresh()
                     N.append(self.f[n].attrs.get("numEvents")[0])
@@ -147,33 +147,33 @@ class FileLoader(QtCore.QObject):
                 return 0
         return 1
     def saveTags(self):
-        if self.f == None:
+        if self.f is None:
             return
         if 0 ==  self.ensureReadWriteModeActivated():
             for n,t in self.tagsItems.items():
                 t.saveTags()
     def modelsChanged(self):
-        if self.f == None:
+        if self.f is None:
             return
         for n,m in self.modelItems.items():
             if m.paramsDirty:
                 return True
         return False
     def pattersonsChanged(self):
-        if self.f == None:
+        if self.f is None:
             return
         for n,p in self.pattersonItems.items():
             if p.paramsDirty:
                 return True
         return False
     def saveModels(self):
-        if self.f == None:
+        if self.f is None:
             return
         if 0 ==  self.ensureReadWriteModeActivated():
             for n,m in self.modelItems.items():
                 m.saveParams()
     def savePattersons(self):
-        if self.f == None:
+        if self.f is None:
             return
         if 0 ==  self.ensureReadWriteModeActivated():
             for n,m in self.pattersonItems.items():

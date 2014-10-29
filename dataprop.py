@@ -185,7 +185,7 @@ class DataProp(QtGui.QWidget):
         self.stackSize = newStackSize
         self.updateShape()
     def updateShape(self):
-        if self.data != None:
+        if self.data is not None:
             # update shape label
             string = "Shape: "
             shape = list(self.data.shape())
@@ -197,7 +197,7 @@ class DataProp(QtGui.QWidget):
     def setData(self,data=None):
         self.data = data
         self.updateShape()
-        if data != None:
+        if data is not None:
             self.datatype.setText("Data Type: %s" % (data.dtypeName))
             self.datasize.setText("Data Size: %s" % sizeof_fmt(data.dtypeItemsize*reduce(mul,data.shape())))
             if data.isStack:
@@ -224,7 +224,7 @@ class DataProp(QtGui.QWidget):
         self.imageStackBox.hide()
     # VIEW
     def onPixelClicked(self,info):
-        if self.data != None and info != None:
+        if self.data is not None and info is not None:
             (hist,edges) = numpy.histogram(self.data.data(img=info["img"]),bins=100)
             self.displayBox.pixelClicked(hist,edges)
             # Check if we clicked on a tag
@@ -320,7 +320,7 @@ class DataProp(QtGui.QWidget):
         self.sortingDataLabel.setText("")
         self.sortingBox.hide()
     def refreshSorting(self,data):
-        if data != None:
+        if data is not None:
             self.sortingData = data
             self.sortingBox.show()
             self.sortingDataLabel.setText(data.fullName)
@@ -425,7 +425,7 @@ class DataProp(QtGui.QWidget):
                 self.show()
     def toggleSelectedImageTag(self,id):
         img = self.viewer.view.view2D.selectedImage
-        if(img == None):
+        if(img is None):
             return
         self.toggleTag(img,id)
     def toggleTag(self,img,id):
@@ -587,7 +587,7 @@ class FilterWidget(QtGui.QWidget):
         self.yieldLabel.setText(yieldLabelString)
         (hist,edges) = numpy.histogram(self.data,bins=100)
         edges = (edges[:-1]+edges[1:])/2.0
-        if self.histogram.itemPlot != None:
+        if self.histogram.itemPlot is not None:
             self.histogram.removeItem(self.histogram.itemPlot)
         #self.histogram.clear()
         item = self.histogram.plot(edges,hist,fillLevel=0,fillBrush=QtGui.QColor(255, 255, 255, 128),antialias=True)
@@ -595,7 +595,7 @@ class FilterWidget(QtGui.QWidget):
         self.histogram.itemPlot = item
         self.histogram.region.setRegion([vmin,vmax])
         self.histogram.autoRange()
-        if self.dataItem.selectedIndex == None:
+        if self.dataItem.selectedIndex is None:
             self.set1DimensionalDataset()
         else:
             self.populateIndexCombo()
@@ -654,11 +654,11 @@ class ModelProperties(QtGui.QGroupBox, ui.modelProperties.Ui_ModelProperties):
         self.visibilitySlider.sliderMoved.connect(self.setParams)
     def setModelItem(self,modelItem=None):
         self.modelItem = modelItem
-        if modelItem == None:
+        if modelItem is None:
             paramsImg = None
         else:
             img = self.parent.viewer.view.view2D.selectedImage
-            if img == None:
+            if img is None:
                 paramsImg = None
                 self.showParams(paramsImg)
             else:
@@ -667,7 +667,7 @@ class ModelProperties(QtGui.QGroupBox, ui.modelProperties.Ui_ModelProperties):
                 #self.setParams()  ## This breaks reloading of a dataset. Without this, viewing the model on selected images still works...
     def showParams(self,params=None):
         img = self.parent.viewer.view.view2D.selectedImage
-        if img != None:
+        if img is not None:
             self.centerX.setReadOnly(False)
             self.centerY.setReadOnly(False)
             self.diameter.setReadOnly(False)
@@ -681,7 +681,7 @@ class ModelProperties(QtGui.QGroupBox, ui.modelProperties.Ui_ModelProperties):
             self.scaling.setReadOnly(True)
             self.maskRadius.setReadOnly(True)
             self.visibilitySlider.setEnabled(False)           
-        if self.modelItem == None:
+        if self.modelItem is None:
             self.centerX.setValue(0)
             self.centerY.setValue(0)
             self.diameter.setValue(0)
@@ -709,7 +709,7 @@ class ModelProperties(QtGui.QGroupBox, ui.modelProperties.Ui_ModelProperties):
         params["_visibility"] = float(self.visibilitySlider.value()/100.)
         params["_maximumShift"] = int(self.maximumShift.value())
         params["_findCenterMethod"] = str(self.findCenterMethod.currentText())
-        if(img == None):
+        if(img is None):
             return
         self.modelItem.setParams(img,params)
         # max: needed at psusr to really refresh, works without on my mac
@@ -751,11 +751,11 @@ class PattersonProperties(QtGui.QGroupBox, ui.pattersonProperties.Ui_PattersonPr
         self.pattersonPushButton.clicked.connect(self.calculatePatterson)
     def setPattersonItem(self,pattersonItem=None):
         self.pattersonItem = pattersonItem
-        if pattersonItem == None:
+        if pattersonItem is None:
             paramsImg = None
         else:
             img = self.parent.viewer.view.view2D.selectedImage
-            if img == None:
+            if img is None:
                 paramsImg = None
                 self.showParams(paramsImg)
             else:
@@ -764,7 +764,7 @@ class PattersonProperties(QtGui.QGroupBox, ui.pattersonProperties.Ui_PattersonPr
                 #self.setParams() ## This causes problems when datasets are reloaded (or new datasets loaded) and even without this line, the patterson params are still set properly
     def showParams(self,params=None):
         img = self.parent.viewer.view.view2D.selectedImage
-        if img != None:
+        if img is not None:
             self.imageThreshold.setReadOnly(False)
             self.maskSmooth.setReadOnly(False)
             self.maskThreshold.setReadOnly(False)
@@ -781,7 +781,7 @@ class PattersonProperties(QtGui.QGroupBox, ui.pattersonProperties.Ui_PattersonPr
             self.darkfieldY.setReadOnly(True)
             self.darkfieldSigma.setReadOnly(True)
 
-        if self.pattersonItem == None:
+        if self.pattersonItem is None:
             self.imageThreshold.setValue(0)
             self.maskSmooth.setValue(0)
             self.maskThreshold.setValue(0)
@@ -811,14 +811,14 @@ class PattersonProperties(QtGui.QGroupBox, ui.pattersonProperties.Ui_PattersonPr
         params["darkfieldX"] = self.darkfieldX.value()
         params["darkfieldY"] = self.darkfieldY.value()
         params["darkfieldSigma"] = self.darkfieldSigma.value()
-        if img == None:
+        if img is None:
             return
         self.pattersonItem.setParams(img,params)
         # max: needed at psusr to really refresh, works without on my mac
         self.parent.viewer.view.view2D.updateGL()
     def calculatePatterson(self):
         img = self.parent.viewer.view.view2D.selectedImage
-        if img != None:
+        if img is not None:
             self.pattersonItem.requestPatterson(img)
         # max: needed at psusr to really refresh, works without on my mac
         self.parent.viewer.view.view2D.updateGL()

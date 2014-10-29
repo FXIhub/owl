@@ -476,7 +476,7 @@ class Viewer(QtGui.QMainWindow):
                 self.fileLoader.mode = "r"
                 self.settings.setValue("fileMode", "r")
                 self.updateTimer.stop()
-            if self.fileLoader.f != None:
+            if self.fileLoader.f is not None:
                 self.fileLoader.reopenFile()
 
     def _saveTagsClicked(self):
@@ -620,7 +620,7 @@ class Viewer(QtGui.QMainWindow):
 
         TODO FM: why is this not part of CXITree?
         """
-        if dataName == "" or dataName == None:
+        if dataName == "" or dataName is None:
             self.cxiNavigation.CXITree.loadData()
             return
         dataItem = self.cxiNavigation.CXITree.fileLoader.dataItems[dataName]
@@ -652,7 +652,7 @@ class Viewer(QtGui.QMainWindow):
 
         TODO FM: should it really be here
         """
-        if dataName == "" or dataName == None:
+        if dataName == "" or dataName is None:
             self.view.view2D.setMask()
             self.view.view2D.clearTextures()
             self.view.view2D.updateGL()
@@ -712,7 +712,7 @@ class Viewer(QtGui.QMainWindow):
                     else:
                         selIndDialog = ui.dialogs.SelectIndexDialog(self, dataItem)
                         if(selIndDialog.exec_() == QtGui.QDialog.Accepted):
-                            while dataItem.selectedIndex == None:
+                            while dataItem.selectedIndex is None:
                                 time.sleep(0.1)
                             targetBox = self.cxiNavigation.addFilterBox()
                             self.dataProp.addFilter(dataItem)
@@ -724,7 +724,7 @@ class Viewer(QtGui.QMainWindow):
         # add, replace or remove secondary filter
         else:
             i = self.cxiNavigation.dataBoxes["filters"].index(senderBox)
-            if dataName == "" or dataName == None:
+            if dataName == "" or dataName is None:
                 self.dataProp.removeFilter(i)
                 self.cxiNavigation.removeFilterBox(senderBox)
                 self.dataProp.view2DPropChanged.emit(self.dataProp.view2DProp)
@@ -744,7 +744,7 @@ class Viewer(QtGui.QMainWindow):
 
         TODO FM: does not belong here as it only accesses children
         """
-        if dataName == "" or dataName == None:
+        if dataName == "" or dataName is None:
             self.cxiNavigation.dataBoxes["sort"].button.setName()
             self.dataProp.clearSorting()
             self.dataProp.setSorting()
@@ -770,7 +770,7 @@ class Viewer(QtGui.QMainWindow):
 
         TODO FM: does not belong here as it only accesses children
         """
-        if dataName == "" or dataName == None:
+        if dataName == "" or dataName is None:
             self.view.view1D.setDataItemX(None)
             self.view.view1D.refreshPlot()
             self.statusBar.showMessage("Reset X data for plot." % dataName, 1000)
@@ -789,7 +789,7 @@ class Viewer(QtGui.QMainWindow):
 
         TODO FM: does not belong here as it only accesses children
         """
-        if dataName == "" or dataName == None:
+        if dataName == "" or dataName is None:
             self.view.view1D.setDataItemY(None)
             self.view.view1D.refreshPlot()
             self.view.view1D.hide()
@@ -821,7 +821,7 @@ class Viewer(QtGui.QMainWindow):
         _ = foovalue
         self.view.view1D.setPlotMode(self.cxiNavigation.dataMenus["plot Y"].getPlotMode())
         self.view.view1D.refreshPlot()
-        if self.view.view1D.dataItemY != None:
+        if self.view.view1D.dataItemY is not None:
             self.viewActions["View 1D"].setChecked(True)
             self.view.view1D.show()
             self.dataProp.plotBox.show()
@@ -864,7 +864,7 @@ class Viewer(QtGui.QMainWindow):
         TODO FM: move to cxiNavigation
         """
         n = None
-        if dataItem != None:
+        if dataItem is not None:
             if hasattr(dataItem, "fullName"):
                 n = dataItem.fullName
         self.cxiNavigation.dataBoxes["plot X"].button.setName(n)
@@ -875,7 +875,7 @@ class Viewer(QtGui.QMainWindow):
         TODO FM: move to cxiNavigation
         """
         n = None
-        if dataItem != None:
+        if dataItem is not None:
             if hasattr(dataItem, "fullName"):
                 n = dataItem.fullName
         self.cxiNavigation.dataBoxes["plot Y"].button.setName(n)
@@ -885,7 +885,7 @@ class Viewer(QtGui.QMainWindow):
 
         TODO FM: move to dataProp
         """
-        if dataItemImage == None:
+        if dataItemImage is None:
             self.dataProp.modelProperties.setModelItem(None)
             self.dataProp.pattersonProperties.setPattersonItem(None)
         else:
@@ -898,7 +898,7 @@ class Viewer(QtGui.QMainWindow):
         dataItems = {"image":dataItemImage, "mask":dataItemMask}
         for k, item in dataItems.items():
             n = None
-            if item != None:
+            if item is not None:
                 if hasattr(item, "fullName"):
                     n = item.fullName
             self.cxiNavigation.dataBoxes[k].button.setName(n)

@@ -21,7 +21,7 @@ class DataButton(QtGui.QPushButton):
         self.setIconSize(QtCore.QSize(S,S))
         self.setToolTip("drag data here")
         self.setAcceptDrops(True)
-        if menu != None:
+        if menu is not None:
             self.setMenu(menu)
     def dragEnterEvent(self, e):
         if e.mimeData().hasFormat('text/plain'):
@@ -32,7 +32,7 @@ class DataButton(QtGui.QPushButton):
         t = e.mimeData().text()
         self.needData.emit(t)
     def setName(self,name=None):
-        if name == None:
+        if name is None:
             self.setStyleSheet("text-align: left; font-style: italic")
             self.setText("drag %s data here" % self.dataMode)
         else:
@@ -47,7 +47,7 @@ class DataBox(QtGui.QHBoxLayout):
         self.addWidget(self.button)
         self.vbox = QtGui.QVBoxLayout()
         self.addLayout(self.vbox)
-        if menu != None:
+        if menu is not None:
             self.menu.clearAction.triggered.connect(self.clear)
     def clear(self):
         self.button.setName()
@@ -276,7 +276,7 @@ class CXITree(QtGui.QTreeWidget):
     def expandTree(self,path=None):
         root = self.item
         root.setExpanded(True)
-        if path == None:
+        if path is None:
             path = "entry_1/image_1/data"
         for j,section in zip(range(len(path.split("/"))),path.split("/")):
             if section == "":
