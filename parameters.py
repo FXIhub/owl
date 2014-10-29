@@ -123,7 +123,7 @@ class ModelItem(AbstractParameterItem):
                                "intensityMJUM2": float(self.settings.value("modelIntensity")),
                                "diameterNM": float(self.settings.value("modelDiameter")),
                                "maskRadius": float(self.settings.value("modelMaskRadius"))}
-        generalParamsDef = {"photonWavelengthNM":1.,"detectorDistanceMM":1000.,"detectorPixelSizeUM":75.,"detectorQuantumEfficiency":1.,"detectorADUPhoton":10.,"materialType":"water","_visibility":0.5}
+        generalParamsDef = {"photonWavelengthNM":1.,"detectorDistanceMM":1000.,"detectorPixelSizeUM":75.,"detectorQuantumEfficiency":1.,"detectorADUPhoton":10.,"materialType":"water","_visibility":0.5, "_findCenterMethod":'quadrant', "_maximumShift":5}
         name = "model"
         AbstractParameterItem.__init__(self,parentGroup,fileLoader,name,individualParamsDef,generalParamsDef)
     def centerAndFit(self,img):

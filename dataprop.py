@@ -645,6 +645,8 @@ class ModelProperties(QtGui.QGroupBox, ui.modelProperties.Ui_ModelProperties):
         self.diameter.valueChanged.connect(self.setParams)
         self.scaling.valueChanged.connect(self.setParams)
         self.maskRadius.valueChanged.connect(self.setParams)
+        self.maximumShift.valueChanged.connect(self.setParams)
+        self.findCenterMethod.currentIndexChanged.connect(self.setParams)
         self.experiment.released.connect(self.onExperiment)
         self.findCenterPushButton.released.connect(self.calculateFindCenter)
         self.findRadiusPushButton.released.connect(self.calculateFindRadius)
@@ -694,6 +696,8 @@ class ModelProperties(QtGui.QGroupBox, ui.modelProperties.Ui_ModelProperties):
             self.scaling.setValue(params["intensityMJUM2"])
             self.maskRadius.setValue(params["maskRadius"])
             self.visibilitySlider.setValue(params["_visibility"]*100)
+            self.maximumShift.setValue(params["_maximumShift"])
+            self.findCenterMethod.setCurrentIndex(self.findCenterMethod.findText(params["_findCenterMethod"]))
     def setParams(self):
         params = {}
         img = self.parent.viewer.view.view2D.selectedImage
@@ -703,6 +707,8 @@ class ModelProperties(QtGui.QGroupBox, ui.modelProperties.Ui_ModelProperties):
         params["intensityMJUM2"] = self.scaling.value()
         params["maskRadius"] = self.maskRadius.value()
         params["_visibility"] = float(self.visibilitySlider.value()/100.)
+        params["_maximumShift"] = int(self.maximumShift.value())
+        params["_findCenterMethod"] = str(self.findCenterMethod.currentText())
         if(img == None):
             return
         self.modelItem.setParams(img,params)

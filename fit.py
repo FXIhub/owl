@@ -10,7 +10,6 @@ try:
     HAS_SPIMAGE = True
 except:
     HAS_SPIMAGE = False
-#test
 
 class FitModel:
     def __init__(self,dataItemImage,dataItemMask):
@@ -22,166 +21,31 @@ class FitModel:
         params = self.fit(img,params)
         return params
     def center(self,img,params):
+        if not HAS_SPIMAGE:
+            print "No libspimage"
+            return params
         I = self.dataItemImage.data(img=img)
         M = self.dataItemMask.data(img=img,binaryMask=True)
-        C = FindCenter(I,M,params,5, params["maskRadius"])
-        C.center_initial(downsampling=4.)
-        C.center_refine(downsampling=4., dc_max=5)
-        C.center_refine(dc_max=2)
-        return C.params
+        method = params["_findCenterMethod"]
+        if method == 'quadrant':
+            x,y = spimage.find_center(I,M,method='quadrant', x0=params["offCenterX"], y0=params["offCenterY"],dmax=params["_maximumShift"])
+        elif method == 'pw (slow)':
+            x,y = spimage.find_center(I,M,method='pixelwise_slow', x0=params["offCenterX"], y0=params["offCenterY"],dmax=params["_maximumShift"], rmax=params["maskRadius"])
+        elif method == 'pw (fast)':
+            x,y = spimage.find_center(I,M,method='pixelwise_fast', x0=params["offCenterX"], y0=params["offCenterY"],dmax=params["_maximumShift"], rmax=params["maskRadius"])
+        elif method == 'blurred':
+            x,y = spimage.find_center(I,M,method='blurred', x0=params["offCenterX"], y0=params["offCenterY"],dmax=params["_maximumShift"], threshold=12., blur_radius=4.)
+        else:
+            x,y = spimage.find_center(I,M)
+        params["offCenterX"] = x
+        params["offCenterY"] = y
+        return params
     def fit(self,img,params):
         I = self.dataItemImage.data(img=img)
         M = self.dataItemMask.data(img=img,binaryMask=True)
         params = fit(I,M,params,params["maskRadius"],downsampling=5,do_brute=True)
         params = fit(I,M,params,params["maskRadius"],downsampling=1,do_brute=False)
         return params
-
-class GaussModel:
-    def __init__(self, shape, downsampling):
-        yy,xx = numpy.indices(shape)
-        self.yy = yy - shape[0]/2
-        self.xx = xx - shape[1]/2
-        self.yy = self.yy[::downsampling]
-        self.xx = self.xx[::downsampling]
-    def model(self, A, mux, muy, s):
-        return A * numpy.exp(- ((self.xx-mux)**2) / (2* (s**2))) * numpy.exp(- ((self.yy-muy)**2) / (2* (s**2)))
-    def error(self, p, m, y):
-        return m.flatten()*(self.model(p[0], p[1], p[2],p[3]).flatten() - y.flatten())
-
-class FindCenter:
-    def __init__(self, img, msk, params, dc_max, r_max):
-        self.img = img
-        self.msk = msk
-        self.params = params
-        self.r_max = r_max
-
-    def center_initial(self, downsampling=1.): 
-        p0 = numpy.array([1., 0., 0., 20.])
-        GM = GaussModel(self.img.shape, downsampling)
-        p, ier = leastsq(GM.error, p0, args=(self.msk[::downsampling], self.img[::downsampling]))
-        self.params["offCenterX"] = p[1]
-        self.params["offCenterY"] = p[2]
-
-    def center_refine(self, **kwargs):
-        if HAS_SPIMAGE:
-            self.center_refine_fast(**kwargs)
-        else:
-            print "No libspimage"
-            
-    def center_refine_fast(self, downsampling=1., dc_max=1.):
-        I = spimage.sp_image_alloc(numpy.ceil(self.img.shape[1]/float(downsampling)).astype(int), numpy.ceil(self.img.shape[0]/float(downsampling)).astype(int), 1)
-        I.image[:] = self.img[::downsampling,::downsampling]
-        I.mask[:]  = self.msk[::downsampling,::downsampling]
-        I.detector.image_center[:] = numpy.array([self.params["offCenterY"]/float(downsampling) + self.img.shape[0]/2, self.params["offCenterX"]/float(downsampling) + self.img.shape[1]/2, 0 ])
-        success = spimage.sp_find_center_refine(I, dc_max, 0, None)
-        self.params["offCenterX"] = (I.detector.image_center[1] - self.img.shape[1]/2) * downsampling
-        self.params["offCenterY"] = (I.detector.image_center[0] - self.img.shape[1]/2) * downsampling
-        
-def center_refine_slow(img,msk,params,dc_max,r_max):
-    s = img.shape
-    cx_g = (s[1]-1)/2.+params["offCenterX"]
-    cy_g = (s[0]-1)/2.+params["offCenterY"]
-    cx_g = numpy.round(cx_g*2)/2.
-    cy_g = numpy.round(cy_g*2)/2.
-    ddc = 0.5
-    N_sam1= int(numpy.round(2*dc_max/ddc))+1
-    cx_sam1 = numpy.linspace(cx_g-dc_max,cx_g+dc_max,N_sam1)
-    cy_sam1 = numpy.linspace(cy_g-dc_max,cy_g+dc_max,N_sam1)
-    N_sam2= int(numpy.round(4*dc_max/ddc))+1
-    cx_sam2 = numpy.linspace(cx_g-dc_max*2,cx_g+dc_max*2,N_sam2)
-    cy_sam2 = numpy.linspace(cy_g-dc_max*2,cy_g+dc_max*2,N_sam2)
-    # extend mask so that every pixel has a partner at every possible center
-    msk_ext = msk.copy()
-    for cy in cy_sam2:
-        for cx in cx_sam2:
-            msk_ext *= symmetrize(msk,cx,cy)
-    Nme = msk_ext.sum()
-    errs = numpy.zeros(shape=(N_sam1,N_sam1))
-    r_max_sq = r_max**2
-    X,Y = numpy.meshgrid(numpy.arange(img.shape[1]),numpy.arange(img.shape[0]))
-    for cx,icx in zip(cx_sam1,numpy.arange(N_sam1)):
-        for cy,icy in zip(cy_sam1,numpy.arange(N_sam1)):
-            # SLOW CODE
-            #for x,y,v1 in zip((Xme-cx),(Yme-cy),imgme):
-            #    M = (Xm-cx==-x)*(Ym-cy==-y)
-            #    if M.sum() == 1:
-            #        v2 = imgm[M==True]
-            #        errs[icy,icx] += abs(v1-v2)
-            #    else:
-            #        print x,y,M.sum()
-            # FAST CODE (does the same)
-            r_sq = ((X-cx)**2+(Y-cy)**2)
-            rmsk = r_sq < r_max_sq
-            img_turned = turn180(img,cx,cy)
-            diff = abs((img-img_turned)*msk_ext*rmsk)
-            errs[icy,icx] = diff.sum()
-            #print cx,cy,errs[icy,icx]
-    #imsave("testout/img_turned_msk_ext.png",log10(img_turned*msk_ext))
-    #imsave("testout/img_msk_ext.png",log10(img*msk_ext))
-    #imsave("testout/errs.png",errs)
-    errs_sm = gaussian_smooth_2d1d(errs,dc_max)
-    i_min = errs.flatten().argmin()
-    cxi_min = i_min % N_sam1
-    cyi_min = i_min/N_sam1
-    #if full_output:
-    #    D = {}
-    #    D["msk_ext"] = msk_ext
-    #    D["img_turned_msk_ext"] = img_turned*msk_ext
-    #    D["img_msk_ext"] = img*msk_ext
-    #    D["errmap"] = errs/errs.max()
-    #    D["errmap_sm"] = gaussian_smooth_2d1d(errs,3.)
-    #    D["errmap_sm"] /= D["errmap_sm"].max() 
-    #    D["errmap_min"] = errs.min()
-    #    return cx_sam1[cxi_min],cy_sam1[cyi_min],D
-    #else:
-    cx_r = cx_sam1[cxi_min]
-    cy_r = cy_sam1[cyi_min]
-    params["offCenterX"] = cx_r-(s[1]-1)/2.
-    params["offCenterY"] = cy_r-(s[0]-1)/2.
-    return params
-
-def symmetrize(M,cx,cy):
-    M_new = M.copy()
-    M_new *= turn180(M,cx,cy)
-    return M_new
-
-def turnccw(array2d):
-    array2d_turned = numpy.zeros(shape=(array2d.shape[1],array2d.shape[0]),dtype=array2d.dtype)
-    N = len(array2d_turned)-1
-    for x in range(0,len(array2d[0])):
-        array2d_turned[N-x,:] = array2d[:,x].T
-    return array2d_turned
-
-def turn180(img,cx=None,cy=None):
-    if cx == None:
-        cx1 = (img.shape[0]-1)/2
-    if cy == None:
-        cy1 = (img.shape[0]-1)/2
-    cx1 = round(cx*2)/2.
-    cy1 = round(cy*2)/2.
-    Nx1 = int(2*min([cx1,img.shape[1]-1-cx1]))+1
-    Ny1 = int(2*min([cy1,img.shape[0]-1-cy1]))+1
-    y_start = int(round(cy1-(Ny1-1)/2.))
-    y_stop = int(round(cy1+(Ny1-1)/2.))+1
-    x_start = int(round(cx1-(Nx1-1)/2.))
-    x_stop = int(round(cx1+(Nx1-1)/2.))+1
-    img_new = numpy.zeros(shape=(img.shape[0],img.shape[1]),dtype=img.dtype)
-    img_new[y_start:y_stop,x_start:x_stop] = turnccw(turnccw(img[y_start:y_stop,x_start:x_stop]))
-    return img_new
-
-def gaussian_smooth_2d1d(I,sm,precision=1.):
-    N = 2*int(numpy.round(precision*sm))+1
-    if len(I.shape) == 2:
-        kernel = numpy.zeros(shape=(N,N))
-        X,Y = numpy.meshgrid(numpy.arange(0,N,1),numpy.arange(0,N,1))
-        X = X-N/2
-        kernel = numpy.exp(X**2/(2.0*sm**2))
-        kernel /= kernel.sum()
-        Ism = scipy.signal.convolve2d(I,kernel,mode='same',boundary='wrap')
-        return Ism
-    elif len(I.shape) == 1:
-        print "Error input"
-        return []
 
 #from pylab import *
 def fit(image,mask,params,r_max,downsampling=1,do_brute=True):
