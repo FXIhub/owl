@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'ui/modelProperties.ui'
+# Form implementation generated from reading ui file 'modelProperties.ui'
 #
-# Created: Wed Oct 29 15:28:31 2014
+# Created: Wed Oct 29 18:03:11 2014
 #      by: pyside-uic 0.2.13 running on PySide 1.2.2
 #
 # WARNING! All changes made in this file will be lost!
