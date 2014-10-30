@@ -719,10 +719,10 @@ class ModelProperties(QtGui.QGroupBox, ui.modelProperties.Ui_ModelProperties):
             self.maximumShift.setValue(params["_maximumShift"])
             self.blurRadius.setValue(params["_blurRadius"])
             self.visibilitySlider.setValue(params["_visibility"]*100)
-            self.findCenterMethod.setCurrentIndex(self.findCenterMethod.findText(params["_findCenterMethod"]))
-            self.fitDiameterMethod.setCurrentIndex(self.fitDiameterMethod.findText(params["_fitDiameterMethod"]))
-            self.fitIntensityMethod.setCurrentIndex(self.fitIntensityMethod.findText(params["_fitIntensityMethod"]))
-            self.fitModelMethod.setCurrentIndex(self.fitModelMethod.findText(params["_fitModelMethod"]))
+            self.findCenterMethod.setCurrentIndex(self.findCenterMethod.findText(str(params["_findCenterMethod"])))
+            self.fitDiameterMethod.setCurrentIndex(self.fitDiameterMethod.findText(str(params["_fitDiameterMethod"])))
+            self.fitIntensityMethod.setCurrentIndex(self.fitIntensityMethod.findText(str(params["_fitIntensityMethod"])))
+            self.fitModelMethod.setCurrentIndex(self.fitModelMethod.findText(str(params["_fitModelMethod"])))
     def setParams(self):
         params = {}
         img = self.parent.viewer.view.view2D.selectedImage
