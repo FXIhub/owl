@@ -470,8 +470,9 @@ class View2D(View, QtOpenGL.QGLWidget):
         cx = self.centerX
         cy = self.centerY
         sides = 200
-        for a in [4.49, 7.725, 10.9]:
-            radius = a/self.modelSize
+        qr_approx = [4.49, 7.725, 10.904, 14.135, 17.26, 20.43, 23.56, 26.71] # These are approcimations to tan(qr) = qr
+        for a in qr_approx:
+            radius = a/(self.modelSize + numpy.finfo("float64").eps)
             for i in range(sides):
                 if not i % 4: GL.glBegin(GL.GL_LINE_LOOP)
                 x = radius * numpy.cos(i*2*numpy.pi/sides) + cx*imgWidth/self.zoom

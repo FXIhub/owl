@@ -123,7 +123,19 @@ class ModelItem(AbstractParameterItem):
                                "intensityMJUM2": float(self.settings.value("modelIntensity")),
                                "diameterNM": float(self.settings.value("modelDiameter")),
                                "maskRadius": float(self.settings.value("modelMaskRadius"))}
-        generalParamsDef = {"photonWavelengthNM":1.,"detectorDistanceMM":1000.,"detectorPixelSizeUM":75.,"detectorQuantumEfficiency":1.,"detectorADUPhoton":10.,"materialType":"water","_visibility":0.5, "_findCenterMethod":'quadrant', "_maximumShift":5}
+        generalParamsDef = {"photonWavelengthNM":1.,
+                            "detectorDistanceMM":1000.,
+                            "detectorPixelSizeUM":75.,
+                            "detectorQuantumEfficiency":1.,
+                            "detectorADUPhoton":10.,
+                            "materialType":"water",
+                            "_visibility":0.5,
+                            "_maximumShift":5,
+                            "_blurRadius":4,
+                            "_findCenterMethod":'quadrant', 
+                            "_fitDiameterMethod":'None', 
+                            "_fitIntensityMethod":'None', 
+                            "_fitModelMethod":'fast',} 
         name = "model"
         AbstractParameterItem.__init__(self,parentGroup,fileLoader,name,individualParamsDef,generalParamsDef)
     def centerAndFit(self,img):
@@ -136,7 +148,7 @@ class ModelItem(AbstractParameterItem):
         self.setParams(img,newParams)
     def fit(self,img):
         M = fit.FitModel(self.dataItemImage,self.dataItemMask)
-        newParams = M.fit(img,self.getParams(img))
+        newParams = M.center_and_fit(img,self.getParams(img))
         self.setParams(img,newParams)
 
 

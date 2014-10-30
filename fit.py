@@ -15,8 +15,7 @@ class FitModel:
     def __init__(self,dataItemImage,dataItemMask):
         self.dataItemImage = dataItemImage
         self.dataItemMask = dataItemMask
-    def center_and_fit(self,img):
-        params = self.dataItemImage.modelItem.getParams(img)
+    def center_and_fit(self,img, params):
         params = self.center(img,params)
         params = self.fit(img,params)
         return params

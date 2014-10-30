@@ -643,14 +643,19 @@ class ModelProperties(QtGui.QGroupBox, ui.modelProperties.Ui_ModelProperties):
         self.centerX.valueChanged.connect(self.setParams)
         self.centerY.valueChanged.connect(self.setParams)
         self.diameter.valueChanged.connect(self.setParams)
-        self.scaling.valueChanged.connect(self.setParams)
+        self.intensity.valueChanged.connect(self.setParams)
         self.maskRadius.valueChanged.connect(self.setParams)
         self.maximumShift.valueChanged.connect(self.setParams)
+        self.blurRadius.valueChanged.connect(self.setParams)
         self.findCenterMethod.currentIndexChanged.connect(self.setParams)
+        self.fitDiameterMethod.currentIndexChanged.connect(self.setParams)
+        self.fitIntensityMethod.currentIndexChanged.connect(self.setParams)
+        self.fitModelMethod.currentIndexChanged.connect(self.setParams)
         self.experiment.released.connect(self.onExperiment)
-        self.findCenterPushButton.released.connect(self.calculateFindCenter)
-        self.findRadiusPushButton.released.connect(self.calculateFindRadius)
-        self.fitModelPushButton.released.connect(self.calculateFitModel)
+        self.findCenterPushButton.released.connect(self.FindCenter)
+        self.fitDiameterPushButton.released.connect(self.FitDiameter)
+        self.fitIntensityPushButton.released.connect(self.FitIntensity)
+        self.fitModelPushButton.released.connect(self.FitModel)
         self.visibilitySlider.sliderMoved.connect(self.setParams)
     def setModelItem(self,modelItem=None):
         self.modelItem = modelItem
@@ -671,44 +676,59 @@ class ModelProperties(QtGui.QGroupBox, ui.modelProperties.Ui_ModelProperties):
             self.centerX.setReadOnly(False)
             self.centerY.setReadOnly(False)
             self.diameter.setReadOnly(False)
-            self.scaling.setReadOnly(False)
+            self.intensity.setReadOnly(False)
             self.maskRadius.setReadOnly(False)
+            self.maximumShift.setReadOnly(False)
+            self.blurRadius.setReadOnly(False)
             self.visibilitySlider.setEnabled(True)
         else:
             self.centerX.setReadOnly(True)
             self.centerY.setReadOnly(True)
             self.diameter.setReadOnly(True)
-            self.scaling.setReadOnly(True)
+            self.intensity.setReadOnly(True)
             self.maskRadius.setReadOnly(True)
+            self.maximumShift.setReadOnly(True)
+            self.blurRadius.setReadOnly(True)
             self.visibilitySlider.setEnabled(False)           
         if self.modelItem is None:
+            # BD: Is this case ever happening?
             self.centerX.setValue(0)
             self.centerY.setValue(0)
             self.diameter.setValue(0)
-            self.scaling.setValue(0)
+            self.intensity.setValue(0)
             self.maskRadius.setValue(0)
+            self.maximumShift.setValue(0)
+            self.blurRadius.setValue(0)
             self.visibilitySlider.setValue(50)
         else:
             params = self.modelItem.getParams(img)
             self.centerX.setValue(params["offCenterX"])
             self.centerY.setValue(params["offCenterY"])
             self.diameter.setValue(params["diameterNM"])
-            self.scaling.setValue(params["intensityMJUM2"])
+            self.intensity.setValue(params["intensityMJUM2"])
             self.maskRadius.setValue(params["maskRadius"])
-            self.visibilitySlider.setValue(params["_visibility"]*100)
             self.maximumShift.setValue(params["_maximumShift"])
+            self.blurRadius.setValue(params["_blurRadius"])
+            self.visibilitySlider.setValue(params["_visibility"]*100)
             self.findCenterMethod.setCurrentIndex(self.findCenterMethod.findText(params["_findCenterMethod"]))
+            self.fitDiameterMethod.setCurrentIndex(self.fitDiameterMethod.findText(params["_fitDiameterMethod"]))
+            self.fitIntensityMethod.setCurrentIndex(self.fitIntensityMethod.findText(params["_fitIntensityMethod"]))
+            self.fitModelMethod.setCurrentIndex(self.fitModelMethod.findText(params["_fitModelMethod"]))
     def setParams(self):
         params = {}
         img = self.parent.viewer.view.view2D.selectedImage
         params["offCenterX"] = self.centerX.value()
         params["offCenterY"] = self.centerY.value()
         params["diameterNM"] = self.diameter.value()
-        params["intensityMJUM2"] = self.scaling.value()
+        params["intensityMJUM2"] = self.intensity.value()
         params["maskRadius"] = self.maskRadius.value()
         params["_visibility"] = float(self.visibilitySlider.value()/100.)
         params["_maximumShift"] = int(self.maximumShift.value())
+        params["_blurRadius"] = int(self.blurRadius.value())
         params["_findCenterMethod"] = str(self.findCenterMethod.currentText())
+        params["_fitDiameterMethod"] = str(self.fitDiameterMethod.currentText())
+        params["_fitIntensityMethod"] = str(self.fitIntensityMethod.currentText())
+        params["_fitModelMethod"] = str(self.fitModelMethod.currentText())
         if(img is None):
             return
         self.modelItem.setParams(img,params)
@@ -718,15 +738,19 @@ class ModelProperties(QtGui.QGroupBox, ui.modelProperties.Ui_ModelProperties):
     def onExperiment(self):
         expDialog = ExperimentDialog(self, self.modelItem)
         expDialog.exec_()
-    def calculateFindCenter(self):
+    def FindCenter(self):
         img = self.parent.viewer.view.view2D.selectedImage
         self.modelItem.center(img)
         self.showParams()
-    def calculateFindRadius(self):
+    def FitDiameter(self):
         img = self.parent.viewer.view.view2D.selectedImage
         self.modelItem.center(img)
         self.showParams()
-    def calculateFitModel(self):
+    def FitIntensity(self):
+        img = self.parent.viewer.view.view2D.selectedImage
+        self.modelItem.center(img)
+        self.showParams()
+    def FitModel(self):
         img = self.parent.viewer.view.view2D.selectedImage
         self.modelItem.fit(img)
         self.showParams()
