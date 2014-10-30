@@ -752,7 +752,7 @@ class ModelProperties(QtGui.QGroupBox, ui.modelProperties.Ui_ModelProperties):
         self.showParams()
     def FitModel(self):
         img = self.parent.viewer.view.view2D.selectedImage
-        self.modelItem.fit(img)
+        self.modelItem.fit_model(img)
         self.showParams()
     def toggleVisible(self):
         self.setVisible(not self.isVisible())

@@ -7,22 +7,18 @@ from scipy.optimize import leastsq
 import scipy.stats
 try:
     import spimage
-    HAS_SPIMAGE = True
+    hasSpimage = True
 except:
-    HAS_SPIMAGE = False
+    print "No libspimage"
+    hasSpimage = False
 
 class FitModel:
     def __init__(self,dataItemImage,dataItemMask):
         self.dataItemImage = dataItemImage
         self.dataItemMask = dataItemMask
-    def center_and_fit(self,img, params):
-        params = self.center(img,params)
-        params = self.fit(img,params)
-        return params
-    def center(self,img,params):
-        if not HAS_SPIMAGE:
-            print "No libspimage"
-            return params
+
+    def find_center(self,img,params):
+        if hasSpimage: return params
         I = self.dataItemImage.data(img=img)
         M = self.dataItemMask.data(img=img,binaryMask=True)
         method = params["_findCenterMethod"]
@@ -39,11 +35,15 @@ class FitModel:
         params["offCenterX"] = x
         params["offCenterY"] = y
         return params
-    def fit(self,img,params):
+
+    def fit_model(self,img,params):
         I = self.dataItemImage.data(img=img)
         M = self.dataItemMask.data(img=img,binaryMask=True)
-        params = fit(I,M,params,params["maskRadius"],downsampling=5,do_brute=True)
-        params = fit(I,M,params,params["maskRadius"],downsampling=1,do_brute=False)
+        method = params["_fitModelMethod"]
+        if method == 'fast':
+            params = self.find_center(img, params)
+            params = fit(I,M,params,params["maskRadius"],downsampling=5,do_brute=True)
+            params = fit(I,M,params,params["maskRadius"],downsampling=1,do_brute=False)
         return params
 
 #from pylab import *

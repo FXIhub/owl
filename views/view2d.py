@@ -477,9 +477,8 @@ class View2D(View, QtOpenGL.QGLWidget):
                 if not i % 4: GL.glBegin(GL.GL_LINE_LOOP)
                 x = radius * numpy.cos(i*2*numpy.pi/sides) + cx*imgWidth/self.zoom
                 y = radius * numpy.sin(i*2*numpy.pi/sides) + (1-cy)*imgHeight/self.zoom
-                x = max(0, min(x, imgWidth/self.zoom))
-                y = max(0, min(y, imgHeight/self.zoom))
-                GL.glVertex2f(x, y)
+                if (x > 0) and (x < imgWidth/self.zoom) and (y > 0) and (y < imgHeight/self.zoom):
+                    GL.glVertex2f(x, y)
                 if not (i + 3) % 4: GL.glEnd()
         GL.glPopMatrix()
 

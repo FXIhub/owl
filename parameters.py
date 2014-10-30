@@ -138,17 +138,13 @@ class ModelItem(AbstractParameterItem):
                             "_fitModelMethod":'fast',} 
         name = "model"
         AbstractParameterItem.__init__(self,parentGroup,fileLoader,name,individualParamsDef,generalParamsDef)
-    def centerAndFit(self,img):
+    def find_center(self,img):
         M = fit.FitModel(self.dataItemImage,self.dataItemMask)
-        newParams = M.center_and_fit(img)
+        newParams = M.find_center(img,self.getParams(img))
         self.setParams(img,newParams)
-    def center(self,img):
+    def fit_model(self,img):
         M = fit.FitModel(self.dataItemImage,self.dataItemMask)
-        newParams = M.center(img,self.getParams(img))
-        self.setParams(img,newParams)
-    def fit(self,img):
-        M = fit.FitModel(self.dataItemImage,self.dataItemMask)
-        newParams = M.center_and_fit(img,self.getParams(img))
+        newParams = M.fit_model(img,self.getParams(img))
         self.setParams(img,newParams)
 
 
