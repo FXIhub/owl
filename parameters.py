@@ -133,14 +133,18 @@ class ModelItem(AbstractParameterItem):
                             "_maximumShift":5,
                             "_blurRadius":4,
                             "_findCenterMethod":'quadrant', 
-                            "_fitDiameterMethod":'None', 
-                            "_fitIntensityMethod":'None', 
+                            "_fitDiameterMethod":'pearson', 
+                            "_fitIntensityMethod":'none', 
                             "_fitModelMethod":'fast',} 
         name = "model"
         AbstractParameterItem.__init__(self,parentGroup,fileLoader,name,individualParamsDef,generalParamsDef)
     def find_center(self,img):
         M = fit.FitModel(self.dataItemImage,self.dataItemMask)
         newParams = M.find_center(img,self.getParams(img))
+        self.setParams(img,newParams)
+    def fit_diameter(self, img):
+        M = fit.FitModel(self.dataItemImage,self.dataItemMask)
+        newParams = M.fit_diameter(img,self.getParams(img))
         self.setParams(img,newParams)
     def fit_model(self,img):
         M = fit.FitModel(self.dataItemImage,self.dataItemMask)

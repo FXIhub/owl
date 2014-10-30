@@ -22,10 +22,29 @@ class FitModel:
             x,y = spimage.find_center(I,M,method='pixelwise_fast', x0=params["offCenterX"], y0=params["offCenterY"],dmax=params["_maximumShift"], rmax=params["maskRadius"])
         elif method == 'blurred':
             x,y = spimage.find_center(I,M,method='blurred', x0=params["offCenterX"], y0=params["offCenterY"],dmax=params["_maximumShift"], threshold=params["detectorADUPhoton"]/2., blur_radius=params["_blurRadius"])
+        elif method == 'none':
+            x,y = [params["offCenterX"], params["offCenterY"]]
         else:
             x,y = spimage.find_center(I,M)
         params["offCenterX"] = x
         params["offCenterY"] = y
+        return params
+        
+    def fit_diameter(self,img,params):
+        if not hasSpimage: return params
+        I = self.dataItemImage.data(img=img)
+        M = self.dataItemMask.data(img=img,binaryMask=True)
+        method = params["_fitDiameterMethod"]
+        #if method == 'pearson':
+        #    diameter = spimage.fit_sphere_diameter(I,M,method='pearson', x0=params["offCenterX"], y0=params["offCenterY"], rmax=params["maskRadius"], downsampling=1, do_brute=True, full_output=True)
+        #params["diameterNM"] = diameter
+        return params
+            
+    def fit_intensity(self,img,params):
+        if not hasSpimage: return params
+        I = self.dataItemImage.data(img=img)
+        M = self.dataItemMask.data(img=img,binaryMask=True)
+        method = params["_fitIntensityMethod"]
         return params
 
     def fit_model(self,img,params):

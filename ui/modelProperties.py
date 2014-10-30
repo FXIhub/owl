@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'ui/modelProperties.ui'
 #
-# Created: Thu Oct 30 11:13:14 2014
+# Created: Thu Oct 30 19:16:05 2014
 #      by: pyside-uic 0.2.13 running on PySide 1.2.2
 #
 # WARNING! All changes made in this file will be lost!
@@ -12,7 +12,7 @@ from PySide import QtCore, QtGui
 class Ui_ModelProperties(object):
     def setupUi(self, ModelProperties):
         ModelProperties.setObjectName("ModelProperties")
-        ModelProperties.resize(255, 486)
+        ModelProperties.resize(255, 493)
         ModelProperties.setStyleSheet("Text-align:left")
         self.gridLayout_4 = QtGui.QGridLayout(ModelProperties)
         self.gridLayout_4.setObjectName("gridLayout_4")
@@ -106,6 +106,7 @@ class Ui_ModelProperties(object):
         self.findCenterMethod.addItem("")
         self.findCenterMethod.addItem("")
         self.findCenterMethod.addItem("")
+        self.findCenterMethod.addItem("")
         self.gridLayout.addWidget(self.findCenterMethod, 0, 0, 1, 1)
         self.findCenterPushButton = QtGui.QPushButton(ModelProperties)
         self.findCenterPushButton.setObjectName("findCenterPushButton")
@@ -117,12 +118,15 @@ class Ui_ModelProperties(object):
         sizePolicy.setHeightForWidth(self.fitDiameterMethod.sizePolicy().hasHeightForWidth())
         self.fitDiameterMethod.setSizePolicy(sizePolicy)
         self.fitDiameterMethod.setObjectName("fitDiameterMethod")
+        self.fitDiameterMethod.addItem("")
+        self.fitDiameterMethod.addItem("")
         self.gridLayout.addWidget(self.fitDiameterMethod, 1, 0, 1, 1)
         self.fitDiameterPushButton = QtGui.QPushButton(ModelProperties)
         self.fitDiameterPushButton.setObjectName("fitDiameterPushButton")
         self.gridLayout.addWidget(self.fitDiameterPushButton, 1, 1, 1, 1)
         self.fitIntensityMethod = QtGui.QComboBox(ModelProperties)
         self.fitIntensityMethod.setObjectName("fitIntensityMethod")
+        self.fitIntensityMethod.addItem("")
         self.gridLayout.addWidget(self.fitIntensityMethod, 2, 0, 1, 1)
         self.fitIntensityPushButton = QtGui.QPushButton(ModelProperties)
         self.fitIntensityPushButton.setObjectName("fitIntensityPushButton")
@@ -151,12 +155,16 @@ class Ui_ModelProperties(object):
         self.label_5.setText(QtGui.QApplication.translate("ModelProperties", "Mask radius [px]:", None, QtGui.QApplication.UnicodeUTF8))
         self.label_7.setText(QtGui.QApplication.translate("ModelProperties", "Blur radius [px]:", None, QtGui.QApplication.UnicodeUTF8))
         self.label_6.setText(QtGui.QApplication.translate("ModelProperties", "Maximum shift [px]:", None, QtGui.QApplication.UnicodeUTF8))
-        self.findCenterMethod.setItemText(0, QtGui.QApplication.translate("ModelProperties", "quadrant", None, QtGui.QApplication.UnicodeUTF8))
-        self.findCenterMethod.setItemText(1, QtGui.QApplication.translate("ModelProperties", "pw (fast)", None, QtGui.QApplication.UnicodeUTF8))
-        self.findCenterMethod.setItemText(2, QtGui.QApplication.translate("ModelProperties", "pw (slow)", None, QtGui.QApplication.UnicodeUTF8))
-        self.findCenterMethod.setItemText(3, QtGui.QApplication.translate("ModelProperties", "blurred", None, QtGui.QApplication.UnicodeUTF8))
+        self.findCenterMethod.setItemText(0, QtGui.QApplication.translate("ModelProperties", "none", None, QtGui.QApplication.UnicodeUTF8))
+        self.findCenterMethod.setItemText(1, QtGui.QApplication.translate("ModelProperties", "quadrant", None, QtGui.QApplication.UnicodeUTF8))
+        self.findCenterMethod.setItemText(2, QtGui.QApplication.translate("ModelProperties", "blurred", None, QtGui.QApplication.UnicodeUTF8))
+        self.findCenterMethod.setItemText(3, QtGui.QApplication.translate("ModelProperties", "pw (fast)", None, QtGui.QApplication.UnicodeUTF8))
+        self.findCenterMethod.setItemText(4, QtGui.QApplication.translate("ModelProperties", "pw (slow)", None, QtGui.QApplication.UnicodeUTF8))
         self.findCenterPushButton.setText(QtGui.QApplication.translate("ModelProperties", "Find center", None, QtGui.QApplication.UnicodeUTF8))
+        self.fitDiameterMethod.setItemText(0, QtGui.QApplication.translate("ModelProperties", "pearson", None, QtGui.QApplication.UnicodeUTF8))
+        self.fitDiameterMethod.setItemText(1, QtGui.QApplication.translate("ModelProperties", "none", None, QtGui.QApplication.UnicodeUTF8))
         self.fitDiameterPushButton.setText(QtGui.QApplication.translate("ModelProperties", "Fit diameter", None, QtGui.QApplication.UnicodeUTF8))
+        self.fitIntensityMethod.setItemText(0, QtGui.QApplication.translate("ModelProperties", "none", None, QtGui.QApplication.UnicodeUTF8))
         self.fitIntensityPushButton.setText(QtGui.QApplication.translate("ModelProperties", "Fit intensity", None, QtGui.QApplication.UnicodeUTF8))
         self.fitModelMethod.setItemText(0, QtGui.QApplication.translate("ModelProperties", "fast", None, QtGui.QApplication.UnicodeUTF8))
         self.fitModelMethod.setItemText(1, QtGui.QApplication.translate("ModelProperties", "refine", None, QtGui.QApplication.UnicodeUTF8))

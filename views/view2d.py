@@ -650,8 +650,10 @@ class View2D(View, QtOpenGL.QGLWidget):
 
         # Model related variables
         if(self.modelView):
+            #print "view2d.py: update model params", img
             # TODO FM: All this physics knowledge should not be here.
             # It has to be moved out of here, possibly even out of owl
+            # BD: moved it to libspimage
             params = self.data.modelItem.getParams(img)
             s = imageData.shape
 

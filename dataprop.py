@@ -742,8 +742,10 @@ class ModelProperties(QtGui.QGroupBox, ui.modelProperties.Ui_ModelProperties):
             return
         self.modelItem.setParams(img,params)
         # max: needed at psusr to really refresh, works without on my mac
+        # BD: refreshing here leads to multiple painting of the model (as individual model parameters change), 
+        #     better don't refresh here, unless this is the only possible way to do so
         #self.parent.viewer.view.view2D._paintImage(img)
-        self.parent.viewer.view.view2D.updateGL()
+        #self.parent.viewer.view.view2D.updateGL()
     def onExperiment(self):
         expDialog = ExperimentDialog(self, self.modelItem)
         expDialog.exec_()
@@ -753,7 +755,7 @@ class ModelProperties(QtGui.QGroupBox, ui.modelProperties.Ui_ModelProperties):
         self.showParams()
     def FitDiameter(self):
         img = self.parent.viewer.view.view2D.selectedImage
-        self.modelItem.find_center(img)
+        self.modelItem.fit_diameter(img)
         self.showParams()
     def FitIntensity(self):
         img = self.parent.viewer.view.view2D.selectedImage
