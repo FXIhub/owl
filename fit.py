@@ -15,13 +15,13 @@ class FitModel:
         M = self.dataItemMask.data(img=img,binaryMask=True)
         method = params["_findCenterMethod"]
         if method == 'quadrant':
-            x,y = spimage.find_center(I,M,method='quadrant', x0=params["offCenterX"], y0=params["offCenterY"],dmax=params["_maximumShift"])
+            x,y = spimage.find_center(I,M,method='quadrant', x0=params["offCenterX"], y0=params["offCenterY"],dmax=params["_maximumShift"], threshold=params["detectorADUPhoton"]/2.)
         elif method == 'pw (slow)':
             x,y = spimage.find_center(I,M,method='pixelwise_slow', x0=params["offCenterX"], y0=params["offCenterY"],dmax=params["_maximumShift"], rmax=params["maskRadius"])
         elif method == 'pw (fast)':
             x,y = spimage.find_center(I,M,method='pixelwise_fast', x0=params["offCenterX"], y0=params["offCenterY"],dmax=params["_maximumShift"], rmax=params["maskRadius"])
         elif method == 'blurred':
-            x,y = spimage.find_center(I,M,method='blurred', x0=params["offCenterX"], y0=params["offCenterY"],dmax=params["_maximumShift"], threshold=12., blur_radius=4.)
+            x,y = spimage.find_center(I,M,method='blurred', x0=params["offCenterX"], y0=params["offCenterY"],dmax=params["_maximumShift"], threshold=params["detectorADUPhoton"]/2., blur_radius=params["_blurRadius"])
         else:
             x,y = spimage.find_center(I,M)
         params["offCenterX"] = x
