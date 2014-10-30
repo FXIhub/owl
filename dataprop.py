@@ -665,7 +665,7 @@ class ModelProperties(QtGui.QGroupBox, ui.modelProperties.Ui_ModelProperties):
         self.fitDiameterPushButton.released.connect(self.FitDiameter)
         self.fitIntensityPushButton.released.connect(self.FitIntensity)
         self.fitModelPushButton.released.connect(self.FitModel)
-        self.visibilitySlider.sliderMoved.connect(self.setParams)
+        self.visibilitySlider.valueChanged.connect(self.setParams)
     def setModelItem(self,modelItem=None):
         self.modelItem = modelItem
         if modelItem is None:
