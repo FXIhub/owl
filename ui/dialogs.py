@@ -10,12 +10,19 @@ import numpy
 import math
 import logging
 import settingsOwl
-import fit
 import ui.tagsDialog
 import ui.selectIndexDialog
 import ui.preferencesDialog
 import ui.fileModeDialog
 import ui.experimentDialog
+
+# Import spimage for experimentDialog
+try:
+    import spimage
+    hasSpimage = True
+except:
+    hasSpimage = False
+
 
 class TagsDialog(QtGui.QDialog, ui.tagsDialog.Ui_TagsDialog):
     def __init__(self,parent,tags):
@@ -231,7 +238,7 @@ class ExperimentDialog(QtGui.QDialog, ui.experimentDialog.Ui_ExperimentDialog):
         QtGui.QDialog.__init__(self,parent,QtCore.Qt.WindowTitleHint)
         self.setupUi(self)
         self.modelItem = modelItem
-        self.materialType.addItems(fit.DICT_atomic_composition.keys())
+        self.materialType.addItems(spimage.DICT_atomic_composition.keys())
         params = self.modelItem.getParams(0)
         self.wavelength.setValue(params["photonWavelengthNM"])
         self.syncEnergy()
@@ -246,16 +253,16 @@ class ExperimentDialog(QtGui.QDialog, ui.experimentDialog.Ui_ExperimentDialog):
         self.buttonBox.accepted.connect(self.onOkButtonClicked)
     def syncEnergy(self):
         wl = self.wavelength.value()
-        h = fit.DICT_physical_constants['h']
-        c = fit.DICT_physical_constants['c']
-        qe = fit.DICT_physical_constants['e']
+        h = spimage.DICT_physical_constants['h']
+        c = spimage.DICT_physical_constants['c']
+        qe = spimage.DICT_physical_constants['e']
         ey = h*c/wl/1.E-9/qe
         self.energy.setValue(ey)
     def syncWavelength(self):
         ey = self.energy.value()
-        h = fit.DICT_physical_constants['h']
-        c = fit.DICT_physical_constants['c']
-        qe = fit.DICT_physical_constants['e']
+        h = spimage.DICT_physical_constants['h']
+        c = spimage.DICT_physical_constants['c']
+        qe = spimage.DICT_physical_constants['e']
         wl = h*c/ey/1.E-9/qe
         self.wavelength.setValue(wl)
     def onOkButtonClicked(self):

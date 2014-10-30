@@ -14,6 +14,14 @@ import time
 from cxi.cache import GLCache
 import fit
 
+# Import spimage for viewing of sphere model 
+try:
+    import spimage
+    hasSpimage = True
+except:
+    hasSpimage = False
+
+
 class View2D(View, QtOpenGL.QGLWidget):
     needDataImage = QtCore.Signal(int)
     needDataPatterson = QtCore.Signal(int)
@@ -646,39 +654,37 @@ class View2D(View, QtOpenGL.QGLWidget):
             # It has to be moved out of here, possibly even out of owl
             params = self.data.modelItem.getParams(img)
             s = imageData.shape
+
+            # Update center of sphere model
             self.centerX = ((s[1]-1)/2.+params["offCenterX"])/(s[1]-1)
             self.centerY = ((s[0]-1)/2.+params["offCenterY"])/(s[0]-1)
             GL.glUniform1f(self.modelCenterXLoc, self.centerX)
             GL.glUniform1f(self.modelCenterYLoc, self.centerY)
-            p = params["detectorPixelSizeUM"]*1.E-6
-            D = params["detectorDistanceMM"]*1.E-3
-            wl = params["photonWavelengthNM"]*1.E-9
-            h = fit.DICT_physical_constants['h']
-            c = fit.DICT_physical_constants['c']
-            qe = fit.DICT_physical_constants['e']
-            ey_J = h*c/wl
-            r = params["diameterNM"]*1.E-9/2.
-            V = 4/3.*numpy.pi*r**3
-            I_0 = params["intensityMJUM2"]*1.E-3/ey_J*1.E12
-            rho_e = fit.Material(material_type=params["materialType"]).get_electron_density()
+
+            # Update size of sphere model
+            d = params["diameterNM"]
+            wl = params["photonWavelengthNM"]
+            p = params["detectorPixelSizeUM"]
+            D = params["detectorDistanceMM"]
+            self.modelSize = spimage.get_sphere_model_size(d, wl, p, D)
+            GL.glUniform1f(self.modelSizeLoc, self.modelSize)
+
+            # Update scale of sphere model
+            i = params["intensityMJUM2"]
+            m = params["materialType"]
             QE = params["detectorQuantumEfficiency"]
             ADUP = params["detectorADUPhoton"]
-            # k = 2 pi / wavelength
-            # q = coordinate * (k p / D)
-            # s = q modelRadius = coordinate * modelSize
-            # modelSize = q modelRadius / coordinate = modelRadius * k p / D
-            k = 2*numpy.pi/wl
-            self.modelSize = r*k*p/D
-            GL.glUniform1f(self.modelSizeLoc, self.modelSize)
-            # scale = K * QE * ADUP
-            # K = I_0 (rho_e p/D r_0 V)^2
-            K = I_0*(rho_e*p/D*fit.DICT_physical_constants["re"]*V)**2
-            scale = K * QE * ADUP
-
+            scale = spimage.get_sphere_model_scale(i, d, wl, p, D, QE, ADUP, m)
             GL.glUniform1f(self.modelScaleLoc, scale)
+
+            # Update shape 
             GL.glUniform1f(self.imageShapeXLoc, imageData.shape[1])
             GL.glUniform1f(self.imageShapeYLoc, imageData.shape[0])
+
+            # Update visibility of sphere model
             GL.glUniform1f(self.modelVisibilityLoc, params["_visibility"])
+
+            # Save mask radius
             self.maskRadius = params["maskRadius"]
 
         GL.glBegin(GL.GL_QUADS)
@@ -1388,7 +1394,7 @@ class View2D(View, QtOpenGL.QGLWidget):
 
     def toggleModelView(self):
         """Toggle the visibility of the model overlay"""
-        self.modelView = not self.modelView
+        self.modelView = hasSpimage and not self.modelView
         self.updateGL()
 
     def togglePattersonView(self):

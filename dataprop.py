@@ -12,6 +12,15 @@ import ui.displayBox
 import ui.modelProperties
 import ui.pattersonProperties
 
+
+# Import spimage (needed for ModelProperties)
+try:
+    import spimage
+    hasSpimage = True
+except:
+    print "Warning: The python package libspimage could not be found. Without libspimage, the View -> Model feature is disabled. \nAll code for viewing and fitting of the model has been moved to libspimage. You can download and install it from here: \nhttps://github.com/FilipeMaia/libspimage"
+    hasSpimage = False
+
 def sizeof_fmt(num):
     for x in ['bytes','kB','MB','GB']:
         if num < 1024.0:
@@ -740,23 +749,22 @@ class ModelProperties(QtGui.QGroupBox, ui.modelProperties.Ui_ModelProperties):
         expDialog.exec_()
     def FindCenter(self):
         img = self.parent.viewer.view.view2D.selectedImage
-        self.modelItem.center(img)
+        self.modelItem.find_center(img)
         self.showParams()
     def FitDiameter(self):
         img = self.parent.viewer.view.view2D.selectedImage
-        self.modelItem.center(img)
+        self.modelItem.find_center(img)
         self.showParams()
     def FitIntensity(self):
         img = self.parent.viewer.view.view2D.selectedImage
-        self.modelItem.center(img)
+        self.modelItem.find_center(img)
         self.showParams()
     def FitModel(self):
         img = self.parent.viewer.view.view2D.selectedImage
         self.modelItem.fit_model(img)
         self.showParams()
     def toggleVisible(self):
-        self.setVisible(not self.isVisible())
-
+        self.setVisible(hasSpimage and not self.isVisible())
 
 class PattersonProperties(QtGui.QGroupBox, ui.pattersonProperties.Ui_PattersonProperties):
     def __init__(self,parent):
