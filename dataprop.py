@@ -711,6 +711,7 @@ class ModelProperties(QtGui.QGroupBox, ui.modelProperties.Ui_ModelProperties):
             self.visibilitySlider.setValue(50)
         else:
             params = self.modelItem.getParams(img)
+            [ch.blockSignals(True) for ch in self.children()]
             self.centerX.setValue(params["offCenterX"])
             self.centerY.setValue(params["offCenterY"])
             self.diameter.setValue(params["diameterNM"])
@@ -723,6 +724,8 @@ class ModelProperties(QtGui.QGroupBox, ui.modelProperties.Ui_ModelProperties):
             self.fitDiameterMethod.setCurrentIndex(self.fitDiameterMethod.findText(str(params["_fitDiameterMethod"])))
             self.fitIntensityMethod.setCurrentIndex(self.fitIntensityMethod.findText(str(params["_fitIntensityMethod"])))
             self.fitModelMethod.setCurrentIndex(self.fitModelMethod.findText(str(params["_fitModelMethod"])))
+            [ch.blockSignals(False) for ch in self.children()]
+            self.parent.viewer.view.view2D.updateGL()
     def setParams(self):
         params = {}
         img = self.parent.viewer.view.view2D.selectedImage
@@ -745,7 +748,7 @@ class ModelProperties(QtGui.QGroupBox, ui.modelProperties.Ui_ModelProperties):
         # BD: refreshing here leads to multiple painting of the model (as individual model parameters change), 
         #     better don't refresh here, unless this is the only possible way to do so
         #self.parent.viewer.view.view2D._paintImage(img)
-        #self.parent.viewer.view.view2D.updateGL()
+        self.parent.viewer.view.view2D.updateGL()
     def onExperiment(self):
         expDialog = ExperimentDialog(self, self.modelItem)
         expDialog.exec_()
