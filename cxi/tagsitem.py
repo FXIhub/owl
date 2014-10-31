@@ -1,6 +1,6 @@
 from PySide import QtGui, QtCore
 import numpy
-from IPython.core.debugger import Tracer
+#from IPython.core.debugger import Tracer
 
 class TagsItem:
     def __init__(self,parent,fileLoader,path):
