@@ -15,6 +15,7 @@ uniform int showModel;
 uniform float imageShapeX;
 uniform float imageShapeY;
 uniform float modelVisibility;
+uniform float fitMaskRadius;
 void main()
 {
   vec2 uv = gl_TexCoord[0].xy;
@@ -22,12 +23,48 @@ void main()
   vec4 mcolor = texture2D(mask, uv);
   float scale = (vmax-vmin);
   float offset = vmin;
+  
+  float s;
+  if(showModel == 1){
+    // Paint Fit Mask Radius
+    float r = sqrt((uv[0]-modelCenterX)*(uv[0]-modelCenterX)*(imageShapeX-1.)*(imageShapeX-1.)+(uv[1]-modelCenterY)*(uv[1]-modelCenterY)*(imageShapeY-1.)*(imageShapeY-1.));
+    if(abs(r - fitMaskRadius) < 0.5){
+      color.r = 1.0;
+      color.g = 1.0;
+      color.b = 1.0;
+      color.a = 1.0;
+      gl_FragColor = color;
+      return;
+    }
 
-
+    // Paint Fit Model Minima
+    s = modelSize*r;
+    // We want to have a dashed line, with 40 dashes
+    if(sin(atan(uv[1]-modelCenterY,uv[0]-modelCenterX) * 4.0*floor(0.5+r/16.0)) > 0.0){
+      // d is the distance in pixel at which we want to test the function
+      float d = 0.5;
+      // Sphere diffraction has minimas at tan(s) == s
+      float s_up = (r+d)*modelSize;
+      float err1 = abs(tan(s_up)-(s_up)) - abs(tan(s)-s);
+      if(err1 > 0.0){
+	float s_lo = (r-d)*modelSize;
+	float err2 = abs(tan(s_lo)-(s_lo)) - abs(tan(s)-s);
+	if(err2 > 0.0){
+	  color.r = 0.5;
+	  color.g = 0.5;
+	  color.b = 0.5;
+	  color.a = 1.0;
+	  gl_FragColor = color;
+	  return;
+	}
+      }
+    }
+  }
+  
   // Apply Model
   if((showModel == 1) && (uv[0] > modelVisibility)){
     //float s = modelSize*sqrt((uv[0]-modelCenterX)*(uv[0]-modelCenterX)+(uv[1]-modelCenterX)*(uv[1]-modelCenterX));
-    float s = modelSize*sqrt((uv[0]-modelCenterX)*(uv[0]-modelCenterX)*(imageShapeX-1.)*(imageShapeX-1.)+(uv[1]-modelCenterY)*(uv[1]-modelCenterY)*(imageShapeY-1.)*(imageShapeY-1.));
+    //    float s = modelSize*sqrt((uv[0]-modelCenterX)*(uv[0]-modelCenterX)*(imageShapeX-1.)*(imageShapeX-1.)+(uv[1]-modelCenterY)*(uv[1]-modelCenterY)*(imageShapeY-1.)*(imageShapeY-1.));
     color.a = 3.0*(sin(s)-s*cos(s))/(s*s*s);
     color.a *= color.a * modelScale;
 

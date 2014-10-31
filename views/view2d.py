@@ -261,6 +261,7 @@ class View2D(View, QtOpenGL.QGLWidget):
         self.imageShapeXLoc = GL.glGetUniformLocation(self.shader, "imageShapeX")
         self.imageShapeYLoc = GL.glGetUniformLocation(self.shader, "imageShapeY")
         self.modelVisibilityLoc = GL.glGetUniformLocation(self.shader, "modelVisibility")
+        self.fitMaskRadiusLoc = GL.glGetUniformLocation(self.shader, "fitMaskRadius")
 
     def _initColormapTextures(self):
         n = 1024
@@ -369,51 +370,6 @@ class View2D(View, QtOpenGL.QGLWidget):
             self.renderText(pad, pad+height/self.zoom, 0.0, text[i], font)
             height += metrics.height()
 
-        GL.glPopMatrix()
-
-
-    def _paintFitModelMinima(self):
-        GL.glPushMatrix()
-        GL.glShadeModel(GL.GL_FLAT)
-        GL.glColor3f(0.5, 0.5, 0.5)
-        GL.glLineWidth(1./self.zoom)
-        imgWidth = self._getImgWidth("window", False)
-        imgHeight = self.getImgHeight("window", False)
-        cx = self.centerX
-        cy = self.centerY
-        sides = 200
-        qr_approx = [4.49, 7.725, 10.904, 14.135, 17.26, 20.43, 23.56, 26.71] # These are approcimations to tan(qr) = qr
-        for a in qr_approx:
-            radius = a/(self.modelSize + numpy.finfo("float64").eps)
-            for i in range(sides):
-                if not i % 4: GL.glBegin(GL.GL_LINE_LOOP)
-                x = radius * numpy.cos(i*2*numpy.pi/sides) + cx*imgWidth/self.zoom
-                y = radius * numpy.sin(i*2*numpy.pi/sides) + (1-cy)*imgHeight/self.zoom
-                if (x > 0) and (x < imgWidth/self.zoom) and (y > 0) and (y < imgHeight/self.zoom):
-                    GL.glVertex2f(x, y)
-                if not (i + 3) % 4: GL.glEnd()
-        GL.glPopMatrix()
-
-
-    def _paintCircleFitMask(self):
-        GL.glPushMatrix()
-        GL.glShadeModel(GL.GL_FLAT)
-        GL.glColor3f(1.0, 1.0, 1.0)
-        GL.glLineWidth(0.5/self.zoom)
-        imgWidth = self._getImgWidth("window", False)
-        imgHeight = self.getImgHeight("window", False)
-        cx = self.centerX
-        cy = self.centerY
-        sides = 200
-        radius = self.maskRadius
-        GL.glBegin(GL.GL_LINE_LOOP)
-        for i in range(sides):
-            x = radius * numpy.cos(i*2*numpy.pi/sides) + cx*imgWidth/self.zoom
-            y = radius * numpy.sin(i*2*numpy.pi/sides) + (1-cy)*imgHeight/self.zoom
-            x = max(0, min(x, imgWidth/self.zoom))
-            y = max(0, min(y, imgHeight/self.zoom))
-            GL.glVertex2f(x, y)
-        GL.glEnd()
         GL.glPopMatrix()
 
     @QtCore.Slot()
@@ -592,6 +548,7 @@ class View2D(View, QtOpenGL.QGLWidget):
 
             # Save mask radius
             self.maskRadius = params["maskRadius"]
+            GL.glUniform1f(self.fitMaskRadiusLoc, params["maskRadius"])
 
         GL.glBegin(GL.GL_QUADS)
         GL.glTexCoord2f(0.0, 0.0)
@@ -607,9 +564,6 @@ class View2D(View, QtOpenGL.QGLWidget):
         GL.glActiveTexture(GL.GL_TEXTURE0)
 
         GL.glUseProgram(0)
-        if(self.modelView):
-            self._paintCircleFitMask()
-            self._paintFitModelMinima()
 
         if(img == self.selectedImage):
             self._paintSelectedImageBorder(img_width, img_height)
