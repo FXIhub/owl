@@ -13,6 +13,15 @@ import logging
 import time
 from cxi.cache import GLCache
 import fit
+import os.path
+
+# Import spimage for viewing of sphere model 
+try:
+    import spimage
+    hasSpimage = True
+except:
+    hasSpimage = False
+
 
 class View2D(View, QtOpenGL.QGLWidget):
     needDataImage = QtCore.Signal(int)
@@ -97,10 +106,10 @@ class View2D(View, QtOpenGL.QGLWidget):
         As such this kind of functions should be moved to some other place
         which manages what's currently being viewed.
         """
-        if self.data != None:
+        if self.data is not None:
             self.data.deselectStack()
         self.data = dataItem
-        if self.data != None:
+        if self.data is not None:
             self.data.selectStack()
             self.has_data = True
         else:
@@ -114,10 +123,10 @@ class View2D(View, QtOpenGL.QGLWidget):
         As such this kind of functions should be moved to some other place
         which manages what's currently being viewed.
         """
-        if self.mask != None:
+        if self.mask is not None:
             self.mask.deselectStack()
         self.mask = dataItem
-        if self.mask != None:
+        if self.mask is not None:
             self.mask.selectStack()
         self.dataItemChanged.emit(self.data, self.mask)
 
@@ -137,10 +146,10 @@ class View2D(View, QtOpenGL.QGLWidget):
         As such this kind of functions should be moved to some other place
         which manages what's currently being viewed.
         """
-        if self.mask == None:
+        if self.mask is None:
             return None
         elif self.mask.isStack:
-            #if self.integrationMode == None:
+            #if self.integrationMode is None:
             #print self.mask.shape()
             return self.mask.data(img=img)
             #else:
@@ -227,114 +236,17 @@ class View2D(View, QtOpenGL.QGLWidget):
             print 'Missing Shader Objects!'
             sys.exit(1)
         self.makeCurrent()
-        self.shader = compileProgram(compileShader('''
-            void main()
-            {
-                //Transform vertex by modelview and projection matrices
-                gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
 
-                 // Forward current color and texture coordinates after applying texture matrix
-                gl_FrontColor = gl_Color;
-                gl_TexCoord[0] = gl_TextureMatrix[0] * gl_MultiTexCoord0;
-            }
-        ''', GL.GL_VERTEX_SHADER), compileShader('''
-            uniform sampler2D cmap;
-            uniform sampler2D data;
-            uniform int norm;
-            uniform float vmin;
-            uniform float vmax;
-            uniform float gamma;
-            uniform int do_clamp;
-            uniform sampler2D mask;
-            uniform float maskedBits;
-            uniform float modelCenterX;
-            uniform float modelCenterY;
-            uniform float modelSize;
-            uniform float modelScale;
-            uniform int showModel;
-            uniform float imageShapeX;
-            uniform float imageShapeY;
-            uniform float modelVisibility;
-            void main()
-            {
-                vec2 uv = gl_TexCoord[0].xy;
-                vec4 color = texture2D(data, uv);
-                vec4 mcolor = texture2D(mask, uv);
-                float scale = (vmax-vmin);
-                float offset = vmin;
+        # Load shaders from external files
+        this_dir = os.path.dirname(os.path.realpath(__file__))
+        with open ('%s/shader.vert' % this_dir, "r") as myfile:
+            vertexShader = myfile.read()
+        with open ('%s/shader.frag' % this_dir, "r") as myfile:
+            fragmentShader = myfile.read()
+                    
+        self.shader = compileProgram(compileShader(vertexShader, GL.GL_VERTEX_SHADER), 
+                                     compileShader(fragmentShader, GL.GL_FRAGMENT_SHADER), )
 
-
-                // Apply Model
-                if((showModel == 1) && (uv[0] > modelVisibility)){
-                        //float s = modelSize*sqrt((uv[0]-modelCenterX)*(uv[0]-modelCenterX)+(uv[1]-modelCenterX)*(uv[1]-modelCenterX));
-                        float s = modelSize*sqrt((uv[0]-modelCenterX)*(uv[0]-modelCenterX)*(imageShapeX-1.)*(imageShapeX-1.)+(uv[1]-modelCenterY)*(uv[1]-modelCenterY)*(imageShapeY-1.)*(imageShapeY-1.));
-                        color.a = 3.0*(sin(s)-s*cos(s))/(s*s*s);
-                        color.a *= color.a * modelScale;
-
-                }else{
-
-                // Apply Mask
-
-                // Using a float for the mask will only work up to about 24 bits
-                float maskBits = mcolor.a;
-                // loop through the first 16 bits
-                float bit = 1.0;
-                if(maskBits > 0.0){
-                    for(int i = 0;i<16;i++){
-                        if(floor(mod(maskBits/bit, 2.0)) == 1.0 && floor(mod(maskedBits/bit, 2.0)) == 1.0){
-                            color.a = 0.0;
-                            gl_FragColor = color;
-                            return;
-                        }
-                        bit = bit*2.0;
-                    }
-                }
-                }
-
-
-                uv[0] = (color.a-offset);
-
-                // Check for clamping
-                uv[1] = 0.0;
-                if(uv[0] < 0.0){
-                  if(do_clamp == 1){
-                    uv[0] = 0.0;
-                    gl_FragColor = texture2D(cmap, uv);
-                    return;
-                  }else{
-                    color.a = 0.0;
-                    gl_FragColor = color;
-                    return;
-                  }
-                }
-                if(uv[0] > scale){
-                  if(do_clamp == 1){
-                    uv[0] = 1.0;
-                    gl_FragColor = texture2D(cmap, uv);
-                    return;
-                  }else{
-                    color.a = 0.0;
-                    gl_FragColor = color;
-                    return;
-                  }
-                }
-                // Apply Colormap
-                if(norm == 0){
-                 // linear
-                  uv[0] /= scale;
-                }else if(norm == 1){
-                 // log
-                 scale = log(scale+1.0);
-                 uv[0] = log(uv[0]+1.0)/scale;
-                }else if(norm == 2){
-                  // power
-                 scale = pow(scale+1.0, gamma)-1.0;
-                 uv[0] = (pow(uv[0]+1.0, gamma)-1.0)/scale;
-                }
-                color = texture2D(cmap, uv);
-                gl_FragColor = color;
-            }
-        ''', GL.GL_FRAGMENT_SHADER), )
         self.vminLoc = GL.glGetUniformLocation(self.shader, "vmin")
         self.vmaxLoc = GL.glGetUniformLocation(self.shader, "vmax")
         self.gammaLoc = GL.glGetUniformLocation(self.shader, "gamma")
@@ -349,6 +261,7 @@ class View2D(View, QtOpenGL.QGLWidget):
         self.imageShapeXLoc = GL.glGetUniformLocation(self.shader, "imageShapeX")
         self.imageShapeYLoc = GL.glGetUniformLocation(self.shader, "imageShapeY")
         self.modelVisibilityLoc = GL.glGetUniformLocation(self.shader, "modelVisibility")
+        self.fitMaskRadiusLoc = GL.glGetUniformLocation(self.shader, "fitMaskRadius")
 
     def _initColormapTextures(self):
         n = 1024
@@ -418,7 +331,7 @@ class View2D(View, QtOpenGL.QGLWidget):
         if(self.indexProjector.indexToImg(self.lastHoveredViewIndex) == img):
             ix = self.hoveredPixel[0]
             iy = self.hoveredPixel[1]
-            if self.loaderThread.maskData[img] != None:
+            if self.loaderThread.maskData[img] is not None:
                 text.append("Mask: %5.3g" % (self.loaderThread.maskData[img][iy, ix]))
             text.append("Value: %5.3g" % (self.loaderThread.imageData[img][iy, ix]))
             text.append("Pixel: (%d, %d)" % (ix, iy))
@@ -457,27 +370,6 @@ class View2D(View, QtOpenGL.QGLWidget):
             self.renderText(pad, pad+height/self.zoom, 0.0, text[i], font)
             height += metrics.height()
 
-        GL.glPopMatrix()
-
-    def _paintCircleFitMask(self):
-        GL.glPushMatrix()
-        GL.glShadeModel(GL.GL_FLAT)
-        GL.glColor3f(1.0, 1.0, 1.0)
-        GL.glLineWidth(0.5/self.zoom)
-        imgWidth = self._getImgWidth("window", False)
-        imgHeight = self.getImgHeight("window", False)
-        cx = self.centerX
-        cy = self.centerY
-        sides = 200
-        radius = self.maskRadius
-        GL.glBegin(GL.GL_LINE_LOOP)
-        for i in range(sides):
-            x = radius * numpy.cos(i*2*numpy.pi/sides) + cx*imgWidth/self.zoom
-            y = radius * numpy.sin(i*2*numpy.pi/sides) + (1-cy)*imgHeight/self.zoom
-            x = max(0, min(x, imgWidth/self.zoom))
-            y = max(0, min(y, imgHeight/self.zoom))
-            GL.glVertex2f(x, y)
-        GL.glEnd()
         GL.glPopMatrix()
 
     @QtCore.Slot()
@@ -618,44 +510,45 @@ class View2D(View, QtOpenGL.QGLWidget):
 
         # Model related variables
         if(self.modelView):
+            #print "view2d.py: update model params", img
             # TODO FM: All this physics knowledge should not be here.
             # It has to be moved out of here, possibly even out of owl
+            # BD: moved it to libspimage
             params = self.data.modelItem.getParams(img)
             s = imageData.shape
+
+            # Update center of sphere model
             self.centerX = ((s[1]-1)/2.+params["offCenterX"])/(s[1]-1)
             self.centerY = ((s[0]-1)/2.+params["offCenterY"])/(s[0]-1)
             GL.glUniform1f(self.modelCenterXLoc, self.centerX)
             GL.glUniform1f(self.modelCenterYLoc, self.centerY)
-            p = params["detectorPixelSizeUM"]*1.E-6
-            D = params["detectorDistanceMM"]*1.E-3
-            wl = params["photonWavelengthNM"]*1.E-9
-            h = fit.DICT_physical_constants['h']
-            c = fit.DICT_physical_constants['c']
-            qe = fit.DICT_physical_constants['e']
-            ey_J = h*c/wl
-            r = params["diameterNM"]*1.E-9/2.
-            V = 4/3.*numpy.pi*r**3
-            I_0 = params["intensityMJUM2"]*1.E-3/ey_J*1.E12
-            rho_e = fit.Material(material_type=params["materialType"]).get_electron_density()
+
+            # Update size of sphere model
+            d = params["diameterNM"]
+            wl = params["photonWavelengthNM"]
+            p = params["detectorPixelSizeUM"]
+            D = params["detectorDistanceMM"]
+            self.modelSize = spimage.get_sphere_model_size(d, wl, p, D)
+            GL.glUniform1f(self.modelSizeLoc, self.modelSize)
+
+            # Update scale of sphere model
+            i = params["intensityMJUM2"]
+            m = params["materialType"]
             QE = params["detectorQuantumEfficiency"]
             ADUP = params["detectorADUPhoton"]
-            # k = 2 pi / wavelength
-            # q = coordinate * (k p / D)
-            # s = q modelRadius = coordinate * modelSize
-            # modelSize = q modelRadius / coordinate = modelRadius * k p / D
-            k = 2*numpy.pi/wl
-            modelSize = r*k*p/D
-            GL.glUniform1f(self.modelSizeLoc, modelSize)
-            # scale = K * QE * ADUP
-            # K = I_0 (rho_e p/D r_0 V)^2
-            K = I_0*(rho_e*p/D*fit.DICT_physical_constants["re"]*V)**2
-            scale = K * QE * ADUP
-
+            scale = spimage.get_sphere_model_scale(i, d, wl, p, D, QE, ADUP, m)
             GL.glUniform1f(self.modelScaleLoc, scale)
+
+            # Update shape 
             GL.glUniform1f(self.imageShapeXLoc, imageData.shape[1])
             GL.glUniform1f(self.imageShapeYLoc, imageData.shape[0])
+
+            # Update visibility of sphere model
             GL.glUniform1f(self.modelVisibilityLoc, params["_visibility"])
+
+            # Save mask radius
             self.maskRadius = params["maskRadius"]
+            GL.glUniform1f(self.fitMaskRadiusLoc, params["maskRadius"])
 
         GL.glBegin(GL.GL_QUADS)
         GL.glTexCoord2f(0.0, 0.0)
@@ -671,8 +564,6 @@ class View2D(View, QtOpenGL.QGLWidget):
         GL.glActiveTexture(GL.GL_TEXTURE0)
 
         GL.glUseProgram(0)
-        if(self.modelView):
-            self._paintCircleFitMask()
 
         if(img == self.selectedImage):
             self._paintSelectedImageBorder(img_width, img_height)
@@ -782,7 +673,7 @@ class View2D(View, QtOpenGL.QGLWidget):
         if not self.data.isStack:
             return 1
         else:
-            if self.indexProjector.imgs == None:
+            if self.indexProjector.imgs is None:
                 return self._getNImages()
             else:
                 return len(self.indexProjector.imgs)
@@ -792,7 +683,7 @@ class View2D(View, QtOpenGL.QGLWidget):
 
         TODO FM: Called once from view2DScrollWidget. Why?
         """
-        if self.data != None:
+        if self.data is not None:
             imgHeight = self.data.height()
             if border == True:
                 imgHeight += self._subplotSceneBorder()
@@ -976,7 +867,7 @@ class View2D(View, QtOpenGL.QGLWidget):
     def _nextSlideRow(self):
         self.nextRow(wrap=True)
         info = self._getPixelInfo(self.centralImg, self.ix, self.iy)
-        if info == None:
+        if info is None:
             return
         self.selectedImage = info["img"]
         self.pixelClicked.emit(info)
@@ -1003,7 +894,7 @@ class View2D(View, QtOpenGL.QGLWidget):
     def _browseToLastIfAuto(self):
         """Scroll to the last position if autoLast is true"""
         if self.autoLast:
-            if self.data != None:
+            if self.data is not None:
                 self.browseToViewIndex(self.indexProjector.getNViewIndices()-1)
 
     def mouseReleaseEvent(self, event):
@@ -1031,7 +922,7 @@ class View2D(View, QtOpenGL.QGLWidget):
         if img in self.loaderThread.imageData.keys():
             (self.ix, self.iy) = self._windowToImageCoordinates(x, y, 0)
             info = self._getPixelInfo(img, self.ix, self.iy)
-            if info == None:
+            if info is None:
                 return
             self.selectedImage = info["img"]
             self.pixelClicked.emit(info)
@@ -1047,7 +938,7 @@ class View2D(View, QtOpenGL.QGLWidget):
         info["img"] = img
         info["viewIndex"] = self.indexProjector.imgToIndex(img)
         info["imageValue"] = self.loaderThread.imageData[img][iy, ix]
-        if self.loaderThread.maskData[img] == None:
+        if self.loaderThread.maskData[img] is None:
             info["maskValue"] = None
         else:
             info["maskValue"] = self.loaderThread.maskData[img][iy, ix]
@@ -1256,7 +1147,7 @@ class View2D(View, QtOpenGL.QGLWidget):
 
     def refreshDisplayProp(self, prop):
         """Redraws the image properties hovering display"""
-        if prop != None:
+        if prop is not None:
             self.normScaling = prop["normScaling"]
             if(self.normScaling == 'lin'):
                 self.normScalingValue = 0
@@ -1310,7 +1201,7 @@ class View2D(View, QtOpenGL.QGLWidget):
     def onStackSizeChanged(self, newStackSize):
         """Triggered when the size of the stack changes"""
         # not sure if this is needed
-        if self.data != None:
+        if self.data is not None:
             self.has_data = True
         else:
             self.has_data = False
@@ -1334,7 +1225,7 @@ class View2D(View, QtOpenGL.QGLWidget):
         """Moves current selection"""
         if(abs(x) > 1 or abs(y) > 1):
             raise AssertionError('moveSelection only supports moves <= 1 in x and y')
-        if(self.selectedImage == None):
+        if(self.selectedImage is None):
             return
         viewIndex = self.indexProjector.imgToIndex(self.selectedImage)
         img = self.indexProjector.indexToImg(viewIndex+x+y*self.stackWidth)
@@ -1350,7 +1241,7 @@ class View2D(View, QtOpenGL.QGLWidget):
         self.selectedImage = img
         if img in self.loaderThread.imageData.keys():
             info = self._getPixelInfo(img, 0, 0)
-            if info == None:
+            if info is None:
                 return
             self.pixelClicked.emit(info)
 
@@ -1363,7 +1254,7 @@ class View2D(View, QtOpenGL.QGLWidget):
 
     def toggleModelView(self):
         """Toggle the visibility of the model overlay"""
-        self.modelView = not self.modelView
+        self.modelView = hasSpimage and not self.modelView
         self.updateGL()
 
     def togglePattersonView(self):

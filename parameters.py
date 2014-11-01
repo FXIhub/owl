@@ -24,7 +24,7 @@ class AbstractParameterItem:
         self.initParams()
     def initParams(self):
         # return if we do not even know the stack size
-        if self.fileLoader.stackSize == None:
+        if self.fileLoader.stackSize is None:
             self.numEvents = self.chunkSize
         else:
             self.numEvents = self.fileLoader.stackSize - self.fileLoader.stackSize % self.chunkSize + self.chunkSize
@@ -51,7 +51,7 @@ class AbstractParameterItem:
     def getParams(self,img0):
         if (self.genParams == {}) or (self.indParams == {}):
             self.initParams()
-        if img0 == None:
+        if img0 is None:
             img = 0
         else:
             img = img0
@@ -123,20 +123,32 @@ class ModelItem(AbstractParameterItem):
                                "intensityMJUM2": float(self.settings.value("modelIntensity")),
                                "diameterNM": float(self.settings.value("modelDiameter")),
                                "maskRadius": float(self.settings.value("modelMaskRadius"))}
-        generalParamsDef = {"photonWavelengthNM":1.,"detectorDistanceMM":1000.,"detectorPixelSizeUM":75.,"detectorQuantumEfficiency":1.,"detectorADUPhoton":10.,"materialType":"water","_visibility":0.5}
+        generalParamsDef = {"photonWavelengthNM":1.,
+                            "detectorDistanceMM":1000.,
+                            "detectorPixelSizeUM":75.,
+                            "detectorQuantumEfficiency":1.,
+                            "detectorADUPhoton":10.,
+                            "materialType":"water",
+                            "_visibility":0.5,
+                            "_maximumShift":5,
+                            "_blurRadius":4,
+                            "_findCenterMethod":'quadrant', 
+                            "_fitDiameterMethod":'pearson', 
+                            "_fitIntensityMethod":'none', 
+                            "_fitModelMethod":'fast',} 
         name = "model"
         AbstractParameterItem.__init__(self,parentGroup,fileLoader,name,individualParamsDef,generalParamsDef)
-    def centerAndFit(self,img):
+    def find_center(self,img):
         M = fit.FitModel(self.dataItemImage,self.dataItemMask)
-        newParams = M.center_and_fit(img)
+        newParams = M.find_center(img,self.getParams(img))
         self.setParams(img,newParams)
-    def center(self,img):
+    def fit_diameter(self, img):
         M = fit.FitModel(self.dataItemImage,self.dataItemMask)
-        newParams = M.center(img,self.getParams(img))
+        newParams = M.fit_diameter(img,self.getParams(img))
         self.setParams(img,newParams)
-    def fit(self,img):
+    def fit_model(self,img):
         M = fit.FitModel(self.dataItemImage,self.dataItemMask)
-        newParams = M.fit(img,self.getParams(img))
+        newParams = M.fit_model(img,self.getParams(img))
         self.setParams(img,newParams)
 
 

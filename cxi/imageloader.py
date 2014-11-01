@@ -24,7 +24,7 @@ class ImageLoader(QtCore.QObject):
             # loadImage
             self.imageLoaded.emit(img)
             return
-        if self.view.data == None:
+        if self.view.data is None:
             return
         self.logger.debug("Loading image %d"  % (img))
         ################### Important Note ##################
@@ -39,12 +39,12 @@ class ImageLoader(QtCore.QObject):
         mask = self.view.getMask(img)
         self.imageData[img] = numpy.ones((self.view.data.height(),self.view.data.width()),dtype=numpy.float32)
         self.imageData[img][:] = data[:]
-        if phase != None:
+        if phase is not None:
             self.phaseData[img] = numpy.ones((self.view.data.height(),self.view.data.width()),dtype=numpy.float32)
             self.phaseData[img][:] = phase[:]
         else:
             self.phaseData[img] = None
-        if mask != None:
+        if mask is not None:
             self.maskData[img] = numpy.ones((self.view.data.height(),self.view.data.width()),dtype=numpy.float32)
             self.maskData[img][:] = mask[:]
         else:

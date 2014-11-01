@@ -21,7 +21,7 @@ class DataButton(QtGui.QPushButton):
         self.setIconSize(QtCore.QSize(S,S))
         self.setToolTip("drag data here")
         self.setAcceptDrops(True)
-        if menu != None:
+        if menu is not None:
             self.setMenu(menu)
     def dragEnterEvent(self, e):
         if e.mimeData().hasFormat('text/plain'):
@@ -32,7 +32,7 @@ class DataButton(QtGui.QPushButton):
         t = e.mimeData().text()
         self.needData.emit(t)
     def setName(self,name=None):
-        if name == None:
+        if name is None:
             self.setStyleSheet("text-align: left; font-style: italic")
             self.setText("drag %s data here" % self.dataMode)
         else:
@@ -47,7 +47,7 @@ class DataBox(QtGui.QHBoxLayout):
         self.addWidget(self.button)
         self.vbox = QtGui.QVBoxLayout()
         self.addLayout(self.vbox)
-        if menu != None:
+        if menu is not None:
             self.menu.clearAction.triggered.connect(self.clear)
     def clear(self):
         self.button.setName()
@@ -73,13 +73,16 @@ class DataMaskMenu(DataMenu):
                                'bad' : PixelMask.PIXEL_IS_BAD,
                                'resolution' : PixelMask.PIXEL_IS_OUT_OF_RESOLUTION_LIMITS,
                                'missing' : PixelMask.PIXEL_IS_MISSING,
-                               'halo' : PixelMask.PIXEL_IS_IN_HALO}
+                               'halo' : PixelMask.PIXEL_IS_IN_HALO,
+                               'corrected' : PixelMask.PIXEL_IS_ARTIFACT_CORRECTED,
+                               'non-corrected' : PixelMask.PIXEL_FAILED_ARTIFACT_CORRECTION}
         self.maskActions = {}
         for key in self.PIXELMASK_BITS.keys():
             self.maskActions[key] = self.addAction(key)
             self.maskActions[key].setCheckable(True)
             self.maskActions[key].setChecked(True)
         self.maskActions["resolution"].setChecked(False)
+        self.maskActions["corrected"].setChecked(False)
     def getMaskOutBits(self):
         maskOutBits=0
         for key in self.maskActions:
@@ -281,7 +284,7 @@ class CXITree(QtGui.QTreeWidget):
     def expandTree(self,path=None):
         root = self.item
         root.setExpanded(True)
-        if path == None:
+        if path is None:
             path = "entry_1/image_1/data"
         for j,section in zip(range(len(path.split("/"))),path.split("/")):
             if section == "":

@@ -4,6 +4,7 @@ import ui.dialogs
 from analysis import Sizing
 
 class SizingWidget(QtGui.QGroupBox, ui.sizingWidget.Ui_SizingWidget):
+    sizingStopped = QtCore.Signal()
     def __init__(self, parent, view):
         QtGui.QGroupBox.__init__(self,parent)
         self.setupUi(self)
@@ -16,11 +17,11 @@ class SizingWidget(QtGui.QGroupBox, ui.sizingWidget.Ui_SizingWidget):
         self.setData()
         
         # Connect signals
-        self.experimentButton.released.connect(self.onExperiment)
         self.setdataButton.released.connect(self.setData)
         self.startButton.released.connect(self.sizing.startSizing)
+        self.stopButton.released.connect(self.stopSizing)
         self.sizing.sizingProgress.connect(self.updateProgress)
-
+        
     def onExperiment(self):
         expDialog = ui.dialogs.ExperimentDialog(self, self.modelItem)
         expDialog.exec_()
@@ -33,3 +34,7 @@ class SizingWidget(QtGui.QGroupBox, ui.sizingWidget.Ui_SizingWidget):
     def updateProgress(self, status, status_msg):
         self.progressBar.setValue(status)
         self.progressLabel.setText(status_msg)
+
+    def stopSizing(self):
+        self.sizing.stopSizing()
+        #self.sizingStopped.emit()
