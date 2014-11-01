@@ -21,7 +21,12 @@ class DataItem:
         if len(self.fileLoader.f[self.fullName].attrs.items()) > 0 and "axes" in self.fileLoader.f[self.fullName].attrs.keys():
             axes_attrs = self.fileLoader.f[self.fullName].attrs.get("axes")[0].split(":")
             self.isStack = True
-            self.stackDim = axes_attrs.index("experiment_identifier")
+            if "experiment_identifier" in axes_attrs:
+                self.stackDim = axes_attrs.index("experiment_identifier")
+            else:
+                # default choice
+                self.logger.warning("Cannot determine stack dimension. Dataset does not have the standard CXI attribute \'experiment_identifier\'. Choosing the zeroth dimension by default. This might be a wrong choice.")
+                self.stackDim = 0
             # check wheter or not a stack has modules
             if "module_identifier" in axes_attrs:
                 self.stackHasModules = True
