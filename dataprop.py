@@ -762,7 +762,7 @@ class ModelProperties(QtGui.QGroupBox, ui.modelProperties.Ui_ModelProperties):
         self.showParams()
     def FitIntensity(self):
         img = self.parent.viewer.view.view2D.selectedImage
-        self.modelItem.find_center(img)
+        self.modelItem.fit_intensity(img)
         self.showParams()
     def FitModel(self):
         img = self.parent.viewer.view.view2D.selectedImage

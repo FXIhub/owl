@@ -146,6 +146,10 @@ class ModelItem(AbstractParameterItem):
         M = fit.FitModel(self.dataItemImage,self.dataItemMask)
         newParams = M.fit_diameter(img,self.getParams(img))
         self.setParams(img,newParams)
+    def fit_intensity(self, img):
+        M = fit.FitModel(self.dataItemImage,self.dataItemMask)
+        newParams = M.fit_intensity(img,self.getParams(img))
+        self.setParams(img,newParams)
     def fit_model(self,img):
         M = fit.FitModel(self.dataItemImage,self.dataItemMask)
         newParams = M.fit_model(img,self.getParams(img))

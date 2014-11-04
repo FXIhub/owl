@@ -21,8 +21,7 @@ class Sizing(QtCore.QObject):
         self.running = True
         N = len(self.imgs)
         for i in range(N):
-            self.modelItem.center(self.imgs[i])
-            self.modelItem.fit(self.imgs[i])
+            self.modelItem.fit_model(self.imgs[i])
             status = int((float(i+1)/N)*100.)
             status_msg = "Sizing image %d/%d (%.2f %%)" %(i+1, N, status)
             self.sizingProgress.emit(status, status_msg)
