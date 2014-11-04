@@ -16,7 +16,7 @@ uniform float imageShapeX;
 uniform float imageShapeY;
 uniform float modelVisibility;
 uniform float fitMaskRadius;
-#define M_PI 3.1415926535897932384626433832795f
+#define M_PI 3.1415926535897932384626433832795
 void main()
 {
   vec2 uv = gl_TexCoord[0].xy;
