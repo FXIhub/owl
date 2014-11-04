@@ -134,7 +134,7 @@ class ModelItem(AbstractParameterItem):
                             "_blurRadius":4,
                             "_findCenterMethod":'quadrant', 
                             "_fitDiameterMethod":'pearson', 
-                            "_fitIntensityMethod":'none', 
+                            "_fitIntensityMethod":'simple', 
                             "_fitModelMethod":'fast',} 
         name = "model"
         AbstractParameterItem.__init__(self,parentGroup,fileLoader,name,individualParamsDef,generalParamsDef)

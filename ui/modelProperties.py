@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'ui/modelProperties.ui'
 #
-# Created: Thu Oct 30 19:16:05 2014
+# Created: Tue Nov  4 16:05:31 2014
 #      by: pyside-uic 0.2.13 running on PySide 1.2.2
 #
 # WARNING! All changes made in this file will be lost!
@@ -127,6 +127,7 @@ class Ui_ModelProperties(object):
         self.fitIntensityMethod = QtGui.QComboBox(ModelProperties)
         self.fitIntensityMethod.setObjectName("fitIntensityMethod")
         self.fitIntensityMethod.addItem("")
+        self.fitIntensityMethod.addItem("")
         self.gridLayout.addWidget(self.fitIntensityMethod, 2, 0, 1, 1)
         self.fitIntensityPushButton = QtGui.QPushButton(ModelProperties)
         self.fitIntensityPushButton.setObjectName("fitIntensityPushButton")
@@ -164,7 +165,8 @@ class Ui_ModelProperties(object):
         self.fitDiameterMethod.setItemText(0, QtGui.QApplication.translate("ModelProperties", "pearson", None, QtGui.QApplication.UnicodeUTF8))
         self.fitDiameterMethod.setItemText(1, QtGui.QApplication.translate("ModelProperties", "none", None, QtGui.QApplication.UnicodeUTF8))
         self.fitDiameterPushButton.setText(QtGui.QApplication.translate("ModelProperties", "Fit diameter", None, QtGui.QApplication.UnicodeUTF8))
-        self.fitIntensityMethod.setItemText(0, QtGui.QApplication.translate("ModelProperties", "none", None, QtGui.QApplication.UnicodeUTF8))
+        self.fitIntensityMethod.setItemText(0, QtGui.QApplication.translate("ModelProperties", "simple", None, QtGui.QApplication.UnicodeUTF8))
+        self.fitIntensityMethod.setItemText(1, QtGui.QApplication.translate("ModelProperties", "none", None, QtGui.QApplication.UnicodeUTF8))
         self.fitIntensityPushButton.setText(QtGui.QApplication.translate("ModelProperties", "Fit intensity", None, QtGui.QApplication.UnicodeUTF8))
         self.fitModelMethod.setItemText(0, QtGui.QApplication.translate("ModelProperties", "fast", None, QtGui.QApplication.UnicodeUTF8))
         self.fitModelMethod.setItemText(1, QtGui.QApplication.translate("ModelProperties", "refine", None, QtGui.QApplication.UnicodeUTF8))
