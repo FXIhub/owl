@@ -736,7 +736,7 @@ class ModelProperties(QtGui.QGroupBox, ui.modelProperties.Ui_ModelProperties):
         params["maskRadius"] = self.maskRadius.value()
         params["_visibility"] = float(self.visibilitySlider.value()/100.)
         params["_maximumShift"] = int(self.maximumShift.value())
-        params["_blurRadius"] = int(self.blurRadius.value())
+        params["_blurRadius"] = float(self.blurRadius.value())
         params["_findCenterMethod"] = str(self.findCenterMethod.currentText())
         params["_fitDiameterMethod"] = str(self.fitDiameterMethod.currentText())
         params["_fitIntensityMethod"] = str(self.fitIntensityMethod.currentText())
