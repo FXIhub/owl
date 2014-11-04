@@ -16,6 +16,7 @@ uniform float imageShapeX;
 uniform float imageShapeY;
 uniform float modelVisibility;
 uniform float fitMaskRadius;
+#define M_PI 3.1415926535897932384626433832795f
 void main()
 {
   vec2 uv = gl_TexCoord[0].xy;
@@ -38,16 +39,16 @@ void main()
     }
 
     // Paint Fit Model Minima
-    s = modelSize*r;
+    s = 2.0*M_PI*modelSize*r;
     // We want to have a dashed line, with 40 dashes
     if(sin(atan(uv[1]-modelCenterY,uv[0]-modelCenterX) * 4.0*floor(0.5+r/16.0)) > 0.0){
       // d is the distance in pixel at which we want to test the function
       float d = 0.5;
       // Sphere diffraction has minimas at tan(s) == s
-      float s_up = (r+d)*modelSize;
+      float s_up = (r+d)*modelSize*2.0*M_PI;
       float err1 = abs(tan(s_up)-(s_up)) - abs(tan(s)-s);
       if(err1 > 0.0){
-	float s_lo = (r-d)*modelSize;
+	float s_lo = (r-d)*modelSize*2.0*M_PI;;
 	float err2 = abs(tan(s_lo)-(s_lo)) - abs(tan(s)-s);
 	if(err2 > 0.0){
 	  color.r = 0.5;
