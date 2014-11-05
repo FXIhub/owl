@@ -51,8 +51,8 @@ class FitModel:
         m  = params["materialType"]
         rm = params["maskRadius"]
         if method == 'pearson':
-            d = spimage.fit_sphere_diameter(I, M, d, i, wl, ps, D, method='pearson', full_output=False, x0=x0, y0=y0, adup=ap, queff=qe, mat=m, rmax=rm, downsampling=4, do_brute=True)
-            d = spimage.fit_sphere_diameter(I, M, d, i, wl, ps, D, method='pearson', full_output=False, x0=x0, y0=y0, adup=ap, queff=qe, mat=m, rmax=rm, downsampling=1, do_brute=False)
+            d = spimage.fit_sphere_diameter(I, M, d, i, wl, ps, D, method='pearson', full_output=False, x0=x0, y0=y0, adup=ap, queff=qe, mat=m, rmax=rm, downsampling=1, do_brute=20)
+            #d = spimage.fit_sphere_diameter(I, M, d, i, wl, ps, D, method='pearson', full_output=False, x0=x0, y0=y0, adup=ap, queff=qe, mat=m, rmax=rm, downsampling=1, do_brute=False)
         params["diameterNM"] = d
         return params
             
