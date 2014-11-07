@@ -1008,7 +1008,7 @@ def main():
     QtCore.QCoreApplication.setApplicationName("owl")
     # FM: This should provide retina rendering on Mac, but
     # might break some pyqtgraph stuff, we should be aware
-    QtGui.QApplication.setGraphicsSystem("native")
+    # QtGui.QApplication.setGraphicsSystem("native")
     if hasattr(sys, 'argv'):
         app = QtGui.QApplication(sys.argv)
     else:
