@@ -545,11 +545,11 @@ class View2D(QtOpenGL.QGLWidget,View):
             GL.glUniform1f(self.modelCenterYLoc, self.centerY)
 
             # Update size of sphere model
-            d = params["diameterNM"]
+            d  = params["diameterNM"]
             wl = params["photonWavelengthNM"]
-            p = params["detectorPixelSizeUM"]
-            D = params["detectorDistanceMM"]
-            self.modelSize = spimage.get_sphere_model_size(d, wl, p, D)
+            p  = params["detectorPixelSizeUM"]
+            D  = params["detectorDistanceMM"]
+            self.modelSize = spimage.sphere_model_convert_diameter_to_size(d, wl, p, D)
             GL.glUniform1f(self.modelSizeLoc, self.modelSize)
 
             # Update scale of sphere model
@@ -557,7 +557,7 @@ class View2D(QtOpenGL.QGLWidget,View):
             m = params["materialType"]
             QE = params["detectorQuantumEfficiency"]
             ADUP = params["detectorADUPhoton"]
-            scale = spimage.get_sphere_model_scale(i, d, wl, p, D, QE, ADUP, m)
+            scale = spimage.sphere_model_convert_intensity_to_scaling(i, d, wl, p, D, QE, ADUP, m)
             GL.glUniform1f(self.modelScaleLoc, scale)
 
             # Update shape 

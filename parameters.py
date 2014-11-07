@@ -134,7 +134,7 @@ class ModelItem(AbstractParameterItem):
                             "_blurRadius":4,
                             "_findCenterMethod":'quadrant', 
                             "_fitDiameterMethod":'pearson', 
-                            "_fitIntensityMethod":'none', 
+                            "_fitIntensityMethod":'simple', 
                             "_fitModelMethod":'fast',} 
         name = "model"
         AbstractParameterItem.__init__(self,parentGroup,fileLoader,name,individualParamsDef,generalParamsDef)
@@ -145,6 +145,10 @@ class ModelItem(AbstractParameterItem):
     def fit_diameter(self, img):
         M = fit.FitModel(self.dataItemImage,self.dataItemMask)
         newParams = M.fit_diameter(img,self.getParams(img))
+        self.setParams(img,newParams)
+    def fit_intensity(self, img):
+        M = fit.FitModel(self.dataItemImage,self.dataItemMask)
+        newParams = M.fit_intensity(img,self.getParams(img))
         self.setParams(img,newParams)
     def fit_model(self,img):
         M = fit.FitModel(self.dataItemImage,self.dataItemMask)

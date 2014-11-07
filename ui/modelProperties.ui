@@ -260,6 +260,11 @@
       <widget class="QComboBox" name="fitIntensityMethod">
        <item>
         <property name="text">
+         <string>simple</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
          <string>none</string>
         </property>
        </item>
