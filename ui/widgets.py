@@ -1,4 +1,4 @@
-from PySide import QtGui, QtCore, QtOpenGL
+from Qt import QtGui, QtCore, QtOpenGL
 import ui.sizingWidget
 import ui.dialogs
 from analysis import Sizing

@@ -4,7 +4,7 @@ sys.path.append(os.path.dirname(os.path.realpath(__file__)))
 from OpenGL.GL import *
 from OpenGL.GLU import *
 #from PyQt4 import QtGui, QtCore, QtOpenGL, Qt
-from PySide import QtGui, QtCore, QtOpenGL
+from Qt import QtGui, QtCore, QtOpenGL
 
 import numpy
 import math

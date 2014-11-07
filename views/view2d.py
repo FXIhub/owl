@@ -1,5 +1,5 @@
 import sys
-from PySide import QtGui, QtCore, QtOpenGL
+from Qt import QtGui, QtCore, QtOpenGL
 from matplotlib import colors
 from matplotlib import cm
 from views.view import View
@@ -14,6 +14,7 @@ import time
 from cxi.cache import GLCache
 import fit
 import os.path
+import h5py
 
 # Import spimage for viewing of sphere model 
 try:
@@ -23,7 +24,7 @@ except:
     hasSpimage = False
 
 
-class View2D(View, QtOpenGL.QGLWidget):
+class View2D(QtOpenGL.QGLWidget,View):
     needDataImage = QtCore.Signal(int)
     needDataPatterson = QtCore.Signal(int)
     centralImgChanged = QtCore.Signal(int, int, int, int)
@@ -31,6 +32,9 @@ class View2D(View, QtOpenGL.QGLWidget):
     stackWidthChanged = QtCore.Signal(int)
     pixelClicked = QtCore.Signal(dict)
     dataItemChanged = QtCore.Signal(object, object)
+    needDataset = QtCore.Signal(str)
+    datasetChanged = QtCore.Signal(h5py.Dataset,str)
+
     def __init__(self, parent, viewer, indexProjector):
         View.__init__(self, parent, indexProjector, "image")
         QtOpenGL.QGLWidget.__init__(self, parent)
@@ -98,6 +102,18 @@ class View2D(View, QtOpenGL.QGLWidget):
         self.modelView = False
         self.pattersonView = False
         self.hoveredPixel = None
+
+    def dragEnterEvent(self, e):
+        if e.mimeData().hasFormat('text/plain'):
+            e.accept()
+        else:
+            e.ignore() 
+    def dropEvent(self, e):
+        self.needDataset.emit(e.mimeData().text())
+
+    def clearView(self):
+	self.stackSize = 0
+	self.integrationMode = None
 
     def _setData(self, dataItem=None):
         """Sets the currently displayed dataItem
@@ -323,7 +339,9 @@ class View2D(View, QtOpenGL.QGLWidget):
         img_height = self.getImgHeight("scene", False)
         GL.glPushMatrix()
 
+#        font = QtGui.QFont("Arial")
         font = QtGui.QFont("Courier")
+        font.setStyleStrategy(QtGui.QFont.PreferQuality)
         font.setPointSize(15-self.stackWidth*2)
         metrics = QtGui.QFontMetrics(font)
         GL.glColor3f(1.0, 1.0, 1.0)
@@ -364,12 +382,15 @@ class View2D(View, QtOpenGL.QGLWidget):
         GL.glEnd()
 
         height = 0.0
+        GL.glEnable(GL.GL_BLEND)
+        GL.glEnable(GL.GL_TEXTURE_2D)
         GL.glColor3f(0.9, 0.9, 0.9)
         for i in range(0, len(text)):
 #            self.renderText(float(img_width - max_width), height, 0.0, text[i], font)
             self.renderText(pad, pad+height/self.zoom, 0.0, text[i], font)
             height += metrics.height()
-
+        GL.glDisable(GL.GL_TEXTURE_2D)
+        GL.glDisable(GL.GL_BLEND)
         GL.glPopMatrix()
 
     @QtCore.Slot()

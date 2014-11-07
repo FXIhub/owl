@@ -1,4 +1,4 @@
-from PySide import QtCore, QtGui
+from Qt import QtCore, QtGui
 import settingsOwl
 import logging
 

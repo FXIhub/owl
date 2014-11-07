@@ -1,12 +1,16 @@
-from PySide import QtGui, QtCore
+from Qt import QtGui, QtCore
 import pyqtgraph
 import numpy
 from view import View
+import h5py
 
-class View1D(View,QtGui.QFrame):
+class View1D(QtGui.QFrame,View):
     viewIndexSelected = QtCore.Signal(int)
     dataItemXChanged = QtCore.Signal(object)
     dataItemYChanged = QtCore.Signal(object)
+    needDataset = QtCore.Signal(str)
+    datasetChanged = QtCore.Signal(h5py.Dataset,str)
+
     def __init__(self,parent=None,indexProjector=None):
         View.__init__(self,parent,indexProjector,"plot")
         QtGui.QFrame.__init__(self,parent)
@@ -24,6 +28,18 @@ class View1D(View,QtGui.QFrame):
         self.setWindowSize()
         self.nBins = 200
         self.img = None
+    def dragEnterEvent(self, e):
+        if e.mimeData().hasFormat('text/plain'):
+            e.accept()
+        else:
+            e.ignore() 
+    def dropEvent(self, e):
+        self.needDataset.emit(e.mimeData().text())
+
+    def clearView(self):
+	self.stackSize = 0
+	self.integrationMode = None
+
     def initPlot(self,widgetType="plot"):
         self.lineColor = (255,255,255)
         self.lineWidth = 1

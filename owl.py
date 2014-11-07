@@ -5,7 +5,7 @@ import sys, os
 #sys.path.append(os.path.dirname(os.path.realpath(__file__)))
 
 # GUI related packages (OpenGL and Qt)
-from PySide import QtGui, QtCore
+from Qt import QtGui, QtCore
 
 # Some other helpful packages
 import logging

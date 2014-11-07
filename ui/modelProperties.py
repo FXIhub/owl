@@ -7,7 +7,7 @@
 #
 # WARNING! All changes made in this file will be lost!
 
-from PySide import QtCore, QtGui
+from Qt import QtCore, QtGui
 
 class Ui_ModelProperties(object):
     def setupUi(self, ModelProperties):

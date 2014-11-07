@@ -1,4 +1,4 @@
-from PySide import QtGui, QtCore
+from Qt import QtGui, QtCore
 from view2d import View2D
 
 class View2DScrollWidget(QtGui.QWidget):

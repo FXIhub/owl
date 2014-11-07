@@ -1,5 +1,5 @@
 #from PyQt4 import QtGui, QtCore, QtOpenGL, Qt
-from PySide import QtGui, QtCore, QtOpenGL
+from Qt import QtGui, QtCore, QtOpenGL
 import h5py
 from operator import mul
 import numpy

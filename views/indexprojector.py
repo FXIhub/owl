@@ -1,4 +1,4 @@
-from PySide import QtCore
+from Qt import QtCore
 import numpy,logging
 import settingsOwl
 
