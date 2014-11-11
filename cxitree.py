@@ -31,9 +31,10 @@ class DataButton(QtGui.QPushButton):
     def dropEvent(self, e):
         t = e.mimeData().text()
         self.needData.emit(t)
-        for action in self.dataBox.menu.actions():
-            if(action.isCheckable()):
-                action.setEnabled(True)
+        if(self.dataBox.menu is not None):
+            for action in self.dataBox.menu.actions():
+                if(action.isCheckable()):
+                    action.setEnabled(True)
 
     def setName(self,name=None):
         if name is None:
