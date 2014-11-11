@@ -152,6 +152,15 @@ class FileLoader(QtCore.QObject):
         if 0 ==  self.ensureReadWriteModeActivated():
             for n,t in self.tagsItems.items():
                 t.saveTags()
+
+    def tagsChanged(self):
+        if self.f is None:
+            return
+        for n,t in self.tagsItems.items():
+            if t.tagsDirty:
+                return True
+        return False
+
     def modelsChanged(self):
         if self.f is None:
             return

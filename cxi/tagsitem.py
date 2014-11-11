@@ -87,6 +87,8 @@ class TagsItem:
             colors[i,1] = self.tags[i][1].green()
             colors[i,2] = self.tags[i][1].blue()
         ds.attrs['colors'] = colors
+        # Clear the dirty flag
+        self.tagsDirty = False
     def setTag(self,img,tag,value):
         if(tag >= self.tagMembers.shape[0]):
             return

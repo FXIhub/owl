@@ -93,7 +93,6 @@ class Viewer(QtGui.QMainWindow):
         # Other inizializations
         self.dataProp.emitView1DProp()
         self.dataProp.emitView2DProp()
-        self.tagsChanged = False
 
         # End of inizialization
         self.statusBar.showMessage("Initialization complete.", 1000)
@@ -532,7 +531,7 @@ class Viewer(QtGui.QMainWindow):
 
     def closeEvent(self, event):
         """Function run when the application is closing."""
-        if self.tagsChanged:
+        if self.fileLoader.tagsChanged():
             if QtGui.QMessageBox.question(self, "Save tag changes?",
                                           "Would you like to save changes to the tags?",
                                           QtGui.QMessageBox.Save, QtGui.QMessageBox.Discard) == QtGui.QMessageBox.Save:
@@ -947,7 +946,6 @@ class Viewer(QtGui.QMainWindow):
                 tags = tagsDialog.getTags()
                 if(tags != self.view.view2D.data.tagsItem.tags):
                     self.view.view2D.data.tagsItem.setTags(tags)
-                    self.tagsChanged = True
         else:
             QtGui.QMessageBox.information(self, "Cannot set tags", "Cannot set tags if no dataset is open.")
 
