@@ -31,6 +31,10 @@ class DataButton(QtGui.QPushButton):
     def dropEvent(self, e):
         t = e.mimeData().text()
         self.needData.emit(t)
+        for action in self.dataBox.menu.actions():
+            if(action.isCheckable()):
+                action.setEnabled(True)
+
     def setName(self,name=None):
         if name is None:
             self.setStyleSheet("text-align: left; font-style: italic")
@@ -52,7 +56,9 @@ class DataBox(QtGui.QHBoxLayout):
     def clear(self):
         self.button.setName()
         self.button.needData.emit(None)
-
+        for action in self.menu.actions():
+            if(action.isCheckable()):
+                action.setEnabled(False)
 class DataMenu(QtGui.QMenu):
     def __init__(self,parent=None):
         QtGui.QMenu.__init__(self,parent)
