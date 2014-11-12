@@ -94,7 +94,7 @@ class IndexProjector(QtCore.QObject):
                 return self.viewIndices[int(img)]
     # get the img for a given view index
     def indexToImg(self,index):
-        if self.imgs is None or index is None:
+        if self.imgs is None or index is None or len(self.imgs) == 0:
             return index
         else:
             if int(index) >= len(self.imgs):
