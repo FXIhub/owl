@@ -733,6 +733,8 @@ class View2D(QtOpenGL.QGLWidget,View):
 
         top_left = self._windowToViewIndex(0, 0, 0, checkExistance=False, clip=False)
         bottom_right = self._windowToViewIndex(self.width(), self.height(), 0, checkExistance=False, clip=False)
+        if(top_left is None or bottom_right is None):
+            return visible
 
         top_left = self._viewIndexToCell(top_left)
         bottom_right = self._viewIndexToCell(bottom_right)
@@ -1087,7 +1089,9 @@ class View2D(QtOpenGL.QGLWidget,View):
             projection = GL.glGetDoublev(GL.GL_PROJECTION_MATRIX)
             viewport = GL.glGetIntegerv(GL.GL_VIEWPORT)
             (x, y, z) = GLU.gluUnProject(x, viewport[3]-y, z, model=modelview, proj=projection, view=viewport)
-            #print x, y
+            # In certain situations (just after showing), x y z can come out as nan
+            if(math.isnan(x) or math.isnan(y) or math.isnan(z)):
+                return None
             (x, y) = (int(numpy.floor(x/(self.data.width()+self._subplotSceneBorder()))),
                       int(numpy.floor(-y/(self.data.height()+self._subplotSceneBorder()))))
             if(clip and (x < 0 or x >= self.stackWidth or y < 0)):
