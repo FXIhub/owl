@@ -499,9 +499,9 @@ class Viewer(QtGui.QMainWindow):
     def _toggleCXIStyleSheet(self):
         """Toggles between an empty or the dark stylesheet."""
         if self.cxiStyleAction.isChecked():
-            self.setStyleSheetFromFilename("stylesheets/dark.stylesheet")
+            self._setStyleSheetFromFilename("stylesheets/dark.stylesheet")
         else:
-            self.setStyleSheetFromFilename()
+            self._setStyleSheetFromFilename()
 
     def _viewClicked(self):
         """Slot triggered when a View is clicked."""
