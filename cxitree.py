@@ -1,10 +1,11 @@
 #from PyQt4 import QtGui, QtCore, QtOpenGL, Qt
-from PySide import QtGui, QtCore, QtOpenGL
+from Qt import QtGui, QtCore, QtOpenGL
 import h5py
 from operator import mul
 import numpy
 import sys,os
-from dataloader import *
+from cxi.groupitem import GroupItem
+from cxi.pixelmask import PixelMask
 
 class DataButton(QtGui.QPushButton):
     needData = QtCore.Signal(str)    
@@ -20,7 +21,7 @@ class DataButton(QtGui.QPushButton):
         self.setIconSize(QtCore.QSize(S,S))
         self.setToolTip("drag data here")
         self.setAcceptDrops(True)
-        if menu != None:
+        if menu is not None:
             self.setMenu(menu)
     def dragEnterEvent(self, e):
         if e.mimeData().hasFormat('text/plain'):
@@ -30,8 +31,13 @@ class DataButton(QtGui.QPushButton):
     def dropEvent(self, e):
         t = e.mimeData().text()
         self.needData.emit(t)
+        if(self.dataBox.menu is not None):
+            for action in self.dataBox.menu.actions():
+                if(action.isCheckable()):
+                    action.setEnabled(True)
+
     def setName(self,name=None):
-        if name == None:
+        if name is None:
             self.setStyleSheet("text-align: left; font-style: italic")
             self.setText("drag %s data here" % self.dataMode)
         else:
@@ -46,12 +52,14 @@ class DataBox(QtGui.QHBoxLayout):
         self.addWidget(self.button)
         self.vbox = QtGui.QVBoxLayout()
         self.addLayout(self.vbox)
-        if menu != None:
+        if menu is not None:
             self.menu.clearAction.triggered.connect(self.clear)
     def clear(self):
         self.button.setName()
         self.button.needData.emit(None)
-
+        for action in self.menu.actions():
+            if(action.isCheckable()):
+                action.setEnabled(False)
 class DataMenu(QtGui.QMenu):
     def __init__(self,parent=None):
         QtGui.QMenu.__init__(self,parent)
@@ -61,20 +69,20 @@ class DataMaskMenu(DataMenu):
     def __init__(self,parent=None):
         DataMenu.__init__(self,parent)
         self.addSeparator()
-        self.PIXELMASK_BITS = {'perfect' : PIXEL_IS_PERFECT,
-                               'invalid' : PIXEL_IS_INVALID,
-                               'saturated' : PIXEL_IS_SATURATED,
-                               'hot' : PIXEL_IS_HOT,
-                               'dead' : PIXEL_IS_DEAD,
-                               'shadowed' : PIXEL_IS_SHADOWED,
-                               'peakmask' : PIXEL_IS_IN_PEAKMASK,
-                               'ignore' : PIXEL_IS_TO_BE_IGNORED,
-                               'bad' : PIXEL_IS_BAD,
-                               'resolution' : PIXEL_IS_OUT_OF_RESOLUTION_LIMITS,
-                               'missing' : PIXEL_IS_MISSING,
-                               'halo' : PIXEL_IS_IN_HALO,
-                               'corrected' : PIXEL_IS_ARTIFACT_CORRECTED,
-                               'non-corrected' : PIXEL_FAILED_ARTIFACT_CORRECTION}
+        self.PIXELMASK_BITS = {'perfect' : PixelMask.PIXEL_IS_PERFECT,
+                               'invalid' : PixelMask.PIXEL_IS_INVALID,
+                               'saturated' : PixelMask.PIXEL_IS_SATURATED,
+                               'hot' : PixelMask.PIXEL_IS_HOT,
+                               'dead' : PixelMask.PIXEL_IS_DEAD,
+                               'shadowed' : PixelMask.PIXEL_IS_SHADOWED,
+                               'peakmask' : PixelMask.PIXEL_IS_IN_PEAKMASK,
+                               'ignore' : PixelMask.PIXEL_IS_TO_BE_IGNORED,
+                               'bad' : PixelMask.PIXEL_IS_BAD,
+                               'resolution' : PixelMask.PIXEL_IS_OUT_OF_RESOLUTION_LIMITS,
+                               'missing' : PixelMask.PIXEL_IS_MISSING,
+                               'halo' : PixelMask.PIXEL_IS_IN_HALO,
+                               'corrected' : PixelMask.PIXEL_IS_ARTIFACT_CORRECTED,
+                               'non-corrected' : PixelMask.PIXEL_FAILED_ARTIFACT_CORRECTION}
         self.maskActions = {}
         for key in self.PIXELMASK_BITS.keys():
             self.maskActions[key] = self.addAction(key)
@@ -204,8 +212,13 @@ class CXITree(QtGui.QTreeWidget):
     def updateTree(self):
         self.updateBranch(self.fileLoader,self.item)
     def updateBranch(self,group,branch):
-        groupChildrenNames = group.children.keys()
+        groupChildrenNames=  group.children.keys()
+        # First groups then datasets in alphabetical order
         groupChildrenNames.sort()
+        for n in list(groupChildrenNames):
+            if not isinstance(group.children[n],GroupItem):
+                groupChildrenNames.remove(n)
+                groupChildrenNames.append(n)
         branchChildrenNames = [branch.child(i).text(self.columnName) for i in range(branch.childCount())]
         for i,k in enumerate(groupChildrenNames):
             child = group.children[k]
@@ -278,7 +291,7 @@ class CXITree(QtGui.QTreeWidget):
     def expandTree(self,path=None):
         root = self.item
         root.setExpanded(True)
-        if path == None:
+        if path is None:
             path = "entry_1/image_1/data"
         for j,section in zip(range(len(path.split("/"))),path.split("/")):
             if section == "":

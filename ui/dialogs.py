@@ -1,19 +1,30 @@
-
 import sys,os
 sys.path.append(os.path.dirname(os.path.realpath(__file__)))
 #print (sys.version)
 from OpenGL.GL import *
 from OpenGL.GLU import *
 #from PyQt4 import QtGui, QtCore, QtOpenGL, Qt
-from PySide import QtGui, QtCore, QtOpenGL
+from Qt import QtGui, QtCore, QtOpenGL
 
 import numpy
 import math
 import logging
 import settingsOwl
-import tagsDialog,selectIndexDialog,preferencesDialog,fileModeDialog
+import ui.tagsDialog
+import ui.selectIndexDialog
+import ui.preferencesDialog
+import ui.fileModeDialog
+import ui.experimentDialog
 
-class TagsDialog(QtGui.QDialog, tagsDialog.Ui_TagsDialog):
+# Import spimage for experimentDialog
+try:
+    import spimage
+    hasSpimage = True
+except:
+    hasSpimage = False
+
+
+class TagsDialog(QtGui.QDialog, ui.tagsDialog.Ui_TagsDialog):
     def __init__(self,parent,tags):
         QtGui.QDialog.__init__(self,parent,QtCore.Qt.WindowTitleHint)
         self.setupUi(self)
@@ -76,7 +87,7 @@ class TagsDialog(QtGui.QDialog, tagsDialog.Ui_TagsDialog):
         self.tagsTable.insertColumn(self.tagsTable.columnCount())
 
         # The Tag name
-        if(title == None):
+        if(title is None):
             title = "Tag "+str(self.colorIndex)
         item = QtGui.QTableWidgetItem(title)
         item.setTextAlignment(QtCore.Qt.AlignHCenter|QtCore.Qt.AlignVCenter)
@@ -86,7 +97,7 @@ class TagsDialog(QtGui.QDialog, tagsDialog.Ui_TagsDialog):
         # The Tag color
         item = QtGui.QTableWidgetItem()
         item.setFlags(QtCore.Qt.ItemIsEnabled)
-        if(color == None):
+        if(color is None):
             color = self.colors[self.colorIndex%len(self.colors)]
         self.colorIndex += 1
         item.setBackground(color)
@@ -117,7 +128,7 @@ class TagsDialog(QtGui.QDialog, tagsDialog.Ui_TagsDialog):
     def deleteTag(self):
         self.tagsTable.removeColumn(self.tagsTable.currentColumn())
 
-class SelectIndexDialog(QtGui.QDialog, selectIndexDialog.Ui_SelectIndexDialog):
+class SelectIndexDialog(QtGui.QDialog, ui.selectIndexDialog.Ui_SelectIndexDialog):
     def __init__(self,parent,dataItem):
         QtGui.QDialog.__init__(self,parent,QtCore.Qt.WindowTitleHint)
         self.setupUi(self)
@@ -136,7 +147,7 @@ class SelectIndexDialog(QtGui.QDialog, selectIndexDialog.Ui_SelectIndexDialog):
         for i in range(nDims):
             self.labels.append("%i" % i)
         if isTags:
-            for i,tag in zip(range(nDims),self.dataItem.tags):
+            for i,tag in zip(range(nDims),self.dataItem.tagsItem.tags):
                 title = tag[0]
                 self.labels[i] += " " + title
         self.comboBox.addItems(self.labels)
@@ -146,7 +157,7 @@ class SelectIndexDialog(QtGui.QDialog, selectIndexDialog.Ui_SelectIndexDialog):
         self.accept()        
                 
 
-class PreferencesDialog(QtGui.QDialog, preferencesDialog.Ui_PreferencesDialog):
+class PreferencesDialog(QtGui.QDialog, ui.preferencesDialog.Ui_PreferencesDialog):
     def __init__(self,parent):
         QtGui.QDialog.__init__(self,parent,QtCore.Qt.WindowTitleHint)
         self.setupUi(self)
@@ -159,6 +170,7 @@ class PreferencesDialog(QtGui.QDialog, preferencesDialog.Ui_PreferencesDialog):
             self.traditional.setChecked(True)
         self.imageCacheSpin.setValue(int(settings.value("imageCacheSize")))
         self.maskCacheSpin.setValue(int(settings.value("maskCacheSize")))
+        self.geometryCacheSpin.setValue(int(settings.value("geometryCacheSize")))
         self.textureCacheSpin.setValue(int(settings.value("textureCacheSize")))
         self.updateTimerSpin.setValue(int(settings.value("updateTimer")))
         self.movingAverageSizeSpin.setValue(float(settings.value("movingAverageSize")))
@@ -205,7 +217,7 @@ class PreferencesDialog(QtGui.QDialog, preferencesDialog.Ui_PreferencesDialog):
 
 
 
-class FileModeDialog(QtGui.QDialog, fileModeDialog.Ui_FileModeDialog):
+class FileModeDialog(QtGui.QDialog, ui.fileModeDialog.Ui_FileModeDialog):
     def __init__(self,parent):
         QtGui.QDialog.__init__(self,parent,QtCore.Qt.WindowTitleHint)
         self.setupUi(self)
@@ -215,5 +227,51 @@ class FileModeDialog(QtGui.QDialog, fileModeDialog.Ui_FileModeDialog):
             self.rw.setChecked(True)
         elif mode == "r*":
             self.rswmr.setChecked(True)
+        elif mode == "r":
+            self.r.setChecked(True)
         if not settingsOwl.swmrSupported:
-            self.rw.setEnabled(False)
+            self.rswmr.setEnabled(False)
+
+
+class ExperimentDialog(QtGui.QDialog, ui.experimentDialog.Ui_ExperimentDialog):
+    def __init__(self,parent, modelItem):
+        QtGui.QDialog.__init__(self,parent,QtCore.Qt.WindowTitleHint)
+        self.setupUi(self)
+        self.modelItem = modelItem
+        self.materialType.addItems(spimage.DICT_atomic_composition.keys())
+        params = self.modelItem.getParams(0)
+        self.wavelength.setValue(params["photonWavelengthNM"])
+        self.syncEnergy()
+        self.distance.setValue(params["detectorDistanceMM"])
+        self.pixelSize.setValue(params["detectorPixelSizeUM"])
+        self.quantumEfficiency.setValue(params["detectorQuantumEfficiency"])
+        self.ADUPhoton.setValue(params["detectorADUPhoton"])
+        allItems = [self.materialType.itemText(i) for i in range(self.materialType.count())]
+        self.materialType.setCurrentIndex(allItems.index(params["materialType"]))
+        self.wavelength.editingFinished.connect(self.syncEnergy)
+        self.energy.editingFinished.connect(self.syncWavelength)
+        self.buttonBox.accepted.connect(self.onOkButtonClicked)
+    def syncEnergy(self):
+        wl = self.wavelength.value()
+        h = spimage.DICT_physical_constants['h']
+        c = spimage.DICT_physical_constants['c']
+        qe = spimage.DICT_physical_constants['e']
+        ey = h*c/wl/1.E-9/qe
+        self.energy.setValue(ey)
+    def syncWavelength(self):
+        ey = self.energy.value()
+        h = spimage.DICT_physical_constants['h']
+        c = spimage.DICT_physical_constants['c']
+        qe = spimage.DICT_physical_constants['e']
+        wl = h*c/ey/1.E-9/qe
+        self.wavelength.setValue(wl)
+    def onOkButtonClicked(self):
+        params = {}
+        params["photonWavelengthNM"] = self.wavelength.value()
+        params["photonEnergyEV"] = self.energy.value()
+        params["detectorDistanceMM"] = self.distance.value()
+        params["detectorPixelSizeUM"] = self.pixelSize.value()
+        params["detectorQuantumEfficiency"] = self.quantumEfficiency.value()
+        params["detectorADUPhoton"] = self.ADUPhoton.value()
+        params["materialType"] = self.materialType.currentText()
+        self.modelItem.setParams(None,params)

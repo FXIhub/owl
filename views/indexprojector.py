@@ -1,4 +1,4 @@
-from PySide import QtCore
+from Qt import QtCore
 import numpy,logging
 import settingsOwl
 
@@ -24,7 +24,7 @@ class IndexProjector(QtCore.QObject):
     def removeFilter(self,index):
         self.filters.pop(index)
     def updateFilterMask(self,vmins=None,vmaxs=None):
-        if vmins == None or vmaxs == None:
+        if vmins is None or vmaxs is None:
             self._filterMask = None
         else:
             if len(self.filters) > 0:
@@ -41,7 +41,7 @@ class IndexProjector(QtCore.QObject):
         self.vmins = vmins
         self.vmaxs = vmaxs
     def filterMask(self):
-        if self._filterMask == None:
+        if self._filterMask is None:
             return numpy.ones(self.stackSize,dtype="bool")
         else:
             return self._filterMask
@@ -49,7 +49,7 @@ class IndexProjector(QtCore.QObject):
         self.updateFilterMask(self.vmins,self.vmaxs)
         if self.stackSize != 0:
             self.imgs = numpy.arange(self.stackSize,dtype="int")
-            if self.sortingDataItem != None:
+            if self.sortingDataItem is not None:
                 if self.sortingDataItem.shape()[0] == self.stackSize:
                     sortingDataItem = -numpy.array(self.sortingDataItem.data())
                 else:
@@ -57,7 +57,7 @@ class IndexProjector(QtCore.QObject):
                     sortingDataItem = numpy.arange(self.stackSize,dtype="int")
             else:
                 sortingDataItem = numpy.arange(self.stackSize,dtype="int")
-            if self._filterMask != None:
+            if self._filterMask is not None:
                 M = self.filterMask()
                 sortingDataItemFiltered = sortingDataItem[M]
                 self.imgs = self.imgs[M]
@@ -77,13 +77,13 @@ class IndexProjector(QtCore.QObject):
         self.stackSize = newStackSize
         self.update()
     def getNViewIndices(self):
-        if self.imgs != None:
+        if self.imgs is not None:
             return len(self.imgs)
         else:
             return 0
     # get the view index for a given img
     def imgToIndex(self,img):
-        if self.viewIndices == None or img == None:
+        if self.viewIndices is None or img is None:
             return img
         else:
             if len(self.viewIndices) == 0:
@@ -94,7 +94,7 @@ class IndexProjector(QtCore.QObject):
                 return self.viewIndices[int(img)]
     # get the img for a given view index
     def indexToImg(self,index):
-        if self.imgs == None or index == None:
+        if self.imgs is None or index is None or len(self.imgs) == 0:
             return index
         else:
             if int(index) >= len(self.imgs):

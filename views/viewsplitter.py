@@ -1,4 +1,4 @@
-from PySide import QtGui, QtCore
+from Qt import QtGui, QtCore
 from view1d import View1D
 from view2dscrollwidget import View2DScrollWidget
 from view2d import View2D

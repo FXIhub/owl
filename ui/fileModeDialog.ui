@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>400</width>
-    <height>128</height>
+    <width>398</width>
+    <height>161</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -19,7 +19,7 @@
      <x>30</x>
      <y>20</y>
      <width>341</width>
-     <height>91</height>
+     <height>125</height>
     </rect>
    </property>
    <layout class="QVBoxLayout" name="verticalLayout">
@@ -31,9 +31,9 @@
      </widget>
     </item>
     <item>
-     <widget class="QRadioButton" name="rw">
+     <widget class="QRadioButton" name="r">
       <property name="text">
-       <string>Read-write</string>
+       <string>Read</string>
       </property>
      </widget>
     </item>
@@ -41,6 +41,13 @@
      <widget class="QRadioButton" name="rswmr">
       <property name="text">
        <string>Read (Single Write Multiple Read)</string>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QRadioButton" name="rw">
+      <property name="text">
+       <string>Read-write</string>
       </property>
      </widget>
     </item>

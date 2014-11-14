@@ -6,6 +6,7 @@ loglev["Viewer"] = logging.WARNING
 loglev["IndexProjector"] = logging.WARNING
 loglev["DataItem"] = logging.WARNING
 loglev["ImageLoader"] = logging.WARNING
+loglev["Sizing"] = logging.WARNING
 
 # SWMR support
 try:

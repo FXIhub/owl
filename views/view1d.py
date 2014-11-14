@@ -1,12 +1,16 @@
-from PySide import QtGui, QtCore
+from Qt import QtGui, QtCore
 import pyqtgraph
 import numpy
 from view import View
+import h5py
 
-class View1D(View,QtGui.QFrame):
+class View1D(QtGui.QFrame,View):
     viewIndexSelected = QtCore.Signal(int)
     dataItemXChanged = QtCore.Signal(object)
     dataItemYChanged = QtCore.Signal(object)
+    needDataset = QtCore.Signal(str)
+    datasetChanged = QtCore.Signal(h5py.Dataset,str)
+
     def __init__(self,parent=None,indexProjector=None):
         View.__init__(self,parent,indexProjector,"plot")
         QtGui.QFrame.__init__(self,parent)
@@ -24,6 +28,18 @@ class View1D(View,QtGui.QFrame):
         self.setWindowSize()
         self.nBins = 200
         self.img = None
+    def dragEnterEvent(self, e):
+        if e.mimeData().hasFormat('text/plain'):
+            e.accept()
+        else:
+            e.ignore() 
+    def dropEvent(self, e):
+        self.needDataset.emit(e.mimeData().text())
+
+    def clearView(self):
+	self.stackSize = 0
+	self.integrationMode = None
+
     def initPlot(self,widgetType="plot"):
         self.lineColor = (255,255,255)
         self.lineWidth = 1
@@ -45,12 +61,12 @@ class View1D(View,QtGui.QFrame):
         self.setStyle()
         #self.p.update()
     def onPixelClicked(self,info):
-        if self.dataItemY != None and info != None:
+        if self.dataItemY is not None and info is not None:
             if self.dataItemY.isStack:
                 self.img = int(info["img"])
                 self.refreshPlot()
     def setDataItemX(self,dataItem):
-        if self.dataItemX != None:
+        if self.dataItemX is not None:
             self.dataItemX.deselectStack()
         self.dataItemX = dataItem
         if hasattr(dataItem,"fullName"): 
@@ -60,7 +76,7 @@ class View1D(View,QtGui.QFrame):
             self.dataItemXLabel = ""
         self.dataItemXChanged.emit(dataItem)
     def setDataItemY(self,dataItem):
-        if self.dataItemY != None:
+        if self.dataItemY is not None:
             self.dataItemY.deselectStack()
         self.dataItemY = dataItem
         if self.dataItemY.isStack:
@@ -75,7 +91,7 @@ class View1D(View,QtGui.QFrame):
         #self.setPixelStack()
         self.dataItemYChanged.emit(dataItem)
     def setWindowSize(self,windowSize=None):
-        if windowSize == None:
+        if windowSize is None:
             self._windowSize = 100
         else:
             self._windowSize = windowSize
@@ -89,16 +105,16 @@ class View1D(View,QtGui.QFrame):
     # DATA
     def onStackSizeChanged(self,newStackSize):
         #self.stackSize = newStackSize
-        if self.dataItemY != None:
+        if self.dataItemY is not None:
             self.refreshPlot()
     def addInfLine(self):
-        if self.infLine == None:
+        if self.infLine is None:
             infLine = pyqtgraph.InfiniteLine(0,90,None,True)
             self.plot.addItem(infLine)
             infLine.sigPositionChangeFinished.connect(self.emitViewIndexSelected)    
             self.infLine = infLine
     def removeInfLine(self):
-        if self.infLine != None:
+        if self.infLine is not None:
             self.plot.removeItem(self.infLine)
             self.infLine = None
     def setStyle(self,**kwargs):
@@ -108,61 +124,61 @@ class View1D(View,QtGui.QFrame):
         self.symbolSize = kwargs.get("symbolSize",self.symbolSize)
         self.symbolColor = kwargs.get("symbolColor",self.symbolColor)
         self.symbol = kwargs.get("symbol",self.symbol)
-        if self.line == None:
+        if self.line is None:
             self.p.setPen(None)
         else:
             pen = pyqtgraph.mkPen(color=self.lineColor,width=self.lineWidth)
             self.p.setPen(pen)
         self.p.setSymbol(self.symbol)
         self.p.setSymbolPen(None)
-        if self.symbol != None:
+        if self.symbol is not None:
             self.p.setSymbolBrush(self.symbolColor)
             self.p.setSymbolSize(self.symbolSize)
     def setPlotMode(self,plotMode):
         self.plotMode = plotMode
         if plotMode == "plot" or plotMode == "average":
-            if self.dataItemX != None:
+            if self.dataItemX is not None:
                 xlabel = self.dataItemX.fullName
             else:
                 xlabel = "index"
-            if self.dataItemY != None:
+            if self.dataItemY is not None:
                 ylabel = self.dataItemY.fullName
             else:
                 ylabel = ""
         elif plotMode == "histogram":
             ylabel = "#"
-            if self.dataItemY != None:
+            if self.dataItemY is not None:
                 xlabel = self.dataItemY.fullName
             else:
                 xlabel = ""
         self.plot.setLabel("bottom",xlabel)
         self.plot.setLabel("left",ylabel)
     def refreshPlot(self):
-        if self.dataItemY == None:
+        if self.dataItemY is None:
             dataY = None
         else:
             dataY = self.dataItemY.data1D(windowSize=self.windowSize(),img=self.img)
-        if dataY == None:
+        if dataY is None:
             self.p.setData([0])
             self.setPlotMode(self.plotMode)
             return
-        if self.p == None:
+        if self.p is None:
             self.initPlot()
         self.removeInfLine()
         # line show/hide does not seem to have any effect
         if self.plotMode == "plot" or self.plotMode == "average":
-            if self.dataItemX == None:
+            if self.dataItemX is None:
                 dataX = numpy.arange(dataY.shape[0])
                 if self.plotMode == "plot":
                     self.addInfLine()
             else:
                 dataX = self.dataItemX.data()
-            if self.indexProjector.imgs != None and dataY.shape[0] == self.indexProjector.imgs.shape[0]:
+            if self.indexProjector.imgs is not None and dataY.shape[0] == self.indexProjector.imgs.shape[0]:
                 dataY = dataY[self.indexProjector.imgs]
             validMask = numpy.isfinite(dataX)*numpy.isfinite(dataY)
             self.p.setData(dataX[validMask],dataY[validMask])
         elif self.plotMode == "histogram":
-            #if self.nBins == None:
+            #if self.nBins is None:
             #    N = 200
             #else:
             N = self.nBins
@@ -171,7 +187,7 @@ class View1D(View,QtGui.QFrame):
             self.p.setData(edges,hist)        
         self.plot.enableAutoRange('xy')
     def refreshDisplayProp(self,props):
-        if props["points"] == True:
+        if props["points"] is True:
             symbol = "o"
         else:
             symbol = None

@@ -1,4 +1,4 @@
-from PySide import QtGui, QtCore
+from Qt import QtGui, QtCore
 from view2d import View2D
 
 class View2DScrollWidget(QtGui.QWidget):
@@ -21,7 +21,7 @@ class View2DScrollWidget(QtGui.QWidget):
     def onValueChanged(self,value):
         self.view2D.scrollTo(value)
     def update(self,foo=None):
-        if self.view2D.data == None or self.view2D.data == {}:
+        if self.view2D.data is None or self.view2D.data == {}:
             self.scrollbar.hide()
         else:
             NViewIndices = self.view2D.stackSize
