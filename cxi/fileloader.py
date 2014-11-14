@@ -130,7 +130,7 @@ class FileLoader(QtCore.QObject):
         if len(N) > 0:
             N = numpy.array(N).min()
         else:
-            N = None
+            N = 0
         if N != self.stackSize:
             self.stackSize = N
             self.stackSizeChanged.emit(N)
