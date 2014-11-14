@@ -105,7 +105,7 @@ class FileLoader(QtCore.QObject):
         def addDatasetRecursively(group,children):
             for n,c in children.items():
                 if c.fullName == path:
-                    d = DataItem(group,self,"/"+name)
+                    d = DataItem(group,self,name)
                     c.children[name[name.rindex('/')+1:]] = d
                     self.dataItems[name] = d
                 elif isinstance(c,GroupItem):                  
