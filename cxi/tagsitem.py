@@ -56,7 +56,7 @@ class TagsItem:
         self.tags = tags
     def saveTags(self):
         # Do we really have to write anything? If not just return.
-        if (self.tags == []) or (self.tagsDirty == False):
+        if (self.tagsDirty == False):
             return
         # Is a tag dataset already existing
         if('tags' in self.fileLoader.f[self.path]):
