@@ -142,6 +142,13 @@ class SelectIndexDialog(QtGui.QDialog, ui.selectIndexDialog.Ui_SelectIndexDialog
         if not isTags:
             nDims = self.dataItem.shape()[1]
         else:
+            if(self.dataItem.parent.tagsItem.tagsDirty):
+                saveTags =  QtGui.QMessageBox.question(self, "Save tag changes?",
+                                                       "You have unsaved changes to tags. You can only filter on saved tags. Would you like to save changes to the tags?",
+                                                   QtGui.QMessageBox.Save, QtGui.QMessageBox.No)
+                if(saveTags == QtGui.QMessageBox.Save):
+                    self.dataItem.parent.tagsItem.saveTags()
+
             nDims = len(self.dataItem.attr("headings"))
         self.labels = []
         for i in range(nDims):
