@@ -447,27 +447,15 @@ class Viewer(QtGui.QMainWindow):
             self._openCXIFile(fileName[0])
 
     def _fileModeClicked(self):
-        """Slot triggered when File Mode is clicked.
-        
-        TODO FM: This should be moved to fileLoader
-        """
-        
+        """Slot triggered when File Mode is clicked."""
         diag = ui.dialogs.FileModeDialog(self)
         if(diag.exec_()):
             if diag.rw.isChecked():
-                self.fileLoader.mode = "r+"
-                self.settings.setValue("fileMode", "r+")
-                self.fileLoader.updateTimer.stop()
+                self.fileLoader.setMode("r+")
             elif diag.rswmr.isChecked():
-                self.fileLoader.mode = "r*"
-                self.settings.setValue("fileMode", "r*")
-                self.fileLoader.updateTimer.start()
+                self.fileLoader.setMode("r*")
             elif diag.r.isChecked():
-                self.fileLoader.mode = "r"
-                self.settings.setValue("fileMode", "r")
-                self.fileLoader.updateTimer.stop()
-            if self.fileLoader.f is not None:
-                self.fileLoader.reopenFile()
+                self.fileLoader.setMode("r")
 
     def _saveTagsClicked(self):
         """Slot triggered when Tags is clicked."""

@@ -199,3 +199,13 @@ class FileLoader(QtCore.QObject):
         if 0 ==  self.ensureReadWriteModeActivated():
             for n,m in self.pattersonItems.items():
                 m.saveParams()
+
+    def setMode(self, newMode):
+        """Sets the file opening mode and reopens any existing file."""
+        if(newMode == "r+" or newMode == "r*" or newMode == "r"):
+            self.mode = newMode
+            self.settings.setValue("fileMode", newMode)
+        else:
+            raise ValueError('%s is not a recognized file mode' % (newMode))
+        if(self.f is not None):
+            self.reopenFile()
