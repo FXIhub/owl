@@ -81,8 +81,6 @@ class Viewer(QtGui.QMainWindow):
 
         # Timer
         QtCore.QTimer.singleShot(0, self._after_show)
-        self.updateTimer = QtCore.QTimer()
-        self._init_timer()
 
         # Connections
         self._init_connections()
@@ -118,17 +116,6 @@ class Viewer(QtGui.QMainWindow):
             self.restoreState(self.settings.value("windowState"))
         self.view.view1D.setWindowSize(float(self.settings.value("movingAverageSize")))
 
-    def _init_timer(self):
-        """Initializes the file refresh timer and starts it if in SWMR mode.
-
-        TODO FM: move the timer to the fileLoader
-        """
-        self.updateTimer.setInterval(int(self.settings.value("updateTimer")))
-        self.updateTimer.timeout.connect(self.fileLoader.updateStackSize)
-        if self.settings.value("fileMode") == "r*":
-            self.updateTimer.start()
-        else:
-            self.updateTimer.stop()
 
     def _init_settings(self):
         """Initializes owl's QSettings to default values if empty."""
@@ -460,21 +447,25 @@ class Viewer(QtGui.QMainWindow):
             self._openCXIFile(fileName[0])
 
     def _fileModeClicked(self):
-        """Slot triggered when File Mode is clicked."""
+        """Slot triggered when File Mode is clicked.
+        
+        TODO FM: This should be moved to fileLoader
+        """
+        
         diag = ui.dialogs.FileModeDialog(self)
         if(diag.exec_()):
             if diag.rw.isChecked():
                 self.fileLoader.mode = "r+"
                 self.settings.setValue("fileMode", "r+")
-                self.updateTimer.stop()
+                self.fileLoader.updateTimer.stop()
             elif diag.rswmr.isChecked():
                 self.fileLoader.mode = "r*"
                 self.settings.setValue("fileMode", "r*")
-                self.updateTimer.start()
+                self.fileLoader.updateTimer.start()
             elif diag.r.isChecked():
                 self.fileLoader.mode = "r"
                 self.settings.setValue("fileMode", "r")
-                self.updateTimer.stop()
+                self.fileLoader.updateTimer.stop()
             if self.fileLoader.f is not None:
                 self.fileLoader.reopenFile()
 
@@ -594,7 +585,7 @@ class Viewer(QtGui.QMainWindow):
             self.view.view2D.imageTextures.setSizeInBytes(v*1024*1024)
             v = diag.updateTimerSpin.value()
             self.settings.setValue("updateTimer", v)
-            self.updateTimer.setInterval(v)
+            self.fileLoader.updateTimer.setInterval(v)
             v = diag.movingAverageSizeSpin.value()
             self.settings.setValue("movingAverageSize", v)
             self.view.view1D.setWindowSize(v)

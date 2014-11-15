@@ -14,6 +14,18 @@ class FileLoader(QtCore.QObject):
         self.f = None
         self.stackSize = None
         self.mode = parent.settings.value("fileMode")
+        self.settings = QtCore.QSettings()
+        self._init_timer()
+    def _init_timer(self):
+        """Initializes the file refresh timer and starts it if in SWMR mode.
+        """
+        self.updateTimer = QtCore.QTimer()
+        self.updateTimer.setInterval(int(self.settings.value("updateTimer")))
+        self.updateTimer.timeout.connect(self.updateStackSize)
+        if self.settings.value("fileMode") == "r*":
+            self.updateTimer.start()
+        else:
+            self.updateTimer.stop()
     def openFile(self,fullFilename,mode0=None):
         if mode0 is not None:
             self.mode = mode0
@@ -36,9 +48,9 @@ class FileLoader(QtCore.QObject):
         # Reopening the file is required after groups (/ datasets?) are created, otherwise we corrupt the file.
         # As we have to do this from time to time never rely on direct pointers to HDF5 datatsets. You better access data only via the HDF5 file object fileLoader.f[datasetname].
         if self.mode == "r*":
-            self.parent.updateTimer.start()
+            self.updateTimer.start()
         elif self.mode == "r+":
-            self.parent.updateTimer.stop()
+            self.updateTimer.stop()
         return self.openFile(self.fullFilename,self.mode)
     def loadFile(self,fullFilename):
         self.f = None
