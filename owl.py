@@ -33,7 +33,7 @@ from views.viewsplitter import ViewSplitter
 # image of intrest but not exactly to it.
 
 
-class Viewer(QtGui.QMainWindow):
+class Owl(QtGui.QMainWindow):
     """Main Window Class
 
     Handles the signals and slots for most connections"""
@@ -1014,7 +1014,7 @@ def main():
         print "Running owl in debugging mode."
         sys.excepthook = exceptionHandler
 
-    aw = Viewer(args)
+    aw = Owl(args)
     aw.show()
     ret = app.exec_()
     aw.view.view2D.stopThreads()
