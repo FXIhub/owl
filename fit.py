@@ -79,6 +79,28 @@ class FitModel:
         params["intensityMJUM2"] = intensity
         return params
 
+    def fit_refine(self, img, params):
+        if not hasSpimage: return params
+        I = self.dataItemImage.data(img=img)
+        M = self.dataItemMask.data(img=img,binaryMask=True)
+        d  = params["diameterNM"]
+        i  = params["intensityMJUM2"]
+        wl = params["photonWavelengthNM"]
+        ps = params["detectorPixelSizeUM"]
+        D  = params["detectorDistanceMM"]
+        x0 = params["offCenterX"]
+        y0 = params["offCenterY"]
+        ap = params["detectorADUPhoton"]
+        qe = params["detectorQuantumEfficiency"]
+        m  = params["materialType"]
+        rm = params["maskRadius"]
+        x0, y0, d, i, info = spimage.fit_full_sphere_model(I, M, d, i, wl, ps, D, full_output=True, x0=x0, y0=y0, adup=ap, queff=qe, mat=m, rmax=rm, downsampling=1)
+        params["offCenterX"] = x0
+        params["offCenterY"] = y0
+        params["diameterNM"] = d
+        params["intensityMJUM2"] = i
+        return params
+        
     def fit_model(self,img,params):
         I = self.dataItemImage.data(img=img)
         M = self.dataItemMask.data(img=img,binaryMask=True)
@@ -88,4 +110,7 @@ class FitModel:
             params = self.find_center(img, params)
             params = self.fit_diameter(img, params)
             params = self.fit_intensity(img, params)
+        elif method == 'refine':
+            if not hasSpimage: return params
+            params = self.fit_refine(img, params)
         return params
