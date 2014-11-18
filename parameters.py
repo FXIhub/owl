@@ -125,6 +125,10 @@ class ModelItem(AbstractParameterItem):
                                "intensityMJUM2": float(self.settings.value("modelIntensity")),
                                "diameterNM": float(self.settings.value("modelDiameter")),
                                "fitError": numpy.nan,
+                               "fitErrorOffCenterX": numpy.nan,
+                               "fitErrorOffCenterY": numpy.nan,
+                               "fitErrorIntensityMJUM2": numpy.nan,
+                               "fitErrorDiameterNM": numpy.nan,
                                "maskRadius": float(self.settings.value("modelMaskRadius"))}
         generalParamsDef = {"photonWavelengthNM":1.,
                             "detectorDistanceMM":1000.,
@@ -135,10 +139,10 @@ class ModelItem(AbstractParameterItem):
                             "_visibility":0.5,
                             "_maximumShift":5,
                             "_blurRadius":4,
-                            "_findCenterMethod":str(self.settings.value("findCenterMethod")), 
-                            "_fitDiameterMethod":str(self.settings.value("fitDiaemeterMethod")), 
-                            "_fitIntensityMethod":str(self.settings.value("fitIntensityMethod")), 
-                            "_fitModelMethod":str(self.settings.value("fitModelMethod"))} 
+                            "_findCenterMethod":'blurred', 
+                            "_fitDiameterMethod":'pearson', 
+                            "_fitIntensityMethod":'simple', 
+                            "_fitModelMethod":'fast'} 
         name = "model"
         AbstractParameterItem.__init__(self,parentGroup,fileLoader,name,individualParamsDef,generalParamsDef)
     def find_center(self,img):

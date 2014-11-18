@@ -52,9 +52,9 @@ class FitModel:
         rm = params["maskRadius"]
         if method == 'pearson':
             d, info = spimage.fit_sphere_diameter(I, M, d, i, wl, ps, D, method='pearson', full_output=True, x0=x0, y0=y0, adup=ap, queff=qe, mat=m, rmax=rm, downsampling=1, do_brute=20)
-            #d = spimage.fit_sphere_diameter(I, M, d, i, wl, ps, D, method='pearson', full_output=False, x0=x0, y0=y0, adup=ap, queff=qe, mat=m, rmax=rm, downsampling=1, do_brute=False)
-            #print 'diameter: ', info
-        params["diameterNM"] = d
+            params["diameterNM"] = d
+            params["fitErrorDiameterNM"] = info["pcov"]
+            params["fitError"] = info["error"]
         return params
             
     def fit_intensity(self,img,params):
@@ -75,10 +75,9 @@ class FitModel:
         rm = params["maskRadius"]
         if method == 'simple':
             intensity, info = spimage.fit_sphere_intensity(I, M, d, i, wl, ps, D, full_output=True, x0=x0, y0=y0, adup=ap, queff=qe, mat=m, rmax=rm, downsampling=1)
-            #print 'intensity: ', info
-        else:
-            intensity = i
-        params["intensityMJUM2"] = intensity
+            params["intensityMJUM2"] = intensity
+            params["fitErrorIntensityMJUM2"] = info["pcov"]
+            params["fitError"] = info["error"]
         return params
 
     def fit_refine(self, img, params):
@@ -101,7 +100,11 @@ class FitModel:
         params["offCenterY"] = y0
         params["diameterNM"] = d
         params["intensityMJUM2"] = i
-        #print 'refine: ', info
+        params["fitErrorOffCenterX"] = info["pcov"][0]
+        params["fitErrorOffCenterY"] = info["pcov"][1]
+        params["fitErrorDiameterNM"] = info["pcov"][2]
+        params["fitErrorIntensityMJUM2"] = info["pcov"][3]
+        params["fitError"] = info["error"]
         return params
         
     def fit_model(self,img,params):
