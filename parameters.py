@@ -38,9 +38,11 @@ class AbstractParameterItem:
         if self.name in self.parentGroup.children:
             gi = self.parentGroup.children[self.name]
             for n in self.paramsIndDef:
-                self.dataItems[n] = gi.children[n]
+                if n in gi.children.keys():
+                    self.dataItems[n] = gi.children[n]
             for n in self.paramsGenDef:
-                self.dataItems[n] = gi.children[n]
+                if n in gi.children.keys():
+                    self.dataItems[n] = gi.children[n]
         # read data from file if data items available
         for n,d in self.dataItems.items():
             data = d.data()
@@ -122,6 +124,7 @@ class ModelItem(AbstractParameterItem):
                                "offCenterY": float(self.settings.value("modelCenterY")),
                                "intensityMJUM2": float(self.settings.value("modelIntensity")),
                                "diameterNM": float(self.settings.value("modelDiameter")),
+                               "fitError": numpy.nan,
                                "maskRadius": float(self.settings.value("modelMaskRadius"))}
         generalParamsDef = {"photonWavelengthNM":1.,
                             "detectorDistanceMM":1000.,
@@ -132,10 +135,10 @@ class ModelItem(AbstractParameterItem):
                             "_visibility":0.5,
                             "_maximumShift":5,
                             "_blurRadius":4,
-                            "_findCenterMethod":'quadrant', 
-                            "_fitDiameterMethod":'pearson', 
-                            "_fitIntensityMethod":'simple', 
-                            "_fitModelMethod":'fast',} 
+                            "_findCenterMethod":str(self.settings.value("findCenterMethod")), 
+                            "_fitDiameterMethod":str(self.settings.value("fitDiaemeterMethod")), 
+                            "_fitIntensityMethod":str(self.settings.value("fitIntensityMethod")), 
+                            "_fitModelMethod":str(self.settings.value("fitModelMethod"))} 
         name = "model"
         AbstractParameterItem.__init__(self,parentGroup,fileLoader,name,individualParamsDef,generalParamsDef)
     def find_center(self,img):
