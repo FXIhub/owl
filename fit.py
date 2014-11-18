@@ -51,8 +51,9 @@ class FitModel:
         m  = params["materialType"]
         rm = params["maskRadius"]
         if method == 'pearson':
-            d = spimage.fit_sphere_diameter(I, M, d, i, wl, ps, D, method='pearson', full_output=False, x0=x0, y0=y0, adup=ap, queff=qe, mat=m, rmax=rm, downsampling=1, do_brute=20)
+            d, info = spimage.fit_sphere_diameter(I, M, d, i, wl, ps, D, method='pearson', full_output=True, x0=x0, y0=y0, adup=ap, queff=qe, mat=m, rmax=rm, downsampling=1, do_brute=20)
             #d = spimage.fit_sphere_diameter(I, M, d, i, wl, ps, D, method='pearson', full_output=False, x0=x0, y0=y0, adup=ap, queff=qe, mat=m, rmax=rm, downsampling=1, do_brute=False)
+            #print 'diameter: ', info
         params["diameterNM"] = d
         return params
             
@@ -73,7 +74,8 @@ class FitModel:
         m  = params["materialType"]
         rm = params["maskRadius"]
         if method == 'simple':
-            intensity = spimage.fit_sphere_intensity(I, M, d, i, wl, ps, D, full_output=False, x0=x0, y0=y0, adup=ap, queff=qe, mat=m, rmax=rm, downsampling=1)
+            intensity, info = spimage.fit_sphere_intensity(I, M, d, i, wl, ps, D, full_output=True, x0=x0, y0=y0, adup=ap, queff=qe, mat=m, rmax=rm, downsampling=1)
+            #print 'intensity: ', info
         else:
             intensity = i
         params["intensityMJUM2"] = intensity
@@ -99,6 +101,7 @@ class FitModel:
         params["offCenterY"] = y0
         params["diameterNM"] = d
         params["intensityMJUM2"] = i
+        #print 'refine: ', info
         return params
         
     def fit_model(self,img,params):
