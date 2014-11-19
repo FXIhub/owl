@@ -511,28 +511,28 @@ class Owl(QtGui.QMainWindow):
     def closeEvent(self, event):
         """Function run when the application is closing."""
         if self.fileLoader.tagsChanged():
-            saveTags =  QtGui.QMessageBox.question(self, "Save tag changes?",
-                                                   "Would you like to save changes to the tags?",
-                                                   QtGui.QMessageBox.Save, QtGui.QMessageBox.Discard,
-                                                   QtGui.QMessageBox.Cancel)
+            saveTags = QtGui.QMessageBox(QtGui.QMessageBox.Question, "Save tag changes?",
+                                         "Would you like to save changes to the tags?",
+                                         QtGui.QMessageBox.Save | QtGui.QMessageBox.Discard 
+                                         | QtGui.QMessageBox.Cancel).exec_()            
             if(saveTags == QtGui.QMessageBox.Save):
                 self.fileLoader.saveTags()
             if(saveTags == QtGui.QMessageBox.Cancel):
                 return event.ignore()
         if self.fileLoader.modelsChanged():
-            saveModel = QtGui.QMessageBox.question(self, "Save model changes?",
-                                                   "Would you like to save changes to the models?",
-                                                   QtGui.QMessageBox.Save, QtGui.QMessageBox.Discard,
-                                                   QtGui.QMessageBox.Cancel)
+            saveModel = QtGui.QMessageBox(QtGui.QMessageBox.Question, "Save model changes?",
+                                         "Would you like to save changes to the models?",
+                                         QtGui.QMessageBox.Save | QtGui.QMessageBox.Discard 
+                                         | QtGui.QMessageBox.Cancel).exec_()            
             if(saveModel == QtGui.QMessageBox.Save):
                 self.fileLoader.saveModels()
             if(saveModel == QtGui.QMessageBox.Cancel):
                 return event.ignore()            
         if self.fileLoader.pattersonsChanged():
-            savePatterson = QtGui.QMessageBox.question(self, "Save Patterson configurations?",
-                                                       "Would you like to save changes to the Patterson configurations?",
-                                                       QtGui.QMessageBox.Save, QtGui.QMessageBox.Discard,
-                                                       QtGui.QMessageBox.Cancel)
+            savePatterson = QtGui.QMessageBox(QtGui.QMessageBox.Question, "Save Patterson configurations??",
+                                              "Would you like to save changes to the Patterson configurations?",
+                                              QtGui.QMessageBox.Save | QtGui.QMessageBox.Discard 
+                                              | QtGui.QMessageBox.Cancel).exec_()            
             if(savePatterson == QtGui.QMessageBox.Save):
                 self.fileLoader.savePattersons()
             if(savePatterson == QtGui.QMessageBox.Cancel):
