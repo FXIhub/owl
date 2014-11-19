@@ -8,10 +8,9 @@ from matplotlib import cm
 import pyqtgraph
 import fit
 from ui.dialogs import ExperimentDialog
-import ui.displayBox
-import ui.modelProperties
-import ui.pattersonProperties
-
+from ui import Ui_displayBox
+from ui import Ui_ModelProperties 
+from ui import Ui_PattersonProperties
 
 # Import spimage (needed for ModelProperties)
 try:
@@ -642,7 +641,7 @@ class FilterWidget(QtGui.QWidget):
         #self.refreshData(self.dataItem)  #BJD: This adds new items to indexCombo, however the labels in the filterBox are not updated now. 
 
 
-class ModelProperties(QtGui.QGroupBox, ui.modelProperties.Ui_ModelProperties):
+class ModelProperties(QtGui.QGroupBox, Ui_ModelProperties):
     def __init__(self,parent):
         self.parent = parent
         QtGui.QGroupBox.__init__(self,parent)
@@ -771,7 +770,7 @@ class ModelProperties(QtGui.QGroupBox, ui.modelProperties.Ui_ModelProperties):
     def toggleVisible(self):
         self.setVisible(hasSpimage and not self.isVisible())
 
-class PattersonProperties(QtGui.QGroupBox, ui.pattersonProperties.Ui_PattersonProperties):
+class PattersonProperties(QtGui.QGroupBox, Ui_PattersonProperties):
     def __init__(self,parent):
         self.parent = parent
         QtGui.QGroupBox.__init__(self,parent)
@@ -862,7 +861,7 @@ class PattersonProperties(QtGui.QGroupBox, ui.pattersonProperties.Ui_PattersonPr
     def toggleVisible(self):
         self.setVisible(not self.isVisible())
 
-class DisplayBox(QtGui.QGroupBox, ui.displayBox.Ui_displayBox):
+class DisplayBox(QtGui.QGroupBox, Ui_displayBox):
     def __init__(self,parent):
 
         QtGui.QGroupBox.__init__(self,parent)

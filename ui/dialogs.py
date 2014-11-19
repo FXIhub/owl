@@ -10,13 +10,12 @@ import numpy
 import math
 import logging
 import settingsOwl
-import ui.tagsDialog
-import ui.selectIndexDialog
-import ui.preferencesDialog
-import ui.fileModeDialog
-import ui.experimentDialog
+from ui import Ui_TagsDialog
+from ui import Ui_SelectIndexDialog
+from ui import Ui_PreferencesDialog
+from ui import Ui_FileModeDialog
+from ui import Ui_ExperimentDialog
 
-# Import spimage for experimentDialog
 try:
     import spimage
     hasSpimage = True
@@ -24,7 +23,7 @@ except:
     hasSpimage = False
 
 
-class TagsDialog(QtGui.QDialog, ui.tagsDialog.Ui_TagsDialog):
+class TagsDialog(QtGui.QDialog, Ui_TagsDialog):
     def __init__(self,parent,tags):
         QtGui.QDialog.__init__(self,parent,QtCore.Qt.WindowTitleHint)
         self.setupUi(self)
@@ -128,7 +127,7 @@ class TagsDialog(QtGui.QDialog, ui.tagsDialog.Ui_TagsDialog):
     def deleteTag(self):
         self.tagsTable.removeColumn(self.tagsTable.currentColumn())
 
-class SelectIndexDialog(QtGui.QDialog, ui.selectIndexDialog.Ui_SelectIndexDialog):
+class SelectIndexDialog(QtGui.QDialog, Ui_SelectIndexDialog):
     def __init__(self,parent,dataItem):
         QtGui.QDialog.__init__(self,parent,QtCore.Qt.WindowTitleHint)
         self.setupUi(self)
@@ -164,7 +163,7 @@ class SelectIndexDialog(QtGui.QDialog, ui.selectIndexDialog.Ui_SelectIndexDialog
         self.accept()        
                 
 
-class PreferencesDialog(QtGui.QDialog, ui.preferencesDialog.Ui_PreferencesDialog):
+class PreferencesDialog(QtGui.QDialog, Ui_PreferencesDialog):
     def __init__(self,parent):
         QtGui.QDialog.__init__(self,parent,QtCore.Qt.WindowTitleHint)
         self.setupUi(self)
@@ -224,7 +223,7 @@ class PreferencesDialog(QtGui.QDialog, ui.preferencesDialog.Ui_PreferencesDialog
 
 
 
-class FileModeDialog(QtGui.QDialog, ui.fileModeDialog.Ui_FileModeDialog):
+class FileModeDialog(QtGui.QDialog, Ui_FileModeDialog):
     def __init__(self,parent):
         QtGui.QDialog.__init__(self,parent,QtCore.Qt.WindowTitleHint)
         self.setupUi(self)
@@ -240,7 +239,7 @@ class FileModeDialog(QtGui.QDialog, ui.fileModeDialog.Ui_FileModeDialog):
             self.rswmr.setEnabled(False)
 
 
-class ExperimentDialog(QtGui.QDialog, ui.experimentDialog.Ui_ExperimentDialog):
+class ExperimentDialog(QtGui.QDialog, Ui_ExperimentDialog):
     def __init__(self,parent, modelItem):
         QtGui.QDialog.__init__(self,parent,QtCore.Qt.WindowTitleHint)
         self.setupUi(self)

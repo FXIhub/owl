@@ -1,9 +1,8 @@
 from Qt import QtGui, QtCore, QtOpenGL
-import ui.sizingWidget
-import ui.dialogs
+from ui import Ui_SizingWidget
 from analysis import Sizing
 
-class SizingWidget(QtGui.QGroupBox, ui.sizingWidget.Ui_SizingWidget):
+class SizingWidget(QtGui.QGroupBox, Ui_SizingWidget):
     sizingStopped = QtCore.Signal()
     def __init__(self, parent, view):
         QtGui.QGroupBox.__init__(self,parent)
@@ -22,10 +21,6 @@ class SizingWidget(QtGui.QGroupBox, ui.sizingWidget.Ui_SizingWidget):
         self.stopButton.released.connect(self.stopSizing)
         self.sizing.sizingProgress.connect(self.updateProgress)
         
-    def onExperiment(self):
-        expDialog = ui.dialogs.ExperimentDialog(self, self.modelItem)
-        expDialog.exec_()
-
     def setData(self):
         imgs = self.view.indexProjector.imgs
         self.sizing.setImgs(imgs)

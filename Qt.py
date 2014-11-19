@@ -60,7 +60,7 @@ if USE_QT_PY == PYSIDE:
         """
         import pysideuic
         import xml.etree.ElementTree as xml
-        from io import StringIO
+        from cStringIO import StringIO
         
         parsed = xml.parse(uiFile)
         widget_class = parsed.find('widget').get('class')
