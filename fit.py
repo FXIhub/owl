@@ -50,8 +50,9 @@ class FitModel:
         qe = params["detectorQuantumEfficiency"]
         m  = params["materialType"]
         rm = params["maskRadius"]
+        ne = params["_nrEval"]
         if method == 'pearson':
-            d, info = spimage.fit_sphere_diameter(I, M, d, i, wl, ps, D, method='pearson', full_output=True, x0=x0, y0=y0, adup=ap, queff=qe, mat=m, rmax=rm, downsampling=1, do_brute=20)
+            d, info = spimage.fit_sphere_diameter(I, M, d, i, wl, ps, D, method='pearson', full_output=True, x0=x0, y0=y0, adup=ap, queff=qe, mat=m, rmax=rm, downsampling=1, do_brute_evals=ne)
             params["diameterNM"] = d
             params["fitErrorDiameterNM"] = info["pcov"]
             params["fitError"] = info["error"]

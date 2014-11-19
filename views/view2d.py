@@ -277,6 +277,7 @@ class View2D(QtOpenGL.QGLWidget,View):
         self.imageShapeXLoc = GL.glGetUniformLocation(self.shader, "imageShapeX")
         self.imageShapeYLoc = GL.glGetUniformLocation(self.shader, "imageShapeY")
         self.modelVisibilityLoc = GL.glGetUniformLocation(self.shader, "modelVisibility")
+        self.modelMinimaAlphaLoc = GL.glGetUniformLocation(self.shader, "modelMinimaAlpha")
         self.fitMaskRadiusLoc = GL.glGetUniformLocation(self.shader, "fitMaskRadius")
 
     def _initColormapTextures(self):
@@ -567,6 +568,9 @@ class View2D(QtOpenGL.QGLWidget,View):
             # Update visibility of sphere model
             GL.glUniform1f(self.modelVisibilityLoc, params["_visibility"])
 
+            # Update alpha value of sphere model minima
+            GL.glUniform1f(self.modelMinimaAlphaLoc, params["_modelMinimaAlpha"])
+
             # Save mask radius
             self.maskRadius = params["maskRadius"]
             GL.glUniform1f(self.fitMaskRadiusLoc, params["maskRadius"])
@@ -585,7 +589,7 @@ class View2D(QtOpenGL.QGLWidget,View):
         GL.glActiveTexture(GL.GL_TEXTURE0)
 
         GL.glUseProgram(0)
-
+        
         if(img == self.selectedImage):
             self._paintSelectedImageBorder(img_width, img_height)
             self._paintImageProperties(img)

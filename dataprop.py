@@ -655,6 +655,7 @@ class ModelProperties(QtGui.QGroupBox, Ui_ModelProperties):
         self.maskRadius.valueChanged.connect(self.setParams)
         self.maximumShift.valueChanged.connect(self.setParams)
         self.blurRadius.valueChanged.connect(self.setParams)
+        self.nrEval.valueChanged.connect(self.setParams)
         self.findCenterMethod.currentIndexChanged.connect(self.setParams)
         self.fitDiameterMethod.currentIndexChanged.connect(self.setParams)
         self.fitIntensityMethod.currentIndexChanged.connect(self.setParams)
@@ -664,7 +665,10 @@ class ModelProperties(QtGui.QGroupBox, Ui_ModelProperties):
         self.fitDiameterPushButton.released.connect(self.FitDiameter)
         self.fitIntensityPushButton.released.connect(self.FitIntensity)
         self.fitModelPushButton.released.connect(self.FitModel)
-        self.visibilitySlider.valueChanged.connect(self.setParams)
+        self.visibilityEdit.textChanged.connect(self.ModelVisibilityChanged)
+        self.visibilitySlider.valueChanged.connect(self.ModelVisibilityChanged)
+        self.minimaEdit.textChanged.connect(self.ModelMinimaChanged)
+        self.minimaSlider.valueChanged.connect(self.ModelMinimaChanged)
     def setModelItem(self,modelItem=None):
         self.modelItem = modelItem
         if modelItem is None:
@@ -688,7 +692,9 @@ class ModelProperties(QtGui.QGroupBox, Ui_ModelProperties):
             self.maskRadius.setReadOnly(False)
             self.maximumShift.setReadOnly(False)
             self.blurRadius.setReadOnly(False)
+            self.nrEval.setReadOnly(False)
             self.visibilitySlider.setEnabled(True)
+            self.minimaSlider.setEnabled(True)
         else:
             self.centerX.setReadOnly(True)
             self.centerY.setReadOnly(True)
@@ -697,9 +703,10 @@ class ModelProperties(QtGui.QGroupBox, Ui_ModelProperties):
             self.maskRadius.setReadOnly(True)
             self.maximumShift.setReadOnly(True)
             self.blurRadius.setReadOnly(True)
-            self.visibilitySlider.setEnabled(False)           
+            self.nrEval.setReadOnly(True)
+            self.visibilitySlider.setEnabled(False)
+            self.minimaSlider.setEnabled(False)
         if self.modelItem is None:
-            # BD: Is this case ever happening?
             self.centerX.setValue(0)
             self.centerY.setValue(0)
             self.diameter.setValue(0)
@@ -707,7 +714,11 @@ class ModelProperties(QtGui.QGroupBox, Ui_ModelProperties):
             self.maskRadius.setValue(0)
             self.maximumShift.setValue(0)
             self.blurRadius.setValue(0)
+            self.nrEval.setValue(10)
             self.visibilitySlider.setValue(50)
+            self.visibilityEdit.setText(str(50))
+            self.minimaSlider.setValue(50)
+            self.minimaEdit.setText(str(50))
         else:
             params = self.modelItem.getParams(img)
             [ch.blockSignals(True) for ch in self.children()]
@@ -718,7 +729,9 @@ class ModelProperties(QtGui.QGroupBox, Ui_ModelProperties):
             self.maskRadius.setValue(params["maskRadius"])
             self.maximumShift.setValue(params["_maximumShift"])
             self.blurRadius.setValue(params["_blurRadius"])
+            self.nrEval.setValue(params["_nrEval"])
             self.visibilitySlider.setValue(params["_visibility"]*100)
+            self.visibilityEdit.setText(str(int(params["_visibility"]*100)))
             self.findCenterMethod.setCurrentIndex(self.findCenterMethod.findText(str(params["_findCenterMethod"])))
             self.fitDiameterMethod.setCurrentIndex(self.fitDiameterMethod.findText(str(params["_fitDiameterMethod"])))
             self.fitIntensityMethod.setCurrentIndex(self.fitIntensityMethod.findText(str(params["_fitIntensityMethod"])))
@@ -734,6 +747,7 @@ class ModelProperties(QtGui.QGroupBox, Ui_ModelProperties):
         params["intensityMJUM2"] = self.intensity.value()
         params["maskRadius"] = self.maskRadius.value()
         params["_visibility"] = float(self.visibilitySlider.value()/100.)
+        params["_modelMinimaAlpha"] = float(self.minimaSlider.value()/100.)
         params["_maximumShift"] = int(self.maximumShift.value())
         params["_blurRadius"] = float(self.blurRadius.value())
         params["_findCenterMethod"] = str(self.findCenterMethod.currentText())
@@ -767,6 +781,14 @@ class ModelProperties(QtGui.QGroupBox, Ui_ModelProperties):
         img = self.parent.viewer.view.view2D.selectedImage
         self.modelItem.fit_model(img)
         self.showParams()
+    def ModelVisibilityChanged(self, value):
+        self.visibilityEdit.setText(str(value))
+        self.visibilitySlider.setValue(int(value))
+        self.setParams()
+    def ModelMinimaChanged(self, value):
+        self.minimaEdit.setText(str(value))
+        self.minimaSlider.setValue(int(value))
+        self.setParams()
     def toggleVisible(self):
         self.setVisible(hasSpimage and not self.isVisible())
 

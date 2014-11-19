@@ -15,6 +15,7 @@ uniform int showModel;
 uniform float imageShapeX;
 uniform float imageShapeY;
 uniform float modelVisibility;
+uniform float modelMinimaAlpha;
 uniform float fitMaskRadius;
 #define M_PI 3.1415926535897932384626433832795
 void main()
@@ -51,9 +52,9 @@ void main()
 	float s_lo = (r-d)*modelSize*2.0*M_PI;;
 	float err2 = abs(tan(s_lo)-(s_lo)) - abs(tan(s)-s);
 	if(err2 > 0.0){
-	  color.r = 0.5;
-	  color.g = 0.5;
-	  color.b = 0.5;
+	  color.r = modelMinimaAlpha;
+	  color.g = modelMinimaAlpha;
+	  color.b = modelMinimaAlpha;
 	  color.a = 1.0;
 	  gl_FragColor = color;
 	  return;
