@@ -363,7 +363,7 @@
         <number>100</number>
        </property>
        <property name="value">
-        <number>100</number>
+        <number>50</number>
        </property>
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
@@ -385,7 +385,7 @@
         </size>
        </property>
        <property name="text">
-        <string>100</string>
+        <string>50</string>
        </property>
        <property name="maxLength">
         <number>3000</number>

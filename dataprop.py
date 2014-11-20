@@ -750,6 +750,7 @@ class ModelProperties(QtGui.QGroupBox, Ui_ModelProperties):
         params["_modelMinimaAlpha"] = float(self.minimaSlider.value()/100.)
         params["_maximumShift"] = int(self.maximumShift.value())
         params["_blurRadius"] = float(self.blurRadius.value())
+        params["_nrEval"] = float(self.nrEval.value())
         params["_findCenterMethod"] = str(self.findCenterMethod.currentText())
         params["_fitDiameterMethod"] = str(self.fitDiameterMethod.currentText())
         params["_fitIntensityMethod"] = str(self.fitIntensityMethod.currentText())
