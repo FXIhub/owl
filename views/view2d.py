@@ -1127,7 +1127,11 @@ class View2D(QtOpenGL.QGLWidget,View):
     def _scaleZoom(self, ratio):
         self.zoom *= ratio
         self.translation[0] *= ratio
-        viewIndex = self.indexProjector.imgToIndex(self.centralImg)
+        if(self.selectedImage and self.selectedImage in self._visibleImages()):
+            viewIndex = self.indexProjector.imgToIndex(self.selectedImage)
+        else:
+            viewIndex = self.indexProjector.imgToIndex(self.centralImg)
+        print "centralImg %d" % (self.centralImg)
         self.browseToViewIndex(viewIndex)
 
     def _zoomFromStackWidth(self):
