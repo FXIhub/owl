@@ -143,7 +143,7 @@ class ModelItem(AbstractParameterItem):
                             "_nrEval":20,
                             "_findCenterMethod":'blurred', 
                             "_fitDiameterMethod":'pearson', 
-                            "_fitIntensityMethod":'simple', 
+                            "_fitIntensityMethod":'pixelwise', 
                             "_fitModelMethod":'fast'} 
         name = "model"
         AbstractParameterItem.__init__(self,parentGroup,fileLoader,name,individualParamsDef,generalParamsDef)

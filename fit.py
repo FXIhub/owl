@@ -52,10 +52,12 @@ class FitModel:
         rm = params["maskRadius"]
         ne = params["_nrEval"]
         if method == 'pearson':
-            d, info = spimage.fit_sphere_diameter(I, M, d, i, wl, ps, D, method='pearson', full_output=True, x0=x0, y0=y0, adup=ap, queff=qe, mat=m, rmax=rm, downsampling=1, do_brute_evals=ne)
-            params["diameterNM"] = d
-            params["fitErrorDiameterNM"] = info["pcov"]
-            params["fitError"] = info["error"]
+            diameter, info = spimage.fit_sphere_diameter(I, M, d, i, wl, ps, D, method='pearson', full_output=True, x0=x0, y0=y0, adup=ap, queff=qe, mat=m, rmax=rm, downsampling=1, do_brute_evals=ne)
+        else:
+            diameter, info = [d, {"pcov":None, "error":None}]
+        params["diameterNM"] = diameter
+        params["fitErrorDiameterNM"] = info["pcov"]
+        params["fitError"] = info["error"]
         return params
             
     def fit_intensity(self,img,params):
@@ -74,11 +76,15 @@ class FitModel:
         qe = params["detectorQuantumEfficiency"]
         m  = params["materialType"]
         rm = params["maskRadius"]
-        if method == 'simple':
-            intensity, info = spimage.fit_sphere_intensity(I, M, d, i, wl, ps, D, full_output=True, x0=x0, y0=y0, adup=ap, queff=qe, mat=m, rmax=rm, downsampling=1)
-            params["intensityMJUM2"] = intensity
-            params["fitErrorIntensityMJUM2"] = info["pcov"]
-            params["fitError"] = info["error"]
+        if method == 'pixelwise':
+            intensity, info = spimage.fit_sphere_intensity(I, M, d, i, wl, ps, D, method='pixelwise', full_output=True, x0=x0, y0=y0, adup=ap, queff=qe, mat=m, rmax=rm, downsampling=1)
+        elif method == 'nrphotons':
+            intensity, info = spimage.fit_sphere_intensity(I, M, d, i, wl, ps, D, method='nrphotons', full_output=True, x0=x0, y0=y0, adup=ap, queff=qe, mat=m, rmax=rm, downsampling=1)
+        else:
+            intensity, info = [i, {"pcov":None, "error":None}]
+        params["intensityMJUM2"] = intensity
+        params["fitErrorIntensityMJUM2"] = info["pcov"]
+        params["fitError"] = info["error"]
         return params
 
     def fit_refine(self, img, params):
