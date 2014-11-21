@@ -951,6 +951,7 @@ class View2D(QtOpenGL.QGLWidget,View):
             info = self._getPixelInfo(img, self.ix, self.iy)
             if info is None:
                 return
+            info["event"] = event
             self.selectedImage = info["img"]
             self.pixelClicked.emit(info)
             self.updateGL()

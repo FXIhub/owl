@@ -238,7 +238,13 @@ class DataProp(QtGui.QWidget):
             # Check if we clicked on a tag
             if(info["tagClicked"] != -1):
                 # Toggle tag
-                self.toggleTag(info["img"],info["tagClicked"])
+                # If shift is pressed change all non filtered images
+                if(info["event"].modifiers() & QtCore.Qt.ShiftModifier):
+                    value = (self.data.tagsItem.tagMembers[info["tagClicked"],info["img"]] + 1) % 2
+                    self.setTagOnUnfiltered(info["tagClicked"],value)
+                # Otherwise just change the clicked image
+                else:
+                    self.toggleTag(info["img"],info["tagClicked"])
             self.modelProperties.showParams()
             self.pattersonProperties.showParams()
         else:
@@ -441,6 +447,13 @@ class DataProp(QtGui.QWidget):
         self.data.tagsItem.setTag(img,id,value)
         self.viewer.tagsChanged = True
         self.viewer.view.view2D.updateGL()
+    def setTagOnUnfiltered(self,tagId,value):
+        for i in range(0, self.indexProjector.filterMask().sum()):
+            img = self.indexProjector.indexToImg(i)
+            self.data.tagsItem.setTag(img,tagId,value)
+        self.viewer.tagsChanged = True
+        self.viewer.view.view2D.updateGL()
+
 
                
 
