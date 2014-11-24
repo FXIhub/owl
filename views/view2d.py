@@ -1133,7 +1133,6 @@ class View2D(QtOpenGL.QGLWidget,View):
             viewIndex = self.indexProjector.imgToIndex(self.selectedImage)
         else:
             viewIndex = self.indexProjector.imgToIndex(self.centralImg)
-        print "centralImg %d" % (self.centralImg)
         self.browseToViewIndex(viewIndex)
 
     def _zoomFromStackWidth(self):
@@ -1152,8 +1151,8 @@ class View2D(QtOpenGL.QGLWidget,View):
         QtCore.QCoreApplication.sendPostedEvents()
         QtCore.QCoreApplication.processEvents()
         self._setData()
-        self.setMask()
         self.setMaskOutBits()
+        self.setMask()
 
     def clearTextures(self):
         """Clears the OpenGL and cached textures"""
