@@ -423,8 +423,8 @@ class Owl(QtGui.QMainWindow):
         self.cxiNavigation.dataBoxes["plot Y"].button.needData.connect(self.handleNeedDataY1D)
         self.cxiNavigation.dataMenus["plot Y"].triggered.connect(self.handlePlotModeTriggered)
         self.cxiNavigation.dataBoxes["filter0"].button.needData.connect(self.handleNeedDataFilter)
-        self.dataProp.view1DPropChanged.connect(self.handleView1DPropChanged)
-        self.dataProp.view2DPropChanged.connect(self.handleView2DPropChanged)
+        self.dataProp.view1DPropChanged.connect(self.view.view1D.refreshDisplayProp)
+        self.dataProp.view2DPropChanged.connect(self.view.view2D.refreshDisplayProp)
         self.view.view2D.pixelClicked.connect(self.dataProp.onPixelClicked)
         self.view.view2D.pixelClicked.connect(self.view.view1D.onPixelClicked)
         self.view.view1D.viewIndexSelected.connect(self.handleViewIndexSelected)
@@ -816,20 +816,6 @@ class Owl(QtGui.QMainWindow):
             self.viewActions["View 1D"].setChecked(False)
             self.view.view1D.hide()
             self.dataProp.plotBox.hide()
-
-    def handleView2DPropChanged(self, prop):
-        """Slot triggered when dataProp emits view2DPropChanged
-
-        TODO FM: move to view2D
-        """
-        self.view.view2D.refreshDisplayProp(prop)
-
-    def handleView1DPropChanged(self, prop):
-        """Slot triggered when dataProp emits view1DPropChanged
-
-        TODO FM: move to view1D
-        """
-        self.view.view1D.refreshDisplayProp(prop)
 
     def handleDataClicked(self, dataName):
         """Slot triggered when dataProp emits view1DPropChanged
