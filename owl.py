@@ -645,8 +645,6 @@ class Owl(QtGui.QMainWindow):
         """
         if dataName == "" or dataName is None:
             self.view.view2D.setMask()
-            self.view.view2D.clearTextures()
-            self.view.view2D.updateGL()
             self.cxiNavigation.dataBoxes["mask"].button.setName()
             self.statusBar.showMessage("Reset mask.", 1000)
         else:
@@ -660,8 +658,6 @@ class Owl(QtGui.QMainWindow):
                 self.statusBar.showMessage("Mask shape missmatch. Do not load mask: %s" % dataItem.fullName, 1000)
             else:
                 self.view.view2D.setMask(dataItem)
-                self.view.view2D.clearTextures()
-                self.view.view2D.updateGL()
                 self.cxiNavigation.dataBoxes["mask"].button.setName(dataName)
                 self.statusBar.showMessage("Loaded mask: %s" % dataName, 1000)
         # needed?

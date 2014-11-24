@@ -145,6 +145,8 @@ class View2D(QtOpenGL.QGLWidget,View):
         if self.mask is not None:
             self.mask.selectStack()
         self.dataItemChanged.emit(self.data, self.mask)
+        self.clearTextures()
+        self.updateGL()
 
     def setMaskOutBits(self, maskOutBits=0):
         """Sets the masked out bits in the current mask
@@ -1152,8 +1154,6 @@ class View2D(QtOpenGL.QGLWidget,View):
         self._setData()
         self.setMask()
         self.setMaskOutBits()
-        self.clearTextures()
-        self.updateGL()
 
     def clearTextures(self):
         """Clears the OpenGL and cached textures"""
