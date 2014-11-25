@@ -141,6 +141,7 @@ class ModelItem(AbstractParameterItem):
                             "_maximumShift":5,
                             "_blurRadius":4,
                             "_nrEval":20,
+                            "_doPhotonCounting":1,
                             "_findCenterMethod":'blurred', 
                             "_fitDiameterMethod":'pearson', 
                             "_fitIntensityMethod":'pixelwise', 

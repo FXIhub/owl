@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>255</width>
-    <height>587</height>
+    <width>258</width>
+    <height>611</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -32,20 +32,17 @@
    </item>
    <item row="5" column="0">
     <layout class="QGridLayout" name="gridLayout_3">
-     <item row="2" column="1" colspan="2">
-      <widget class="QDoubleSpinBox" name="blurRadius">
-       <property name="decimals">
-        <number>2</number>
-       </property>
-       <property name="value">
-        <double>4.000000000000000</double>
-       </property>
-      </widget>
-     </item>
      <item row="2" column="0">
       <widget class="QLabel" name="label_7">
        <property name="text">
         <string>Blur radius [px]:</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="0">
+      <widget class="QLabel" name="label_6">
+       <property name="text">
+        <string>Maximum shift [px]:</string>
        </property>
       </widget>
      </item>
@@ -66,20 +63,13 @@
        </property>
       </widget>
      </item>
-     <item row="1" column="1" colspan="2">
-      <widget class="QDoubleSpinBox" name="maximumShift">
+     <item row="3" column="1" colspan="2">
+      <widget class="QDoubleSpinBox" name="nrEval">
        <property name="decimals">
         <number>0</number>
        </property>
        <property name="value">
-        <double>5.000000000000000</double>
-       </property>
-      </widget>
-     </item>
-     <item row="1" column="0">
-      <widget class="QLabel" name="label_6">
-       <property name="text">
-        <string>Maximum shift [px]:</string>
+        <double>20.000000000000000</double>
        </property>
       </widget>
      </item>
@@ -90,13 +80,36 @@
        </property>
       </widget>
      </item>
-     <item row="3" column="1" colspan="2">
-      <widget class="QDoubleSpinBox" name="nrEval">
+     <item row="1" column="1" colspan="2">
+      <widget class="QDoubleSpinBox" name="maximumShift">
        <property name="decimals">
         <number>0</number>
        </property>
        <property name="value">
-        <double>20.000000000000000</double>
+        <double>5.000000000000000</double>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="1" colspan="2">
+      <widget class="QDoubleSpinBox" name="blurRadius">
+       <property name="decimals">
+        <number>2</number>
+       </property>
+       <property name="value">
+        <double>4.000000000000000</double>
+       </property>
+      </widget>
+     </item>
+     <item row="4" column="0" colspan="3">
+      <widget class="QCheckBox" name="doPhotonCounting">
+       <property name="text">
+        <string>Photon counting (discretization)</string>
+       </property>
+       <property name="checkable">
+        <bool>true</bool>
+       </property>
+       <property name="checked">
+        <bool>true</bool>
        </property>
       </widget>
      </item>
