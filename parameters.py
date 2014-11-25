@@ -91,6 +91,7 @@ class AbstractParameterItem:
                 treeDirty = True
             for n,p0 in self.indParams.items():
                 p = p0[:self.numEvents]
+                grp = self.fileLoader.f[self.fullName]
                 if n in grp:
                     ds = grp[n]
                     if ds.shape[0] != p.shape:
@@ -104,6 +105,7 @@ class AbstractParameterItem:
                     self.fileLoader.addDatasetPosterior(self.fullName+"/"+n)
                     treeDirty = True
             for n,p in self.genParams.items():
+                grp = self.fileLoader.f[self.fullName]
                 if n in grp:
                     ds = grp[n]
                     ds[0] = p
