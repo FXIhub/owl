@@ -54,6 +54,8 @@ class FitModel:
         dp = params["_doPhotonCounting"]
         if method == 'pearson':
             diameter, info = spimage.fit_sphere_diameter(I, M, d, i, wl, ps, D, method='pearson', full_output=True, x0=x0, y0=y0, adup=ap, queff=qe, mat=m, rmax=rm, downsampling=1, do_brute_evals=ne, do_photon_counting=dp)
+        elif method == 'pixelwise':
+            diameter, info = spimage.fit_sphere_diameter(I, M, d, i, wl, ps, D, method='pixelwise', full_output=True, x0=x0, y0=y0, adup=ap, queff=qe, mat=m, rmax=rm, downsampling=1, do_photon_counting=dp)
         else:
             diameter, info = [d, {"pcov":None, "error":None}]
         params["diameterNM"] = diameter

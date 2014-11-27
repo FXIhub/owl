@@ -177,6 +177,11 @@
        </item>
        <item>
         <property name="text">
+         <string>pixelwise</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
          <string>none</string>
         </property>
        </item>
