@@ -91,6 +91,7 @@ class AbstractParameterItem:
                 treeDirty = True
             for n,p0 in self.indParams.items():
                 p = p0[:self.numEvents]
+                grp = self.fileLoader.f[self.fullName]
                 if n in grp:
                     ds = grp[n]
                     if ds.shape[0] != p.shape:
@@ -104,6 +105,7 @@ class AbstractParameterItem:
                     self.fileLoader.addDatasetPosterior(self.fullName+"/"+n)
                     treeDirty = True
             for n,p in self.genParams.items():
+                grp = self.fileLoader.f[self.fullName]
                 if n in grp:
                     ds = grp[n]
                     ds[0] = p
@@ -141,6 +143,7 @@ class ModelItem(AbstractParameterItem):
                             "_maximumShift":5,
                             "_blurRadius":4,
                             "_nrEval":20,
+                            "_doPhotonCounting":1,
                             "_findCenterMethod":'blurred', 
                             "_fitDiameterMethod":'pearson', 
                             "_fitIntensityMethod":'pixelwise', 

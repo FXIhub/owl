@@ -13,6 +13,7 @@ class DataButton(QtGui.QPushButton):
         QtGui.QPushButton.__init__(self)
         self.dataBox = dataBox
         self.dataMode = dataMode
+        self.fullName = None
         self.setName()
         self.setIcon(QtGui.QIcon(imageFile))
         S = 30
@@ -37,12 +38,18 @@ class DataButton(QtGui.QPushButton):
                     action.setEnabled(True)
 
     def setName(self,name=None):
+        self.fullName = name
         if name is None:
             self.setStyleSheet("text-align: left; font-style: italic")
             self.setText("drag %s data here" % self.dataMode)
+            self.setToolTip("drag %s data here" % self.dataMode)
         else:
             self.setStyleSheet("text-align: left; font-style: roman") 
+            name = self.fullName
+            if len(name) > 30:
+                name = "... " + name[-26:]
             self.setText(name)
+            self.setToolTip(self.fullName)
 
 class DataBox(QtGui.QHBoxLayout):
     def __init__(self,imageFile,dataMode,menu):
