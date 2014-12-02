@@ -338,24 +338,26 @@ class View2D(QtOpenGL.QGLWidget,View):
         GL.glPopMatrix()
 
     def _paintImageProperties(self, img):
+        if(img is None):
+            return
         img_width = self._getImgWidth("scene", False)
         img_height = self.getImgHeight("scene", False)
-        GL.glPushMatrix()
 
 #        font = QtGui.QFont("Arial")
         font = QtGui.QFont("Courier")
         font.setStyleStrategy(QtGui.QFont.PreferQuality)
-        font.setPointSize(15-self.stackWidth*2)
+        font.setPointSize(15)
         metrics = QtGui.QFontMetrics(font)
-        GL.glColor3f(1.0, 1.0, 1.0)
         text = []
         if(self.indexProjector.indexToImg(self.lastHoveredViewIndex) == img):
             ix = self.hoveredPixel[0]
             iy = self.hoveredPixel[1]
             if self.loaderThread.maskData[img] is not None:
                 text.append("Mask: %5.3g" % (self.loaderThread.maskData[img][iy, ix]))
-            text.append("Value: %5.3g" % (self.loaderThread.imageData[img][iy, ix]))
+            text.append("Value: %g" % (self.loaderThread.imageData[img][iy, ix]))
             text.append("Pixel: (%d, %d)" % (ix, iy))
+        else:
+            return
 
         text.append("Std Dev: %-5.3g" % numpy.std(self.loaderThread.imageData[img]))
         text.append("Mean: %-5.3g" % numpy.mean(self.loaderThread.imageData[img]))
@@ -369,19 +371,24 @@ class View2D(QtOpenGL.QGLWidget,View):
 
         for i in range(0, len(text)):
             max_width = max(metrics.width(text[i]), max_width)
-        pad = img_width*0.02
-        border = img_width*0.015
+        pad = 10
+        border = 1
 
         height = metrics.height()*len(text)
 
-        GL.glTranslate(border, border, 0)
+        GL.glPushMatrix()
+        GL.glColor3f(1.0, 1.0, 1.0)
+
+        (sx,sy,sz) = self._windowToScene(border, self.height()-border, 0)
+
+        GL.glTranslate(sx,sy,sz)
         GL.glColor4f(0.1, 0.1, 0.1, 0.8)
         GL.glLineWidth(0.5)
         GL.glBegin(GL.GL_QUADS)
         GL.glVertex3f(0, 0, 0.0)
-        GL.glVertex3f(2*pad+max_width/self.zoom, 0, 0.0)
-        GL.glVertex3f(2*pad+max_width/self.zoom, 2*pad+height/self.zoom, 0.0)
-        GL.glVertex3f(0, 2*pad+height/self.zoom, 0.0)
+        GL.glVertex3f((2*pad+max_width)/self.zoom, 0, 0.0)
+        GL.glVertex3f((2*pad+max_width)/self.zoom, (2*pad+height)/self.zoom, 0.0)
+        GL.glVertex3f(0, (2*pad+height)/self.zoom, 0.0)
         GL.glEnd()
 
         height = 0.0
@@ -389,8 +396,7 @@ class View2D(QtOpenGL.QGLWidget,View):
         GL.glEnable(GL.GL_TEXTURE_2D)
         GL.glColor3f(0.9, 0.9, 0.9)
         for i in range(0, len(text)):
-#            self.renderText(float(img_width - max_width), height, 0.0, text[i], font)
-            self.renderText(pad, pad+height/self.zoom, 0.0, text[i], font)
+            self.renderText(pad/self.zoom, (pad+height)/self.zoom, 0.0, text[i], font)
             height += metrics.height()
         GL.glDisable(GL.GL_TEXTURE_2D)
         GL.glDisable(GL.GL_BLEND)
@@ -594,7 +600,7 @@ class View2D(QtOpenGL.QGLWidget,View):
         
         if(img == self.selectedImage):
             self._paintSelectedImageBorder(img_width, img_height)
-            self._paintImageProperties(img)
+#            self._paintImageProperties(img)
 
         if(self.data and self.tagView and self.data.tagsItem.tags and self.data.tagsItem.tags != []):
             tag_size = self._tagSize()
@@ -660,6 +666,7 @@ class View2D(QtOpenGL.QGLWidget,View):
                     if self.loadingImageAnimationTimer.isActive():
                         self.loadingImageAnimationTimer.stop()
 
+                self._paintImageProperties(self.selectedImage)
                 if len(visible) > 0:
                     # Set and emit current view index
                     newVal = self._windowToImage(self._getImgWidth("window", True)/2,
