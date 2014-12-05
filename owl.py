@@ -285,7 +285,8 @@ class Owl(QtGui.QMainWindow):
                             "Display Properties" : QtGui.QAction("Display Properties", self),
                             "Tags"               : QtGui.QAction("Tags", self),
                             "Model"              : QtGui.QAction("Model", self),
-                            "Patterson"          : QtGui.QAction("Patterson", self),}
+                            "Patterson"          : QtGui.QAction("Patterson", self),
+                            "Pixel Peeper"       : QtGui.QAction("Pixel Peeper", self),}
 
         viewShortcuts = {"File Tree"          : "Ctrl+T",
                          "View 1D"            : "Ctrl+1",
@@ -293,9 +294,10 @@ class Owl(QtGui.QMainWindow):
                          "Display Properties" : "Ctrl+D",
                          "Tags"               : "Ctrl+G",
                          "Model"              : "Ctrl+M",
-                         "Patterson"          : "Ctrl+P",}
+                         "Patterson"          : "Ctrl+P",
+                         "Pixel Peeper"          : "Ctrl+X",}
 
-        viewNames = ["File Tree", "Display Properties", "View 1D", "View 2D", "Tags", "Model", "Patterson"]
+        viewNames = ["File Tree", "Display Properties", "View 1D", "View 2D", "Tags", "Model", "Patterson","Pixel Peeper"]
 
         actions = {}
         for viewName in viewNames:
@@ -310,9 +312,11 @@ class Owl(QtGui.QMainWindow):
                 actions[viewName].triggered.connect(self._toggleModelView)
             elif(viewName == "Patterson"):
                 actions[viewName].triggered.connect(self._togglePattersonView)
+            elif(viewName == "Pixel Peeper"):
+                actions[viewName].triggered.connect(self.view.view2D.togglePixelPeeper)
             else:
                 actions[viewName].triggered.connect(self._viewClicked)
-            if viewName in ["View 1D", "Model", "Patterson"]:
+            if viewName in ["View 1D", "Model", "Patterson", "Pixel Peeper"]:
                 actions[viewName].setChecked(False)
             else:
                 actions[viewName].setChecked(True)

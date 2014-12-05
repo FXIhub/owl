@@ -15,6 +15,7 @@ from cxi.cache import GLCache
 import fit
 import os.path
 import h5py
+from cxi.pixelmask import PixelMask
 
 # Import spimage for viewing of sphere model 
 try:
@@ -102,6 +103,7 @@ class View2D(QtOpenGL.QGLWidget,View):
         self.modelView = False
         self.pattersonView = False
         self.hoveredPixel = None
+        self.showPixelPeeper = False
 
     def dragEnterEvent(self, e):
         if e.mimeData().hasFormat('text/plain'):
@@ -359,11 +361,11 @@ class View2D(QtOpenGL.QGLWidget,View):
         else:
             return
 
-        text.append("Std Dev: %-5.3g" % numpy.std(self.loaderThread.imageData[img]))
-        text.append("Mean: %-5.3g" % numpy.mean(self.loaderThread.imageData[img]))
-        text.append("Sum: %-5.3g" % numpy.sum(self.loaderThread.imageData[img]))
-        text.append("Max: %-5.3g" % numpy.max(self.loaderThread.imageData[img]))
-        text.append("Min: %-5.3g" % numpy.min(self.loaderThread.imageData[img]))
+        text.append("Std Dev: %g" % numpy.std(self.loaderThread.imageData[img]))
+        text.append("Mean: %g" % numpy.mean(self.loaderThread.imageData[img]))
+        text.append("Sum: %g" % numpy.sum(self.loaderThread.imageData[img]))
+        text.append("Max: %g" % numpy.max(self.loaderThread.imageData[img]))
+        text.append("Min: %g" % numpy.min(self.loaderThread.imageData[img]))
         text.append("Index: %d" % self.indexProjector.imgToIndex(img))
         text.append("Image: %d" % img)
         max_width = 0
@@ -401,6 +403,120 @@ class View2D(QtOpenGL.QGLWidget,View):
         GL.glDisable(GL.GL_TEXTURE_2D)
         GL.glDisable(GL.GL_BLEND)
         GL.glPopMatrix()
+
+    def _paintPixelPeeper(self, img):
+        if(img is None or self.showPixelPeeper == False):
+            return
+        img_width = self._getImgWidth("scene", False)
+        img_height = self.getImgHeight("scene", False)
+
+#        font = QtGui.QFont("Arial")
+        font = QtGui.QFont("Courier")
+        font.setStyleStrategy(QtGui.QFont.PreferQuality)
+        font.setPointSize(15)
+        font.setBold(True)
+        metrics = QtGui.QFontMetrics(font)
+        text = []
+        ROIside = 5
+        if(self.indexProjector.indexToImg(self.lastHoveredViewIndex) != img):
+            return
+
+        ix = self.hoveredPixel[0]
+        iy = self.hoveredPixel[1]
+        maskROI = numpy.zeros((ROIside,ROIside), dtype=numpy.float32)
+        imageROI = numpy.zeros((ROIside,ROIside), dtype=numpy.float32)
+        for y,ROIy in zip(range(iy-ROIside/2,iy+ROIside/2+1),range(0,ROIside)):
+            if(y < 0 or y >= img_height):
+                maskROI[ROIy,:] = PixelMask.PIXEL_IS_MISSING
+                continue
+            for x,ROIx in zip(range(ix-ROIside/2,ix+ROIside/2+1),range(0,ROIside)):
+                if(x < 0 or x >= img_width):
+                    maskROI[ROIy,ROIx] = PixelMask.PIXEL_IS_MISSING
+                    continue
+                if self.loaderThread.maskData[img] is not None:
+                    maskROI[ROIy,ROIx] = self.loaderThread.maskData[img][y, x]
+                imageROI[ROIy,ROIx] = self.loaderThread.imageData[img][y, x]
+        
+        (imageTexture, maskTexture) = self._generatePixelPeeperTextures(imageROI,maskROI)
+
+        ROIPixelSide = 90
+        border = 1
+        # Lower right corner
+        (sx,sy,sz) = self._windowToScene(self.width()-border-ROIPixelSide*ROIside, self.height()-border, 0);
+        GL.glPushMatrix()        
+        GL.glTranslate(sx,sy,sz)
+
+        GL.glUseProgram(self.shader)
+        GL.glActiveTexture(GL.GL_TEXTURE0+1)
+        data_texture_loc = GL.glGetUniformLocation(self.shader, "data")
+        GL.glUniform1i(data_texture_loc, 1)
+
+        GL.glBindTexture(GL.GL_TEXTURE_2D, imageTexture)
+
+        GL.glActiveTexture(GL.GL_TEXTURE0+2)
+        cmap_texture_loc = GL.glGetUniformLocation(self.shader, "cmap")
+        GL.glUniform1i(cmap_texture_loc, 2)
+        GL.glBindTexture(GL.GL_TEXTURE_2D, self.colormapTextures[self.colormapText])
+
+        GL.glActiveTexture(GL.GL_TEXTURE0+3)
+        loc = GL.glGetUniformLocation(self.shader, "mask")
+        GL.glUniform1i(loc, 3)
+        GL.glBindTexture(GL.GL_TEXTURE_2D, maskTexture)
+
+        GL.glBegin(GL.GL_QUADS)
+        GL.glTexCoord2f(0.0, 0.0)
+        GL.glVertex3f(0, (ROIPixelSide*ROIside)/self.zoom, 0.0)
+        GL.glTexCoord2f(1.0, 0.0)
+        GL.glVertex3f((ROIPixelSide*ROIside)/self.zoom,(ROIPixelSide*ROIside)/self.zoom, 0.0)
+        GL.glTexCoord2f(1.0, 1.0)
+        GL.glVertex3f((ROIPixelSide*ROIside)/self.zoom, 0, 0.0)
+        GL.glTexCoord2f(0.0, 1.0)
+        GL.glVertex3f(0, 0, 0.0)
+        GL.glEnd()
+        # Activate again the original texture unit
+        GL.glActiveTexture(GL.GL_TEXTURE0)
+
+        GL.glUseProgram(0)
+        GL.glPopMatrix()
+
+        (sx,sy,sz) = self._windowToScene(self.width()-border-ROIPixelSide*ROIside, self.height()-border-ROIPixelSide*ROIside, 0);
+
+        GL.glPushMatrix()        
+        GL.glTranslate(sx,sy,sz)
+        GL.glLineWidth(0.5)
+
+        for y in range(0,ROIside):
+            for x in range(0,ROIside):
+                if(maskROI[y,x] != PixelMask.PIXEL_IS_MISSING):
+                    v = imageROI[y,x]
+
+                    text = "%.5g" % (v)
+                    width = metrics.width(text)
+                    height = metrics.height()*0.8
+                    GL.glEnable(GL.GL_BLEND)
+
+                    GL.glBegin(GL.GL_QUADS)
+                    GL.glColor4f(0.3, 0.3, 0.3, 0.5)
+                    border = 3
+                    GL.glVertex3f((ROIPixelSide-width-border)/2.0/self.zoom, -(ROIPixelSide-height-border)/2.0/self.zoom, 0.0)
+                    GL.glVertex3f((ROIPixelSide+width+border)/2.0/self.zoom, -(ROIPixelSide-height-border)/2.0/self.zoom, 0.0)
+                    GL.glVertex3f((ROIPixelSide+width+border)/2.0/self.zoom, -(ROIPixelSide+height+border)/2.0/self.zoom, 0.0)
+                    GL.glVertex3f((ROIPixelSide-width-border)/2.0/self.zoom, -(ROIPixelSide+height+border)/2.0/self.zoom, 0.0)
+                    GL.glEnd()
+
+                    GL.glEnable(GL.GL_TEXTURE_2D)
+                    GL.glColor3f(1.0, 1.0, 1.0)
+#                    self.renderText((ROIPixelSide/6)/self.zoom,-(1*ROIPixelSide/3)/self.zoom,0.,"%g" % (v),font)
+                    self.renderText((ROIPixelSide-width)/2.0/self.zoom, -(ROIPixelSide+height)/2.0/self.zoom, 0., text,font)
+#                    GL.glColor3f(0.0, 0.0, 0.0)
+#                    self.renderText((ROIPixelSide/6)/self.zoom,
+#                                    -(2*ROIPixelSide/3)/self.zoom,0., text, font)
+                    GL.glDisable(GL.GL_TEXTURE_2D)
+                    GL.glDisable(GL.GL_BLEND)
+                GL.glTranslate((ROIPixelSide)/self.zoom,0,0)
+            GL.glTranslate(-(ROIside*ROIPixelSide)/self.zoom,-(ROIPixelSide)/self.zoom,0)
+        GL.glPopMatrix()
+
 
     @QtCore.Slot()
     def _incrementLoadingImageAnimationFrame(self):
@@ -667,6 +783,7 @@ class View2D(QtOpenGL.QGLWidget,View):
                         self.loadingImageAnimationTimer.stop()
 
                 self._paintImageProperties(self.selectedImage)
+                self._paintPixelPeeper(self.selectedImage)
                 if len(visible) > 0:
                     # Set and emit current view index
                     newVal = self._windowToImage(self._getImgWidth("window", True)/2,
@@ -818,6 +935,28 @@ class View2D(QtOpenGL.QGLWidget,View):
                 self.pattersonTextureImg = img
                 self.data.pattersonItem.textureLoaded = True
                 self.updateGL()
+
+
+    def _generatePixelPeeperTextures(self,imageROI,maskROI):
+        texture = GL.glGenTextures(1)
+        GL.glBindTexture(GL.GL_TEXTURE_2D, texture)
+        GL.glTexParameterf(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MAG_FILTER, GL.GL_NEAREST)
+        GL.glTexParameterf(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MIN_FILTER, GL.GL_NEAREST)
+        GL.glPixelStorei(GL.GL_UNPACK_ALIGNMENT, 1)
+        GL.glTexImage2D(GL.GL_TEXTURE_2D, 0, OpenGL.GL.ARB.texture_float.GL_ALPHA32F_ARB,
+                        imageROI.shape[1],imageROI.shape[0], 0, GL.GL_ALPHA, GL.GL_FLOAT, imageROI)
+        imageTexture = texture
+
+        texture = GL.glGenTextures(1)
+        GL.glBindTexture(GL.GL_TEXTURE_2D, texture)
+        GL.glTexParameterf(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MAG_FILTER, GL.GL_NEAREST)
+        GL.glTexParameterf(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MIN_FILTER, GL.GL_NEAREST)
+        GL.glPixelStorei(GL.GL_UNPACK_ALIGNMENT, 1)
+        GL.glTexImage2D(GL.GL_TEXTURE_2D, 0, OpenGL.GL.ARB.texture_float.GL_ALPHA32F_ARB,
+                        maskROI.shape[1], maskROI.shape[0], 0, GL.GL_ALPHA, GL.GL_FLOAT, maskROI)
+        maskTexture = texture
+
+        return (imageTexture, maskTexture)
 
     def _updateTextures(self, images):
         for img in images:
@@ -1300,4 +1439,9 @@ class View2D(QtOpenGL.QGLWidget,View):
     def togglePattersonView(self):
         """Toggle the visibility of the patterson"""
         self.pattersonView = not self.pattersonView
+        self.updateGL()
+
+    @QtCore.Slot()
+    def togglePixelPeeper(self):
+        self.showPixelPeeper = not self.showPixelPeeper
         self.updateGL()
