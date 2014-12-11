@@ -76,8 +76,7 @@ class DataMaskMenu(DataMenu):
     def __init__(self,parent=None):
         DataMenu.__init__(self,parent)
         self.addSeparator()
-        self.PIXELMASK_BITS = {'perfect' : PixelMask.PIXEL_IS_PERFECT,
-                               'invalid' : PixelMask.PIXEL_IS_INVALID,
+        self.PIXELMASK_BITS = {'invalid' : PixelMask.PIXEL_IS_INVALID,
                                'saturated' : PixelMask.PIXEL_IS_SATURATED,
                                'hot' : PixelMask.PIXEL_IS_HOT,
                                'dead' : PixelMask.PIXEL_IS_DEAD,
@@ -87,16 +86,21 @@ class DataMaskMenu(DataMenu):
                                'bad' : PixelMask.PIXEL_IS_BAD,
                                'resolution' : PixelMask.PIXEL_IS_OUT_OF_RESOLUTION_LIMITS,
                                'missing' : PixelMask.PIXEL_IS_MISSING,
-                               'halo' : PixelMask.PIXEL_IS_IN_HALO,
-                               'corrected' : PixelMask.PIXEL_IS_ARTIFACT_CORRECTED,
-                               'non-corrected' : PixelMask.PIXEL_FAILED_ARTIFACT_CORRECTION}
+                               'noisy' : PixelMask.PIXEL_IS_NOISY,
+                               'artifact-corrected' : PixelMask.PIXEL_IS_ARTIFACT_CORRECTED,
+                               'artifact-correction failed' : PixelMask.PIXEL_FAILED_ARTIFACT_CORRECTION,
+                               'peak' : PixelMask.PIXEL_IS_PEAK_FOR_HITFINDER,
+                               'background-corrected' : PixelMask.PIXEL_IS_PHOTON_BACKGROUND_CORRECTED}
         self.maskActions = {}
         for key in self.PIXELMASK_BITS.keys():
             self.maskActions[key] = self.addAction(key)
             self.maskActions[key].setCheckable(True)
             self.maskActions[key].setChecked(True)
         self.maskActions["resolution"].setChecked(False)
-        self.maskActions["corrected"].setChecked(False)
+        self.maskActions["peakmask"].setChecked(False)
+        self.maskActions["artifact-corrected"].setChecked(False)
+        self.maskActions["peak"].setChecked(False)
+        self.maskActions["background-corrected"].setChecked(False)
     def getMaskOutBits(self):
         maskOutBits=0
         for key in self.maskActions:
