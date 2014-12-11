@@ -463,6 +463,8 @@ class View2D(QtOpenGL.QGLWidget,View):
         GL.glUniform1i(loc, 3)
         GL.glBindTexture(GL.GL_TEXTURE_2D, maskTexture)
 
+        GL.glUniform1i(self.showModelLoc, 0)
+
         GL.glBegin(GL.GL_QUADS)
         GL.glTexCoord2f(0.0, 0.0)
         GL.glVertex3f(0, (ROIPixelSide*ROIside)/self.zoom, 0.0)
