@@ -204,6 +204,11 @@ class Owl(QtGui.QMainWindow):
         self.fileMenu.addAction(self.saveModels)
         self.saveModels.triggered.connect(self._saveModelsClicked)
 
+        self.exportModelImage = QtGui.QAction("Export Model Image", self)
+        self.exportModelImage.setToolTip("Exports an image of the selected model to an hdf5 file")
+        self.fileMenu.addAction(self.exportModelImage)
+        self.exportModelImage.triggered.connect(self.view.view2D.exportModelImage)
+
         self.savePattersons = QtGui.QAction("Save Pattersons", self)
         self.fileMenu.addAction(self.savePattersons)
         self.savePattersons.triggered.connect(self._savePattersonsClicked)
@@ -285,7 +290,8 @@ class Owl(QtGui.QMainWindow):
                             "Display Properties" : QtGui.QAction("Display Properties", self),
                             "Tags"               : QtGui.QAction("Tags", self),
                             "Model"              : QtGui.QAction("Model", self),
-                            "Patterson"          : QtGui.QAction("Patterson", self),}
+                            "Patterson"          : QtGui.QAction("Patterson", self),
+                            "Pixel Peeper"       : QtGui.QAction("Pixel Peeper", self),}
 
         viewShortcuts = {"File Tree"          : "Ctrl+T",
                          "View 1D"            : "Ctrl+1",
@@ -293,9 +299,10 @@ class Owl(QtGui.QMainWindow):
                          "Display Properties" : "Ctrl+D",
                          "Tags"               : "Ctrl+G",
                          "Model"              : "Ctrl+M",
-                         "Patterson"          : "Ctrl+P",}
+                         "Patterson"          : "Ctrl+P",
+                         "Pixel Peeper"          : "Ctrl+X",}
 
-        viewNames = ["File Tree", "Display Properties", "View 1D", "View 2D", "Tags", "Model", "Patterson"]
+        viewNames = ["File Tree", "Display Properties", "View 1D", "View 2D", "Tags", "Model", "Patterson","Pixel Peeper"]
 
         actions = {}
         for viewName in viewNames:
@@ -310,9 +317,11 @@ class Owl(QtGui.QMainWindow):
                 actions[viewName].triggered.connect(self._toggleModelView)
             elif(viewName == "Patterson"):
                 actions[viewName].triggered.connect(self._togglePattersonView)
+            elif(viewName == "Pixel Peeper"):
+                actions[viewName].triggered.connect(self.view.view2D.togglePixelPeeper)
             else:
                 actions[viewName].triggered.connect(self._viewClicked)
-            if viewName in ["View 1D", "Model", "Patterson"]:
+            if viewName in ["View 1D", "Model", "Patterson", "Pixel Peeper"]:
                 actions[viewName].setChecked(False)
             else:
                 actions[viewName].setChecked(True)
@@ -423,8 +432,8 @@ class Owl(QtGui.QMainWindow):
         self.cxiNavigation.dataBoxes["plot Y"].button.needData.connect(self.handleNeedDataY1D)
         self.cxiNavigation.dataMenus["plot Y"].triggered.connect(self.handlePlotModeTriggered)
         self.cxiNavigation.dataBoxes["filter0"].button.needData.connect(self.handleNeedDataFilter)
-        self.dataProp.view1DPropChanged.connect(self.handleView1DPropChanged)
-        self.dataProp.view2DPropChanged.connect(self.handleView2DPropChanged)
+        self.dataProp.view1DPropChanged.connect(self.view.view1D.refreshDisplayProp)
+        self.dataProp.view2DPropChanged.connect(self.view.view2D.refreshDisplayProp)
         self.view.view2D.pixelClicked.connect(self.dataProp.onPixelClicked)
         self.view.view2D.pixelClicked.connect(self.view.view1D.onPixelClicked)
         self.view.view1D.viewIndexSelected.connect(self.handleViewIndexSelected)
@@ -645,8 +654,6 @@ class Owl(QtGui.QMainWindow):
         """
         if dataName == "" or dataName is None:
             self.view.view2D.setMask()
-            self.view.view2D.clearTextures()
-            self.view.view2D.updateGL()
             self.cxiNavigation.dataBoxes["mask"].button.setName()
             self.statusBar.showMessage("Reset mask.", 1000)
         else:
@@ -660,8 +667,6 @@ class Owl(QtGui.QMainWindow):
                 self.statusBar.showMessage("Mask shape missmatch. Do not load mask: %s" % dataItem.fullName, 1000)
             else:
                 self.view.view2D.setMask(dataItem)
-                self.view.view2D.clearTextures()
-                self.view.view2D.updateGL()
                 self.cxiNavigation.dataBoxes["mask"].button.setName(dataName)
                 self.statusBar.showMessage("Loaded mask: %s" % dataName, 1000)
         # needed?
@@ -820,20 +825,6 @@ class Owl(QtGui.QMainWindow):
             self.viewActions["View 1D"].setChecked(False)
             self.view.view1D.hide()
             self.dataProp.plotBox.hide()
-
-    def handleView2DPropChanged(self, prop):
-        """Slot triggered when dataProp emits view2DPropChanged
-
-        TODO FM: move to view2D
-        """
-        self.view.view2D.refreshDisplayProp(prop)
-
-    def handleView1DPropChanged(self, prop):
-        """Slot triggered when dataProp emits view1DPropChanged
-
-        TODO FM: move to view1D
-        """
-        self.view.view1D.refreshDisplayProp(prop)
 
     def handleDataClicked(self, dataName):
         """Slot triggered when dataProp emits view1DPropChanged

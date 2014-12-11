@@ -4,6 +4,8 @@ try:
 except:
     hasSpimage = False
 
+import numpy
+
 class FitModel:
     def __init__(self,dataItemImage,dataItemMask):
         self.dataItemImage = dataItemImage
@@ -12,7 +14,10 @@ class FitModel:
     def find_center(self,img,params):
         if not hasSpimage: return params
         I = self.dataItemImage.data(img=img)
-        M = self.dataItemMask.data(img=img,binaryMask=True)
+        if(self.dataItemMask):
+            M = self.dataItemMask.data(img=img,binaryMask=True)
+        else:
+            M = numpy.ones(I.shape)
         method = params["_findCenterMethod"]
         x0 = params["offCenterX"]
         y0 = params["offCenterY"]
