@@ -666,26 +666,26 @@ class View2D(QtOpenGL.QGLWidget,View):
             s = imageData.shape
 
             # Update center of sphere model
-            self.centerX = ((s[1]-1)/2.+params["offCenterX"])/(s[1]-1)
-            self.centerY = ((s[0]-1)/2.+params["offCenterY"])/(s[0]-1)
-            GL.glUniform1f(self.modelCenterXLoc, self.centerX)
-            GL.glUniform1f(self.modelCenterYLoc, self.centerY)
+            centerX = ((s[1]-1)/2.+params["offCenterX"])/(s[1]-1)
+            centerY = ((s[0]-1)/2.+params["offCenterY"])/(s[0]-1)
+            GL.glUniform1f(self.modelCenterXLoc, centerX)
+            GL.glUniform1f(self.modelCenterYLoc, centerY)
 
             # Update size of sphere model
             d  = params["diameterNM"]
             wl = params["photonWavelengthNM"]
             p  = params["detectorPixelSizeUM"]
             D  = params["detectorDistanceMM"]
-            self.modelSize = spimage.sphere_model_convert_diameter_to_size(d, wl, p, D)
-            GL.glUniform1f(self.modelSizeLoc, self.modelSize)
+            modelSize = spimage.sphere_model_convert_diameter_to_size(d, wl, p, D)
+            GL.glUniform1f(self.modelSizeLoc, modelSize)
 
             # Update scale of sphere model
             i = params["intensityMJUM2"]
             m = params["materialType"]
             QE = params["detectorQuantumEfficiency"]
             ADUP = params["detectorADUPhoton"]
-            scale = spimage.sphere_model_convert_intensity_to_scaling(i, d, wl, p, D, QE, ADUP, m)
-            GL.glUniform1f(self.modelScaleLoc, scale)
+            modelScale = spimage.sphere_model_convert_intensity_to_scaling(i, d, wl, p, D, QE, ADUP, m)
+            GL.glUniform1f(self.modelScaleLoc, modelScale)
 
             # Update shape 
             GL.glUniform1f(self.imageShapeXLoc, imageData.shape[1])
@@ -1447,3 +1447,53 @@ class View2D(QtOpenGL.QGLWidget,View):
     def togglePixelPeeper(self):
         self.showPixelPeeper = not self.showPixelPeeper
         self.updateGL()
+
+
+    def _getModelImage(self,img):
+
+        imageData = self.loaderThread.imageData[img]
+
+        params = self.data.modelItem.getParams(img)
+        s = imageData.shape
+
+        # Update center of sphere model
+        centerX = ((s[1]-1)/2.+params["offCenterX"])
+        centerY = ((s[0]-1)/2.+params["offCenterY"])
+
+        # Update size of sphere model
+        d  = params["diameterNM"]
+        wl = params["photonWavelengthNM"]
+        p  = params["detectorPixelSizeUM"]
+        D  = params["detectorDistanceMM"]
+        modelSize = spimage.sphere_model_convert_diameter_to_size(d, wl, p, D)
+
+        # Update scale of sphere model
+        i = params["intensityMJUM2"]
+        m = params["materialType"]
+        QE = params["detectorQuantumEfficiency"]
+        ADUP = params["detectorADUPhoton"]
+        modelScale = spimage.sphere_model_convert_intensity_to_scaling(i, d, wl, p, D, QE, ADUP, m)
+
+        xv, yv = numpy.meshgrid(range(s[0]),range(s[1]))
+        r = numpy.sqrt((xv-centerX)**2+(yv-centerY)**2)
+        s = 2.0*numpy.pi*modelSize*r;
+        modelImage =  3.0*(numpy.sin(s)-s*numpy.cos(s))/(s*s*s) * modelScale
+        return modelImage
+        
+    @QtCore.Slot()
+    def exportModelImage(self):
+        if(not self.modelView):
+            QtGui.QMessageBox.information(self,"Cannot Export Model", "Please activate View->Model before exporting model").exec_()
+            return
+        if(self.selectedImage is None):
+            QtGui.QMessageBox.information(self,"Cannot Export Model", "Please first select an image to export").exec_()
+            return
+
+        fileName = QtGui.QFileDialog.getSaveFileName(self, "Save Model to HDF5", None, "HDF5 Files (*.h5)")
+        if(len(fileName) == 0):
+            return
+        f = h5py.File(fileName,'w')
+        f['/model'] = self._getModelImage(self.selectedImage)        
+        f.close()
+
+        

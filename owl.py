@@ -204,6 +204,11 @@ class Owl(QtGui.QMainWindow):
         self.fileMenu.addAction(self.saveModels)
         self.saveModels.triggered.connect(self._saveModelsClicked)
 
+        self.exportModelImage = QtGui.QAction("Export Model Image", self)
+        self.exportModelImage.setToolTip("Exports an image of the selected model to an hdf5 file")
+        self.fileMenu.addAction(self.exportModelImage)
+        self.exportModelImage.triggered.connect(self.view.view2D.exportModelImage)
+
         self.savePattersons = QtGui.QAction("Save Pattersons", self)
         self.fileMenu.addAction(self.savePattersons)
         self.savePattersons.triggered.connect(self._savePattersonsClicked)
