@@ -609,9 +609,12 @@ class View2D(QtOpenGL.QGLWidget,View):
         GL.glActiveTexture(GL.GL_TEXTURE0+1)
         data_texture_loc = GL.glGetUniformLocation(self.shader, "data")
         GL.glUniform1i(data_texture_loc, 1)
-        pattersonParams = self.data.pattersonItem.getParams(img)
-        pattersonEnabled = ((img == pattersonParams["_pattersonImg"]) and (img == self.selectedImage) and
-                            self.pattersonView and (img == self.pattersonTextureImg))
+        pattersonEnabled = False
+        if(self.data.pattersonItem):
+            pattersonParams = self.data.pattersonItem.getParams(img)
+            pattersonEnabled = ((img == pattersonParams["_pattersonImg"]) and (img == self.selectedImage) and
+                                self.pattersonView and (img == self.pattersonTextureImg))
+            
         if not pattersonEnabled:
             imageTexture = self.imageTextures[img]
             imageData = self.loaderThread.imageData[img]
@@ -720,7 +723,7 @@ class View2D(QtOpenGL.QGLWidget,View):
             self._paintSelectedImageBorder(img_width, img_height)
 #            self._paintImageProperties(img)
 
-        if(self.data and self.tagView and self.data.tagsItem.tags and self.data.tagsItem.tags != []):
+        if(self.data and self.tagView and self.data.tagsItem and self.data.tagsItem.tags and self.data.tagsItem.tags != []):
             tag_size = self._tagSize()
             tag_pad = self._tagPad()
             tag_distance = self._tagDistance()
