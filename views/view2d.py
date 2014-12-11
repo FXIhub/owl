@@ -1477,7 +1477,7 @@ class View2D(QtOpenGL.QGLWidget,View):
         xv, yv = numpy.meshgrid(range(s[0]),range(s[1]))
         r = numpy.sqrt((xv-centerX)**2+(yv-centerY)**2)
         s = 2.0*numpy.pi*modelSize*r;
-        modelImage =  3.0*(numpy.sin(s)-s*numpy.cos(s))/(s*s*s) * modelScale
+        modelImage =  (3.0*(numpy.sin(s)-s*numpy.cos(s))/(s*s*s))**2 * modelScale
         return modelImage
         
     @QtCore.Slot()
