@@ -104,6 +104,8 @@ class View2D(QtOpenGL.QGLWidget,View):
         self.pattersonView = False
         self.hoveredPixel = None
         self.showPixelPeeper = False
+        self.peakFinderVisible = False
+        self.peakData = {}
 
     def dragEnterEvent(self, e):
         if e.mimeData().hasFormat('text/plain'):
@@ -519,6 +521,28 @@ class View2D(QtOpenGL.QGLWidget,View):
             GL.glTranslate(-(ROIside*ROIPixelSide)/self.zoom,-(ROIPixelSide)/self.zoom,0)
         GL.glPopMatrix()
 
+    def _paintPeakCircles(self, img):
+        GL.glPushMatrix()
+        imgHeight = self.data.height()
+        if("nPeaks" in self.peakData):
+            nPeaks = self.peakData["nPeaks"].data()
+            peakNPixels = self.peakData["peakNPixels"].data()
+            if(self.data.isRawImage()):
+                peakXPos = self.peakData["peakXPosRaw"].data()
+                peakYPos = self.peakData["peakYPosRaw"].data()
+            elif(self.data.isAssembledImage()):
+                peakXPos = self.peakData["peakXPosAssembled"].data()
+                peakYPos = self.peakData["peakYPosAssembled"].data()
+            else:
+                print "Warning: cannot determine if plotting an assembled or a raw image while drawing peak circles. Assuming assembled."
+                peakXPos = self.peakData["peakXPosAssembled"].data()
+                peakYPos = self.peakData["peakYPosAssembled"].data()
+
+            GL.glLineWidth(1.0)
+            GL.glColor3f(1.0, 1.0, 1.0)
+            for i in range(0,nPeaks[img]):
+                self._drawDisk((peakXPos[img,i],imgHeight-peakYPos[img,i]), 10, 20, False)
+        GL.glPopMatrix()
 
     @QtCore.Slot()
     def _incrementLoadingImageAnimationFrame(self):
@@ -722,6 +746,9 @@ class View2D(QtOpenGL.QGLWidget,View):
         if(img == self.selectedImage):
             self._paintSelectedImageBorder(img_width, img_height)
 #            self._paintImageProperties(img)
+
+        if(self.peakFinderVisible):
+            self._paintPeakCircles(img)
 
         if(self.data and self.tagView and self.data.tagsItem and self.data.tagsItem.tags and self.data.tagsItem.tags != []):
             tag_size = self._tagSize()
@@ -1499,4 +1526,17 @@ class View2D(QtOpenGL.QGLWidget,View):
         f['/model'] = self._getModelImage(self.selectedImage)        
         f.close()
 
-        
+    def setPeakFinderVisible(self,value):
+        self.peakFinderVisible = value
+
+    def setPeakGroup(self,groupItem):
+        if(groupItem is None):
+            self.peakData.clear()
+            return
+        fileLoader = groupItem.fileLoader
+        fields = ['nPeaks','peakNPixels','peakXPosAssembled','peakYPosAssembled',
+                  'peakXPosRaw','peakYPosRaw']
+        for f in fields:
+            dataItem = fileLoader.dataItems[groupItem.fullName+"/"+f]
+            self.peakData[f] = dataItem
+

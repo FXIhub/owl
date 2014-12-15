@@ -172,6 +172,16 @@ class CXINavigation(QtGui.QWidget):
         self.dataBoxes["plot Y"] = DataBox(self.basePath + "/icons/plotY.png","plot Y",self.dataMenus["plot Y"])
         self.vbox.addLayout(self.dataBoxes["plot Y"])
 
+        line = QtGui.QFrame()
+        line.setFrameShape(QtGui.QFrame.HLine)
+        self.vbox.addWidget(line)
+
+        self.dataMenus["Peak List"] = DataMenu(self)
+        self.dataBoxes["Peak List"] = DataBox(self.basePath + "/icons/peakFinder.png","peak list",self.dataMenus["Peak List"])
+        self.dataBoxes["Peak List"].button.hide()
+        self.vbox.addLayout(self.dataBoxes["Peak List"])
+
+
         self.CXITree = CXITree(self)
         self.vbox.addWidget(self.CXITree)
 
@@ -189,6 +199,9 @@ class CXINavigation(QtGui.QWidget):
         self.dataBoxes["filters"][i].button.setParent(None)
         self.dataBoxes["filters"].pop(i)
         self.dataMenus["filters"].pop(i)
+
+    def setPeakFinderVisible(self, value):
+        self.dataBoxes["Peak List"].button.setVisible(value)
         
 
 class CXITree(QtGui.QTreeWidget):
@@ -318,6 +331,25 @@ class CXITree(QtGui.QTreeWidget):
             if not found:
                 break
         return found,child
+    def loadPeakList(self):
+        """If there's a result group that looks like a peak list try to load it
+           into the peak viewer"""
+        root = self.item
+
+        # Loop through the result_x group in serach of peaks and load the first one
+        i = 1
+        while True:
+            path = "entry_1/result_"+str(i)
+            found,child = self.expandTree(path)
+            if(not found):
+                break
+            path += "/peakNPixels"
+            found,child = self.expandTree(path)
+            if(found):
+                self.handleClick(child,1)
+                break
+            i += 1
+                
     def startDrag(self, event):
         # create mime data object
         mime = QtCore.QMimeData()
