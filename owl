@@ -1,0 +1,9 @@
+#!/bin/bash
+if [ "$(hostname)" == psusr* ] || [ "$(hostname)" == psnxserv ]
+then
+  # Source environment
+  source source_this_on_psusr
+fi
+# Start owl
+DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+$DIR/owl.py
