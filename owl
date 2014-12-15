@@ -7,9 +7,9 @@ fi
 # Arguments
 if [ ! -z $1 ] 
 then 
-    ARG=""
-else
     ARG="$1"
+else
+    ARG=""
 fi
 # Start owl
 DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
