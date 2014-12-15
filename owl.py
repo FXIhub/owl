@@ -873,10 +873,12 @@ class Owl(QtGui.QMainWindow):
         else:
             self.dataProp.modelProperties.setModelItem(dataItemImage.modelItem)
             self.dataProp.pattersonProperties.setPattersonItem(dataItemImage.pattersonItem)
-            dataItemImage.modelItem.dataItemImage = dataItemImage
-            dataItemImage.modelItem.dataItemMask = dataItemMask
-            dataItemImage.pattersonItem.dataItemImage = dataItemImage
-            dataItemImage.pattersonItem.dataItemMask = dataItemMask
+            if(dataItemImage.modelItem):
+                dataItemImage.modelItem.dataItemImage = dataItemImage
+                dataItemImage.modelItem.dataItemMask = dataItemMask
+            if(dataItemImage.pattersonItem):
+                dataItemImage.pattersonItem.dataItemImage = dataItemImage
+                dataItemImage.pattersonItem.dataItemMask = dataItemMask
         dataItems = {"image":dataItemImage, "mask":dataItemMask}
         for k, item in dataItems.items():
             n = None
