@@ -4,6 +4,13 @@ then
   # Source environment
   source source_this_on_psusr
 fi
+# Arguments
+if [ ! -z $1 ] 
+then 
+    ARG=""
+else
+    ARG="$1"
+fi
 # Start owl
 DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
-$DIR/owl.py
+$DIR/owl.py $ARG
