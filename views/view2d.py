@@ -637,15 +637,41 @@ class View2D(QtOpenGL.QGLWidget,View):
             # If not mask is available load the default mask
             GL.glBindTexture(GL.GL_TEXTURE_2D, self.defaultMaskTexture)
 
-        if self.autorange:
-            GL.glUniform1f(self.vminLoc, imageData.min())
-            GL.glUniform1f(self.vmaxLoc, imageData.max())
-        elif pattersonEnabled:
-            GL.glUniform1f(self.vminLoc, 0.)
-            GL.glUniform1f(self.vmaxLoc, 1.)
+        if pattersonEnabled:
+            lmin = 0.
+            lmax = 1.
         else:
-            GL.glUniform1f(self.vminLoc, self.normVmin)
-            GL.glUniform1f(self.vmaxLoc, self.normVmax)
+            if "% Range" in [self.normVminUnit,self.normVmaxUnit]:
+                imageDataMin = imageData.min()
+                imageDataMax = imageData.max()
+            if "% Histogram" in [self.normVminUnit,self.normVmaxUnit]:
+                imageDataSorted = numpy.sort(imageData.flatten())
+            # min
+            if self.normVminUnit == "Value":
+                lmin = self.normVminShow
+            elif self.normVminUnit == "% Range":
+                lmin = imageDataMin + (imageDataMax-imageDataMin) * self.normVminShow/100.
+            elif self.normVminUnit == "% Histogram":
+                imin = int(round(self.normVminShow/100. * (len(imageDataSorted)-1)))
+                imin = min(imin,len(imageDataSorted)-1)
+                imin = max(imin,0)
+                lmin = imageDataSorted[imin]
+            else:
+                print "ERROR: Invalid unit for norm limits."
+            # max
+            if self.normVmaxUnit == "Value":
+                lmax = self.normVmaxShow
+            elif self.normVmaxUnit == "% Range":
+                lmax = imageDataMin + (imageDataMax-imageDataMin) * self.normVmaxShow/100.
+            elif self.normVmaxUnit == "% Histogram":
+                imax = int(round(self.normVmaxShow/100. * (len(imageDataSorted)-1)))
+                imax = min(imax,len(imageDataSorted)-1)
+                imax = max(imax,0)
+                lmax = imageDataSorted[imax]
+            else:
+                print "ERROR: Invalid unit for norm limits."
+        GL.glUniform1f(self.vminLoc, lmin)
+        GL.glUniform1f(self.vmaxLoc, lmax)
         if not pattersonEnabled:
             GL.glUniform1f(self.gammaLoc, self.normGamma)
             GL.glUniform1i(self.normLoc, self.normScalingValue)
@@ -1339,9 +1365,10 @@ class View2D(QtOpenGL.QGLWidget,View):
                 self.normScalingValue = 1
             elif(self.normScaling == 'pow'):
                 self.normScalingValue = 2
-            self.normVmin = prop["normVmin"]
-            self.normVmax = prop["normVmax"]
-            self.autorange = prop["autorange"]
+            self.normVminShow = prop["normVminShow"]
+            self.normVmaxShow = prop["normVmaxShow"]
+            self.normVminUnit = prop["normVminUnit"]
+            self.normVmaxUnit = prop["normVmaxUnit"]           
             self.normGamma = prop["normGamma"]
             if(prop["normClamp"] == True):
                 self.normClamp = 1

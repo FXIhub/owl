@@ -168,9 +168,10 @@ class DataProp(QtGui.QWidget):
         self.imageStackSubplots.editingFinished.connect(self.emitView2DProp)
         self.displayBox.displayMax.editingFinished.connect(self.checkLimits)
         self.displayBox.displayMin.editingFinished.connect(self.checkLimits)
+        self.displayBox.displayMaxUnit.currentIndexChanged.connect(self.checkLimits)
+        self.displayBox.displayMinUnit.currentIndexChanged.connect(self.checkLimits)
         self.displayBox.displayClamp.stateChanged.connect(self.emitView2DProp)
-        self.displayBox.displayAutorange.stateChanged.connect(self.emitView2DProp)
-        self.displayBox.displayAutorange.stateChanged.connect(self.setModMinMax)
+        #self.displayBox.displayAutorange.stateChanged.connect(self.emitView2DProp)
         self.displayBox.displayScale.currentIndexChanged.connect(self.emitView2DProp)
         self.invertSortingCheckBox.toggled.connect(self.emitView2DProp)
         self.invertSortingCheckBox.toggled.connect(self.emitView1DProp)
@@ -233,8 +234,7 @@ class DataProp(QtGui.QWidget):
     # VIEW
     def onPixelClicked(self,info):
         if self.data is not None and info is not None:
-            (hist,edges) = numpy.histogram(self.data.data(img=info["img"]),bins=100)
-            self.displayBox.pixelClicked(hist,edges)
+            self.displayBox.onPixelClicked(self.data.data(img=info["img"]))
             # Check if we clicked on a tag
             if(info["tagClicked"] != -1):
                 # Toggle tag
@@ -250,17 +250,37 @@ class DataProp(QtGui.QWidget):
         else:
             self.imageBox.hide()
     def onHistogramClicked(self,region):
-        (min,max) = region.getRegion()
-        self.displayBox.displayMin.setText("%0.1f" % (min))
-        self.displayBox.displayMax.setText("%0.1f" % (max))
+        (normVmin,normVmax) = region.getRegion()
+        normVminUnit = self.displayBox.displayMinUnit.itemText(self.displayBox.displayMinUnit.currentIndex())
+        normVmaxUnit = self.displayBox.displayMaxUnit.itemText(self.displayBox.displayMaxUnit.currentIndex())
+        normVminShow = self.displayBox.toUnit(normVmin,"Value",normVminUnit)
+        normVmaxShow = self.displayBox.toUnit(normVmax,"Value",normVmaxUnit)
+        self.displayBox.displayMin.setText("%0.1f" % (normVminShow))
+        self.displayBox.displayMax.setText("%0.1f" % (normVmaxShow))
         self.checkLimits()
+    def checkLimits(self):
+        #normVmin,normVmax = self.displayBox.getRegionLimits()
+        #normVminUnit = self.displayBox.displayMinUnit.itemText(self.displayBox.displayMinUnit.currentIndex())
+        #normVmaxUnit = self.displayBox.displayMaxUnit.itemText(self.displayBox.displayMaxUnit.currentIndex())
+        #if normVmin is not None:
+        #    normVmaxShowLimit = self.displayBox.toUnit(normVmin,normVminUnit,normVmaxUnit)
+        #    if normVmaxShowLimit is not None:
+        #        self.displayBox.displayMax.validator().setBottom(normVmaxShowLimit)
+        #if normVmax is not None:
+        #    normVminShowLimit = self.displayBox.toUnit(normVmax,normVmaxUnit,normVminUnit)
+        #    if normVminShowLimit is not None:
+        #        self.displayBox.displayMin.validator().setTop(normVminShowLimit)
         self.emitView2DProp()
     # NORM
     def setNorm(self):
         P = self.view2DProp
-        P["normVmin"] = float(self.displayBox.displayMin.text())
-        P["normVmax"] = float(self.displayBox.displayMax.text())
-        P["autorange"] = self.displayBox.displayAutorange.isChecked()
+        P["normVminUnit"] = self.displayBox.displayMinUnit.currentText()
+        P["normVmaxUnit"] = self.displayBox.displayMaxUnit.currentText()
+        P["normVminShow"] = float(self.displayBox.displayMin.text())
+        P["normVmaxShow"] = float(self.displayBox.displayMax.text())
+        normVmin,normVmax = self.displayBox.getRegionLimits()
+        P["normVmin"] = normVmin
+        P["normVmax"] = normVmax        
         P["normClamp"] = self.displayBox.displayClamp.isChecked()
         if self.displayBox.displayScale.currentIndex() == 0:
             P["normScaling"] = "lin"
@@ -269,25 +289,33 @@ class DataProp(QtGui.QWidget):
         else:
             P["normScaling"] = "pow"
         P["normGamma"] = float(self.settings.value('normGamma'))
-        self.displayBox.intensityHistogramRegion.setRegion([float(self.displayBox.displayMin.text()),
-                                                            float(self.displayBox.displayMax.text())])
+        self.displayBox.setRegionLimits(normVmin,normVmax)
     def clearNorm(self):
         settings = QtCore.QSettings()
-        if(settings.contains("normVmax")):
-            normVmax = float(settings.value('normVmax'))
+        if(settings.contains("normVmaxShow")):
+            normVmaxShow = float(settings.value('normVmaxShow'))
         else:
-            normVmax = 1000.
-        if(settings.contains("normVmin")):
-            normVmin = float(settings.value('normVmin'))
+            normVmaxShow = 1000.
+        if(settings.contains("normVminShow")):
+            normVminShow = float(settings.value('normVminShow'))
         else:
-            normVmin = 10.
-        if(settings.contains("normVmin")):
-            autorange = bool(settings.value('autorange'))
+            normVminShow = 10.
+        if(settings.contains("normVminUnit")):
+            normVminUnit = settings.value('normVminUnit')
         else:
-            autorange = False
-        self.displayBox.displayAutorange.setChecked(autorange)
-        self.displayBox.displayMin.setText(str(normVmin))
-        self.displayBox.displayMax.setText(str(normVmax))
+            normVminUnit = "Value"
+        if(settings.contains("normVminUnit")):
+            normVmaxUnit = settings.value('normVmaxUnit')
+        else:
+            normVmaxUnit = "Value"
+        normVminUnitIndex = self.displayBox.displayMinUnit.findText(normVminUnit)
+        normVmaxUnitIndex = self.displayBox.displayMaxUnit.findText(normVmaxUnit)
+        self.displayBox.vMin = self.displayBox.toUnit(normVminShow,normVminUnit,"Value")
+        self.displayBox.vMax = self.displayBox.toUnit(normVmaxShow,normVmaxUnit,"Value")
+        self.displayBox.displayMin.setText(str(normVminShow))
+        self.displayBox.displayMax.setText(str(normVmaxShow))
+        self.displayBox.displayMinUnit.setCurrentIndex(normVminUnitIndex)
+        self.displayBox.displayMaxUnit.setCurrentIndex(normVmaxUnitIndex)
         if(settings.contains("normClamp")):
             normClamp = bool(settings.value('normClamp'))
         else:
@@ -397,10 +425,6 @@ class DataProp(QtGui.QWidget):
         P = self.view1DProp
         P["lines"] = self.plotLinesCheckBox.isChecked()
         P["points"] = self.plotPointsCheckBox.isChecked()
-    def setModMinMax(self):
-        c =  self.displayBox.displayAutorange.isChecked() == False
-        self.displayBox.displayMin.setEnabled(c)
-        self.displayBox.displayMax.setEnabled(c)
     def setCurrentImg(self):
         P = self.view2DProp
         i = self.currentImg.text()
@@ -426,10 +450,6 @@ class DataProp(QtGui.QWidget):
         self.setFilters()
         #self.setImageStackN()
         self.view2DPropChanged.emit(self.view2DProp)
-    def checkLimits(self):
-        self.displayBox.displayMax.validator().setBottom(float(self.displayBox.displayMin.text()))
-        self.displayBox.displayMin.validator().setTop(float(self.displayBox.displayMax.text()))
-        self.emitView2DProp()
     # still needed?
     def keyPressEvent(self,event):
         if event.key() == QtCore.Qt.Key_H:
@@ -905,7 +925,6 @@ class PattersonProperties(QtGui.QGroupBox, Ui_PattersonProperties):
 
 class DisplayBox(QtGui.QGroupBox, Ui_displayBox):
     def __init__(self,parent):
-
         QtGui.QGroupBox.__init__(self,parent)
         self.setupUi(self)
         self.parent = parent
@@ -917,17 +936,69 @@ class DisplayBox(QtGui.QGroupBox, Ui_displayBox):
         self.intensityHistogram.addItem(region)
         self.intensityHistogram.autoRange()
         self.intensityHistogramRegion = region
-
+        self.imageData = None
+        self.x = None
+        self.hist = None
+        self.vMin = None
+        self.vMax = None
         self.displayMin.setValidator(QtGui.QDoubleValidator())
         self.displayMax.setValidator(QtGui.QDoubleValidator())
         self.displayColormap.setFixedSize(QtCore.QSize(100,30))
         self.displayColormap.setMenu(self.parent.viewer.colormapMenu)
-    def pixelClicked(self,hist, edges):
+    def setRegionLimits(self,lmin,lmax):
+        if lmin is None or lmax is None:
+            return
+        self.intensityHistogramRegion.setRegion([lmin,lmax])
+    def getRegionLimits(self):
+        normVminShow = float(self.displayMin.text())
+        normVmaxShow = float(self.displayMax.text())
+        normVminUnit = self.displayMinUnit.itemText(self.displayMinUnit.currentIndex())
+        normVmaxUnit = self.displayMaxUnit.itemText(self.displayMaxUnit.currentIndex())
+        lmin = self.toUnit(normVminShow,normVminUnit)
+        lmax = self.toUnit(normVmaxShow,normVmaxUnit)
+        return lmin,lmax
+    def toUnit(self,value,unit0,unit1="Value"):
+        if "% Range" in [unit1,unit0]:
+            if self.imageData is None:
+                return None
+            imageDataMin = self.imageData.min()
+            imageDataMax = self.imageData.max()
+        if "% Histogram" in [unit1,unit0]:
+            if self.imageData is None:
+                return None
+            imageDataSorted = numpy.sort(self.imageData.flatten())
+        if unit0 == "Value":
+            value0 = value
+        elif self.imageData is None:
+            return None
+        elif unit0 == "% Range":
+            value0 = (imageDataMin + (imageDataMax-imageDataMin) * value/100.)
+        elif unit0 == "% Histogram":
+            i = max(min(value/100., 1.), 0.) * (len(imageDataSorted)-1)
+            i = int(round(i))
+            value0 = imageDataSorted[i]
+        else:
+            print "ERROR: Invalid unit0 for norm limits."
+        if unit1 == "Value":
+            value1 = value0
+        elif self.imageData is None:
+            return None
+        elif unit1 == "% Range":
+            value1 = 100. * (value0 - imageDataMin) / (imageDataMax-imageDataMin)#+numpy.finfo("eps"))
+        elif unit1 == "% Histogram":
+            value1 = 100. * (abs(imageDataSorted - value0)).argmin() / float(len(imageDataSorted)-1)
+        else:
+            print "ERROR: Invalid unit1 for norm limits."
+        return value1
+    def onPixelClicked(self,imageData):
+        self.imageData = imageData
+        (self.hist,edges) = numpy.histogram(imageData,bins=100)
+        self.x = (edges[:-1]+edges[1:])/2.0
         self.intensityHistogram.clear()
-        edges = (edges[:-1]+edges[1:])/2.0
-        item = self.intensityHistogram.plot(edges,numpy.log10(hist+1),fillLevel=0,fillBrush=QtGui.QColor(255, 255, 255, 128),antialias=True)
+        item = self.intensityHistogram.plot(self.x,numpy.log10(self.hist+1),fillLevel=0,fillBrush=QtGui.QColor(255, 255, 255, 128),antialias=True)
         self.intensityHistogram.getPlotItem().getViewBox().setMouseEnabled(x=False,y=False)
         self.intensityHistogramRegion = pyqtgraph.LinearRegionItem(values=[float(self.displayMin.text()),float(self.displayMax.text())],brush="#ffffff15")
         self.intensityHistogramRegion.sigRegionChangeFinished.connect(self.parent.onHistogramClicked)
         self.intensityHistogram.addItem(self.intensityHistogramRegion)
         self.intensityHistogram.autoRange()
+4
