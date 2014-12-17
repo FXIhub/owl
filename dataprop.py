@@ -796,12 +796,13 @@ class ModelProperties(QtGui.QGroupBox, Ui_ModelProperties):
         params["_fitModelMethod"] = str(self.fitModelMethod.currentText())
         if(img is None):
             return
-        self.modelItem.setParams(img,params)
-        # max: needed at psusr to really refresh, works without on my mac
-        # BD: refreshing here leads to multiple painting of the model (as individual model parameters change), 
-        #     better don't refresh here, unless this is the only possible way to do so
-        #self.parent.viewer.view.view2D._paintImage(img)
-        self.parent.viewer.view.view2D.updateGL()
+        if(self.modelItem):
+            self.modelItem.setParams(img,params)
+            # max: needed at psusr to really refresh, works without on my mac
+            # BD: refreshing here leads to multiple painting of the model (as individual model parameters change), 
+            #     better don't refresh here, unless this is the only possible way to do so
+            #self.parent.viewer.view.view2D._paintImage(img)
+            self.parent.viewer.view.view2D.updateGL()
     def onExperiment(self):
         expDialog = ExperimentDialog(self, self.modelItem)
         expDialog.exec_()
@@ -911,9 +912,10 @@ class PattersonProperties(QtGui.QGroupBox, Ui_PattersonProperties):
         params["darkfieldSigma"] = self.darkfieldSigma.value()
         if img is None:
             return
-        self.pattersonItem.setParams(img,params)
-        # max: needed at psusr to really refresh, works without on my mac
-        self.parent.viewer.view.view2D.updateGL()
+        if(self.pattersonItem):            
+            self.pattersonItem.setParams(img,params)
+            # max: needed at psusr to really refresh, works without on my mac
+            self.parent.viewer.view.view2D.updateGL()
     def calculatePatterson(self):
         img = self.parent.viewer.view.view2D.selectedImage
         if img is not None:
