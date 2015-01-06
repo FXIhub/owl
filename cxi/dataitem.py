@@ -68,7 +68,7 @@ class DataItem:
         # Selected dimension for filetering etc. where stack has to have only one dimension
         # Set to none by default
         self.selectedIndex = None
-
+        
     def shape(self,forceRefresh=False):
         #print self.fullName
         #print self.fileLoader.f[self.fullName]
@@ -79,8 +79,8 @@ class DataItem:
             shape = list(shape)
             shape.pop(0)
             shape.insert(0,self.fileLoader.stackSize)
-            #if not self.stackHasModules and self.format == 2:
-            #    shape.insert(1,1)
+            #if self.stackHasModules:
+                #print shape
             #self._shape.insert(0,self.H5Dataset.attrs.get("numEvents", (self.H5Dataset.shape))[0])
             shape = tuple(shape)
         return shape
@@ -108,8 +108,13 @@ class DataItem:
         if self.isComplex == False and complex_mode is not None:
             return None
         img = kwargs.get("img",None)
+        
         if self.isStack and self.format == 2:
             d = numpy.array(self.fileLoader.f[self.fullName][img])
+            if self.stackHasModules:
+                # Apply geometry here, check from file such that d has the proper shape
+                pass
+            
         elif self.isStack and self.format == 1:
             if img is not None:
                 d = numpy.array(self.fileLoader.f[self.fullName])[img][:]
