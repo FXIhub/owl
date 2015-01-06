@@ -339,7 +339,11 @@ class DataProp(QtGui.QWidget):
         P = self.view2DProp
         a = self.viewer.colormapActionGroup.checkedAction()
         self.displayBox.displayColormap.setText(a.text())
-        self.displayBox.displayColormap.setIcon(a.icon())
+        # Use a rescale icon
+        iconwidth = 105 - QtGui.QFontMetrics(QtGui.QFont()).width(a.text())
+        icon = QtGui.QIcon(a.icon().pixmap(64,64).scaled(iconwidth,12))
+        self.displayBox.displayColormap.setIcon(icon)
+        self.displayBox.displayColormap.setIconSize(QtCore.QSize(iconwidth,12))
         P["colormapText"] = a.text()
 
     def clearColormap(self):
@@ -945,7 +949,7 @@ class DisplayBox(QtGui.QGroupBox, Ui_displayBox):
         self.vMax = None
         self.displayMin.setValidator(QtGui.QDoubleValidator())
         self.displayMax.setValidator(QtGui.QDoubleValidator())
-        self.displayColormap.setFixedSize(QtCore.QSize(100,30))
+        self.displayColormap.setFixedSize(QtCore.QSize(160,32))
         self.displayColormap.setMenu(self.parent.viewer.colormapMenu)
     def setRegionLimits(self,lmin,lmax):
         if lmin is None or lmax is None:
