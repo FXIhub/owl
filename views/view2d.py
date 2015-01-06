@@ -104,6 +104,8 @@ class View2D(QtOpenGL.QGLWidget,View):
         self.pattersonView = False
         self.hoveredPixel = None
         self.showPixelPeeper = False
+        self.peakFinderVisible = False
+        self.peakData = {}
 
     def dragEnterEvent(self, e):
         if e.mimeData().hasFormat('text/plain'):
@@ -463,6 +465,8 @@ class View2D(QtOpenGL.QGLWidget,View):
         GL.glUniform1i(loc, 3)
         GL.glBindTexture(GL.GL_TEXTURE_2D, maskTexture)
 
+        GL.glUniform1i(self.showModelLoc, 0)
+
         GL.glBegin(GL.GL_QUADS)
         GL.glTexCoord2f(0.0, 0.0)
         GL.glVertex3f(0, (ROIPixelSide*ROIside)/self.zoom, 0.0)
@@ -517,6 +521,28 @@ class View2D(QtOpenGL.QGLWidget,View):
             GL.glTranslate(-(ROIside*ROIPixelSide)/self.zoom,-(ROIPixelSide)/self.zoom,0)
         GL.glPopMatrix()
 
+    def _paintPeakCircles(self, img):
+        GL.glPushMatrix()
+        imgHeight = self.data.height()
+        if("nPeaks" in self.peakData):
+            nPeaks = self.peakData["nPeaks"].data()
+            peakNPixels = self.peakData["peakNPixels"].data()
+            if(self.data.isRawImage()):
+                peakXPos = self.peakData["peakXPosRaw"].data()
+                peakYPos = self.peakData["peakYPosRaw"].data()
+            elif(self.data.isAssembledImage()):
+                peakXPos = self.peakData["peakXPosAssembled"].data()
+                peakYPos = self.peakData["peakYPosAssembled"].data()
+            else:
+                print "Warning: cannot determine if plotting an assembled or a raw image while drawing peak circles. Assuming assembled."
+                peakXPos = self.peakData["peakXPosAssembled"].data()
+                peakYPos = self.peakData["peakYPosAssembled"].data()
+
+            GL.glLineWidth(1.0)
+            GL.glColor3f(1.0, 1.0, 1.0)
+            for i in range(0,nPeaks[img]):
+                self._drawDisk((peakXPos[img,i],imgHeight-peakYPos[img,i]), 10, 20, False)
+        GL.glPopMatrix()
 
     @QtCore.Slot()
     def _incrementLoadingImageAnimationFrame(self):
@@ -607,9 +633,12 @@ class View2D(QtOpenGL.QGLWidget,View):
         GL.glActiveTexture(GL.GL_TEXTURE0+1)
         data_texture_loc = GL.glGetUniformLocation(self.shader, "data")
         GL.glUniform1i(data_texture_loc, 1)
-        pattersonParams = self.data.pattersonItem.getParams(img)
-        pattersonEnabled = ((img == pattersonParams["_pattersonImg"]) and (img == self.selectedImage) and
-                            self.pattersonView and (img == self.pattersonTextureImg))
+        pattersonEnabled = False
+        if(self.data.pattersonItem):
+            pattersonParams = self.data.pattersonItem.getParams(img)
+            pattersonEnabled = ((img == pattersonParams["_pattersonImg"]) and (img == self.selectedImage) and
+                                self.pattersonView and (img == self.pattersonTextureImg))
+            
         if not pattersonEnabled:
             imageTexture = self.imageTextures[img]
             imageData = self.loaderThread.imageData[img]
@@ -632,15 +661,41 @@ class View2D(QtOpenGL.QGLWidget,View):
             # If not mask is available load the default mask
             GL.glBindTexture(GL.GL_TEXTURE_2D, self.defaultMaskTexture)
 
-        if self.autorange:
-            GL.glUniform1f(self.vminLoc, imageData.min())
-            GL.glUniform1f(self.vmaxLoc, imageData.max())
-        elif pattersonEnabled:
-            GL.glUniform1f(self.vminLoc, 0.)
-            GL.glUniform1f(self.vmaxLoc, 1.)
+        if pattersonEnabled:
+            lmin = 0.
+            lmax = 1.
         else:
-            GL.glUniform1f(self.vminLoc, self.normVmin)
-            GL.glUniform1f(self.vmaxLoc, self.normVmax)
+            if "% Range" in [self.normVminUnit,self.normVmaxUnit]:
+                imageDataMin = imageData.min()
+                imageDataMax = imageData.max()
+            if "% Histogram" in [self.normVminUnit,self.normVmaxUnit]:
+                imageDataSorted = numpy.sort(imageData.flatten())
+            # min
+            if self.normVminUnit == "Value":
+                lmin = self.normVminShow
+            elif self.normVminUnit == "% Range":
+                lmin = imageDataMin + (imageDataMax-imageDataMin) * self.normVminShow/100.
+            elif self.normVminUnit == "% Histogram":
+                imin = int(round(self.normVminShow/100. * (len(imageDataSorted)-1)))
+                imin = min(imin,len(imageDataSorted)-1)
+                imin = max(imin,0)
+                lmin = imageDataSorted[imin]
+            else:
+                print "ERROR: Invalid unit for norm limits."
+            # max
+            if self.normVmaxUnit == "Value":
+                lmax = self.normVmaxShow
+            elif self.normVmaxUnit == "% Range":
+                lmax = imageDataMin + (imageDataMax-imageDataMin) * self.normVmaxShow/100.
+            elif self.normVmaxUnit == "% Histogram":
+                imax = int(round(self.normVmaxShow/100. * (len(imageDataSorted)-1)))
+                imax = min(imax,len(imageDataSorted)-1)
+                imax = max(imax,0)
+                lmax = imageDataSorted[imax]
+            else:
+                print "ERROR: Invalid unit for norm limits."
+        GL.glUniform1f(self.vminLoc, lmin)
+        GL.glUniform1f(self.vmaxLoc, lmax)
         if not pattersonEnabled:
             GL.glUniform1f(self.gammaLoc, self.normGamma)
             GL.glUniform1i(self.normLoc, self.normScalingValue)
@@ -664,26 +719,26 @@ class View2D(QtOpenGL.QGLWidget,View):
             s = imageData.shape
 
             # Update center of sphere model
-            self.centerX = ((s[1]-1)/2.+params["offCenterX"])/(s[1]-1)
-            self.centerY = ((s[0]-1)/2.+params["offCenterY"])/(s[0]-1)
-            GL.glUniform1f(self.modelCenterXLoc, self.centerX)
-            GL.glUniform1f(self.modelCenterYLoc, self.centerY)
+            centerX = ((s[1]-1)/2.+params["offCenterX"])/(s[1]-1)
+            centerY = ((s[0]-1)/2.+params["offCenterY"])/(s[0]-1)
+            GL.glUniform1f(self.modelCenterXLoc, centerX)
+            GL.glUniform1f(self.modelCenterYLoc, centerY)
 
             # Update size of sphere model
             d  = params["diameterNM"]
             wl = params["photonWavelengthNM"]
             p  = params["detectorPixelSizeUM"]
             D  = params["detectorDistanceMM"]
-            self.modelSize = spimage.sphere_model_convert_diameter_to_size(d, wl, p, D)
-            GL.glUniform1f(self.modelSizeLoc, self.modelSize)
+            modelSize = spimage.sphere_model_convert_diameter_to_size(d, wl, p, D)
+            GL.glUniform1f(self.modelSizeLoc, modelSize)
 
             # Update scale of sphere model
             i = params["intensityMJUM2"]
             m = params["materialType"]
             QE = params["detectorQuantumEfficiency"]
             ADUP = params["detectorADUPhoton"]
-            scale = spimage.sphere_model_convert_intensity_to_scaling(i, d, wl, p, D, QE, ADUP, m)
-            GL.glUniform1f(self.modelScaleLoc, scale)
+            modelScale = spimage.sphere_model_convert_intensity_to_scaling(i, d, wl, p, D, QE, ADUP, m)
+            GL.glUniform1f(self.modelScaleLoc, modelScale)
 
             # Update shape 
             GL.glUniform1f(self.imageShapeXLoc, imageData.shape[1])
@@ -718,7 +773,10 @@ class View2D(QtOpenGL.QGLWidget,View):
             self._paintSelectedImageBorder(img_width, img_height)
 #            self._paintImageProperties(img)
 
-        if(self.data and self.tagView and self.data.tagsItem.tags and self.data.tagsItem.tags != []):
+        if(self.peakFinderVisible):
+            self._paintPeakCircles(img)
+
+        if(self.data and self.tagView and self.data.tagsItem and self.data.tagsItem.tags and self.data.tagsItem.tags != []):
             tag_size = self._tagSize()
             tag_pad = self._tagPad()
             tag_distance = self._tagDistance()
@@ -1334,9 +1392,10 @@ class View2D(QtOpenGL.QGLWidget,View):
                 self.normScalingValue = 1
             elif(self.normScaling == 'pow'):
                 self.normScalingValue = 2
-            self.normVmin = prop["normVmin"]
-            self.normVmax = prop["normVmax"]
-            self.autorange = prop["autorange"]
+            self.normVminShow = prop["normVminShow"]
+            self.normVmaxShow = prop["normVmaxShow"]
+            self.normVminUnit = prop["normVminUnit"]
+            self.normVmaxUnit = prop["normVmaxUnit"]           
             self.normGamma = prop["normGamma"]
             if(prop["normClamp"] == True):
                 self.normClamp = 1
@@ -1445,3 +1504,66 @@ class View2D(QtOpenGL.QGLWidget,View):
     def togglePixelPeeper(self):
         self.showPixelPeeper = not self.showPixelPeeper
         self.updateGL()
+
+
+    def _getModelImage(self,img):
+
+        imageData = self.loaderThread.imageData[img]
+
+        params = self.data.modelItem.getParams(img)
+        s = imageData.shape
+
+        # Update center of sphere model
+        centerX = ((s[1]-1)/2.+params["offCenterX"])
+        centerY = ((s[0]-1)/2.+params["offCenterY"])
+
+        # Update size of sphere model
+        d  = params["diameterNM"]
+        wl = params["photonWavelengthNM"]
+        p  = params["detectorPixelSizeUM"]
+        D  = params["detectorDistanceMM"]
+        modelSize = spimage.sphere_model_convert_diameter_to_size(d, wl, p, D)
+
+        # Update scale of sphere model
+        i = params["intensityMJUM2"]
+        m = params["materialType"]
+        QE = params["detectorQuantumEfficiency"]
+        ADUP = params["detectorADUPhoton"]
+        modelScale = spimage.sphere_model_convert_intensity_to_scaling(i, d, wl, p, D, QE, ADUP, m)
+
+        xv, yv = numpy.meshgrid(range(s[0]),range(s[1]))
+        r = numpy.sqrt((xv-centerX)**2+(yv-centerY)**2)
+        s = 2.0*numpy.pi*modelSize*r;
+        modelImage =  (3.0*(numpy.sin(s)-s*numpy.cos(s))/(s*s*s))**2 * modelScale
+        return modelImage
+        
+    @QtCore.Slot()
+    def exportModelImage(self):
+        if(not self.modelView):
+            QtGui.QMessageBox.information(self,"Cannot Export Model", "Please activate View->Model before exporting model").exec_()
+            return
+        if(self.selectedImage is None):
+            QtGui.QMessageBox.information(self,"Cannot Export Model", "Please first select an image to export").exec_()
+            return
+
+        fileName = QtGui.QFileDialog.getSaveFileName(self, "Save Model to HDF5", None, "HDF5 Files (*.h5)")
+        if(len(fileName) == 0):
+            return
+        f = h5py.File(fileName,'w')
+        f['/model'] = self._getModelImage(self.selectedImage)        
+        f.close()
+
+    def setPeakFinderVisible(self,value):
+        self.peakFinderVisible = value
+
+    def setPeakGroup(self,groupItem):
+        if(groupItem is None):
+            self.peakData.clear()
+            return
+        fileLoader = groupItem.fileLoader
+        fields = ['nPeaks','peakNPixels','peakXPosAssembled','peakYPosAssembled',
+                  'peakXPosRaw','peakYPosRaw']
+        for f in fields:
+            dataItem = fileLoader.dataItems[groupItem.fullName+"/"+f]
+            self.peakData[f] = dataItem
+

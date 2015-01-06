@@ -1,0 +1,18 @@
+#!/bin/bash
+DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+if [[ $HOSTNAME == psusr* ]] || [[ $HOSTNAME == psnxserv ]];
+then
+  # Source environment
+  echo "source $DIR/source_this_on_psusr"
+  source $DIR/source_this_on_psusr
+fi
+# Arguments
+if [ ! -z $1 ] 
+then 
+    ARG="$1"
+else
+    ARG=""
+fi
+# Start owl
+echo "$DIR/owl.py $ARG"
+$DIR/owl.py $ARG

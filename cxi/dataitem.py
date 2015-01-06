@@ -3,6 +3,7 @@ import numpy,cmath
 import logging
 import settingsOwl
 from cxi.pixelmask import PixelMask
+import h5py
 
 class DataItem:
     def __init__(self,parent,fileLoader,fullName):
@@ -169,3 +170,29 @@ class DataItem:
             return self.data(**kwargs)[self.selectedIndex,:]
         else:
             return self.data(**kwargs)
+
+    def _canonicalHDF5Path(self):
+        name = self.fullName
+        splitName = self.fullName.split("/")
+        for i in range(len(splitName),0,-1):
+            partialName = "/".join(splitName[0:i])
+            link = self.fileLoader.f.get(partialName,default=None,getclass=False,getlink=True)
+            if(type(link) is h5py.SoftLink):
+                name = link.path+"/"+"/".join(splitName[i:])
+                break
+        return name
+
+    def isRawImage(self):
+        name = self._canonicalHDF5Path()
+        if(name.split("/")[-2].startswith("detector") or name.split("/")[-3].startswith("detector")):
+            return True
+        else:
+            return False
+        
+    def isAssembledImage(self):
+        name = self._canonicalHDF5Path()
+        if(name.split("/")[-2].startswith("image") or name.split("/")[-3].startswith("image")):
+            return True
+        else:
+            return False
+        

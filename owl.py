@@ -106,6 +106,7 @@ class Owl(QtGui.QMainWindow):
         self.fileLoader.loadFile(filename)
         self.cxiNavigation.CXITree.buildTree(self.fileLoader)
         self.cxiNavigation.CXITree.loadData()
+        self.cxiNavigation.CXITree.loadPeakList()
 
     def _init_geometry(self):
         """Initializes the window geometry, and restores any previously saved geometry."""
@@ -204,6 +205,11 @@ class Owl(QtGui.QMainWindow):
         self.fileMenu.addAction(self.saveModels)
         self.saveModels.triggered.connect(self._saveModelsClicked)
 
+        self.exportModelImage = QtGui.QAction("Export Model Image", self)
+        self.exportModelImage.setToolTip("Exports an image of the selected model to an hdf5 file")
+        self.fileMenu.addAction(self.exportModelImage)
+        self.exportModelImage.triggered.connect(self.view.view2D.exportModelImage)
+
         self.savePattersons = QtGui.QAction("Save Pattersons", self)
         self.fileMenu.addAction(self.savePattersons)
         self.savePattersons.triggered.connect(self._savePattersonsClicked)
@@ -286,7 +292,8 @@ class Owl(QtGui.QMainWindow):
                             "Tags"               : QtGui.QAction("Tags", self),
                             "Model"              : QtGui.QAction("Model", self),
                             "Patterson"          : QtGui.QAction("Patterson", self),
-                            "Pixel Peeper"       : QtGui.QAction("Pixel Peeper", self),}
+                            "Pixel Peeper"       : QtGui.QAction("Pixel Peeper", self),
+                            "Peak Finder"        : QtGui.QAction("Peak Finder", self),}
 
         viewShortcuts = {"File Tree"          : "Ctrl+T",
                          "View 1D"            : "Ctrl+1",
@@ -295,9 +302,11 @@ class Owl(QtGui.QMainWindow):
                          "Tags"               : "Ctrl+G",
                          "Model"              : "Ctrl+M",
                          "Patterson"          : "Ctrl+P",
-                         "Pixel Peeper"          : "Ctrl+X",}
+                         "Pixel Peeper": "Ctrl+X",
+                         "Peak Finder": "Ctrl+K",
+        }
 
-        viewNames = ["File Tree", "Display Properties", "View 1D", "View 2D", "Tags", "Model", "Patterson","Pixel Peeper"]
+        viewNames = ["File Tree", "Display Properties", "View 1D", "View 2D", "Tags", "Model", "Patterson", "Pixel Peeper", "Peak Finder"]
 
         actions = {}
         for viewName in viewNames:
@@ -314,9 +323,11 @@ class Owl(QtGui.QMainWindow):
                 actions[viewName].triggered.connect(self._togglePattersonView)
             elif(viewName == "Pixel Peeper"):
                 actions[viewName].triggered.connect(self.view.view2D.togglePixelPeeper)
+            elif(viewName == "Peak Finder"):
+                actions[viewName].triggered.connect(self._togglePeakFinder)
             else:
                 actions[viewName].triggered.connect(self._viewClicked)
-            if viewName in ["View 1D", "Model", "Patterson", "Pixel Peeper"]:
+            if viewName in ["View 1D", "Model", "Patterson", "Pixel Peeper", "Peak Finder"]:
                 actions[viewName].setChecked(False)
             else:
                 actions[viewName].setChecked(True)
@@ -331,7 +342,7 @@ class Owl(QtGui.QMainWindow):
         self.colormapMenu = QtGui.QMenu("Colormap", self)
         self.colormapActionGroup = QtGui.QActionGroup(self)
 
-        traditionalColormaps = ['jet', 'hot', 'gray', 'coolwarm', 'gnuplot', 'gist_earth']
+        traditionalColormaps = ['jet', 'hot', 'binary', 'gray', 'coolwarm', 'gnuplot', 'gist_earth']
         self.colormapActions = {}
         for colormap in traditionalColormaps:
             a = self.colormapMenu.addAction(colormapIcons.pop(colormap), colormap)
@@ -427,6 +438,7 @@ class Owl(QtGui.QMainWindow):
         self.cxiNavigation.dataBoxes["plot Y"].button.needData.connect(self.handleNeedDataY1D)
         self.cxiNavigation.dataMenus["plot Y"].triggered.connect(self.handlePlotModeTriggered)
         self.cxiNavigation.dataBoxes["filter0"].button.needData.connect(self.handleNeedDataFilter)
+        self.cxiNavigation.dataBoxes["Peak List"].button.needData.connect(self.handlePeakListDrop)
         self.dataProp.view1DPropChanged.connect(self.view.view1D.refreshDisplayProp)
         self.dataProp.view2DPropChanged.connect(self.view.view2D.refreshDisplayProp)
         self.view.view2D.pixelClicked.connect(self.dataProp.onPixelClicked)
@@ -804,6 +816,29 @@ class Owl(QtGui.QMainWindow):
             self.viewActions["View 1D"].setChecked(True)
             self.statusBar.showMessage("Loaded Y data for plot: %s" % dataName, 1000)
 
+    def handlePeakListDrop(self, dataName):
+        if(dataName == '' or dataName is None):
+            self.view.view2D.setPeakGroup(None)
+            return
+        if(dataName in self.cxiNavigation.CXITree.fileLoader.dataItems):
+            dataItem = self.cxiNavigation.CXITree.fileLoader.dataItems[dataName]
+            # Check if we have a peak list member
+            if(dataName.endswith("/nPeaks") or dataName.endswith("/peakIntensity") or
+               dataName.endswith("/peakNPixels") or dataName.endswith("/peakXPosAssembled") or
+               dataName.endswith("/peakXPosRaw") or dataName.endswith("/peakYPosAssembled") or
+               dataName.endswith("/peakYPosRaw")):
+                groupItem = self.cxiNavigation.CXITree.fileLoader.groupItems[dataName[:dataName.rindex('/')]]
+                self.cxiNavigation.dataBoxes["Peak List"].button.setName(dataName[:dataName.rindex('/')])
+                self.view.view2D.setPeakGroup(groupItem)
+                return
+        elif(dataName in self.cxiNavigation.CXITree.fileLoader.groupItems):
+            groupItem = self.cxiNavigation.CXITree.fileLoader.groupItems[dataName]
+            if(groupItem.fullName+"/nPeaks" in self.cxiNavigation.CXITree.fileLoader.dataItems):
+                self.cxiNavigation.dataBoxes["Peak List"].button.setName(groupItem.fullName)
+                self.view.view2D.setPeakGroup(groupItem)
+
+
+
     def handlePlotModeTriggered(self, foovalue=None):
         """Slot triggered when a CXITree plotX menu is triggered
 
@@ -827,6 +862,16 @@ class Owl(QtGui.QMainWindow):
         TODO FM: move to view1D
         """
         dataItem = self.cxiNavigation.CXITree.fileLoader.dataItems[dataName]
+        # Check if we have a peak list member
+        if(dataName.endswith("/nPeaks") or dataName.endswith("/peakIntensity") or
+           dataName.endswith("/peakNPixels") or dataName.endswith("/peakXPosAssembled") or
+           dataName.endswith("/peakXPosRaw") or dataName.endswith("/peakYPosAssembled") or
+           dataName.endswith("/peakYPosRaw")):
+            groupItem = self.cxiNavigation.CXITree.fileLoader.groupItems[dataName[:dataName.rindex('/')]]
+            self.cxiNavigation.dataBoxes["Peak List"].button.setName(dataName[:dataName.rindex('/')])
+            self.view.view2D.setPeakGroup(groupItem)
+            return
+
         if (dataItem.format == 0 and dataItem.isStack) or (dataItem.format == 1 and not dataItem.isStack):
             self.handleNeedDataY1D(dataName)
         elif dataItem.format == 2:
@@ -868,10 +913,12 @@ class Owl(QtGui.QMainWindow):
         else:
             self.dataProp.modelProperties.setModelItem(dataItemImage.modelItem)
             self.dataProp.pattersonProperties.setPattersonItem(dataItemImage.pattersonItem)
-            dataItemImage.modelItem.dataItemImage = dataItemImage
-            dataItemImage.modelItem.dataItemMask = dataItemMask
-            dataItemImage.pattersonItem.dataItemImage = dataItemImage
-            dataItemImage.pattersonItem.dataItemMask = dataItemMask
+            if(dataItemImage.modelItem):
+                dataItemImage.modelItem.dataItemImage = dataItemImage
+                dataItemImage.modelItem.dataItemMask = dataItemMask
+            if(dataItemImage.pattersonItem):
+                dataItemImage.pattersonItem.dataItemImage = dataItemImage
+                dataItemImage.pattersonItem.dataItemMask = dataItemMask
         dataItems = {"image":dataItemImage, "mask":dataItemMask}
         for k, item in dataItems.items():
             n = None
@@ -969,6 +1016,10 @@ class Owl(QtGui.QMainWindow):
         if(ok):
             gamma = self.settings.setValue("normGamma", gamma)
             self.dataProp.emitView2DProp()
+
+    def _togglePeakFinder(self, value):
+        self.view.view2D.setPeakFinderVisible(value)
+        self.cxiNavigation.setPeakFinderVisible(value)
 
 def exceptionHandler(exceptionType, value, traceback):
     """Handle exception in debugging mode"""
