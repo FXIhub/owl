@@ -11,7 +11,7 @@ class GroupItem:
         self.name = fullName.split("/")[-1]
         self.tagsItem = TagsItem(self,fileLoader,fullName+"/")
         self.children = {}
-        H5Group = self.fileLoader.f[self.fullName]
+        H5Group = self.fileLoader[self.fullName]
         for k in H5Group.keys():
             item = H5Group[k]
             if isinstance(item,h5py.Group):

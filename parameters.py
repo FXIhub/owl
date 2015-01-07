@@ -82,35 +82,35 @@ class AbstractParameterItem:
     def saveParams(self):
         treeDirty = False
         if self.paramsDirty:
-            if self.name in self.fileLoader.f[self.path].keys():
-                grp = self.fileLoader.f[self.fullName]
+            if self.name in self.fileLoader[self.path].keys():
+                grp = self.fileLoader[self.fullName]
             else:
-                grp = self.fileLoader.f[self.path].create_group(self.name)
+                grp = self.fileLoader[self.path].create_group(self.name)
                 self.fileLoader.reopenFile()
                 self.fileLoader.addGroupPosterior(self.fullName)
                 treeDirty = True
             for n,p0 in self.indParams.items():
                 p = p0[:self.numEvents]
-                grp = self.fileLoader.f[self.fullName]
+                grp = self.fileLoader[self.fullName]
                 if n in grp:
                     ds = grp[n]
                     if ds.shape[0] != p.shape:
                         ds.resize(p.shape)
                     ds[:self.numEvents] = p[:]
                 else:
-                    ds = self.fileLoader.f[self.fullName].create_dataset(n,p.shape,maxshape=(None,),chunks=(10000,),data=self.indParams[n])
+                    ds = self.fileLoader[self.fullName].create_dataset(n,p.shape,maxshape=(None,),chunks=(10000,),data=self.indParams[n])
                     ds.attrs.modify("axes",["experiment_identifier"])
                     ds.attrs.modify("numEvents",[self.numEvents])
                     self.fileLoader.reopenFile()
                     self.fileLoader.addDatasetPosterior(self.fullName+"/"+n)
                     treeDirty = True
             for n,p in self.genParams.items():
-                grp = self.fileLoader.f[self.fullName]
+                grp = self.fileLoader[self.fullName]
                 if n in grp:
                     ds = grp[n]
                     ds[0] = p
                 else:
-                    ds = self.fileLoader.f[self.fullName].create_dataset(n,(1,),data=p)
+                    ds = self.fileLoader[self.fullName].create_dataset(n,(1,),data=p)
                     self.fileLoader.reopenFile()
                     self.fileLoader.addDatasetPosterior(self.fullName+"/"+n)
                     treeDirty = True

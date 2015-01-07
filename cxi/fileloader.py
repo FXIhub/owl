@@ -5,13 +5,44 @@ import settingsOwl
 from groupitem import GroupItem
 from dataitem import DataItem
 
+class DatasetProxy(object):
+    def __init__(self,dataset):
+        self._ds = dataset
+
+    def __getitem__(self, args):
+        return self._ds[args]
+    
+    def keys(self):
+        return self._ds.keys()
+
+    @property
+    def dtype(self):
+        return self._ds.dtype
+    @property
+    def shape(self):
+        return self._ds.shape
+    @property
+    def attrs(self):
+        return self._ds.attrs
+
+    def __array__(self,dtype=None):
+        return self._ds.__array__(dtype)
+
+    def create_dataset(self, name, shape=None, dtype=None, data=None, **kwds):
+        return self._ds.create_dataset(name,shape,dtype,data,kwds)
+
+    def create_group(self, name):
+        return self._ds.create_group(name)
+
+
+
 class FileLoader(QtCore.QObject):
     stackSizeChanged = QtCore.Signal(int)
     fileLoaderExtended = QtCore.Signal()
     def __init__(self,parent):
         QtCore.QObject.__init__(self)
         self.parent = parent
-        self.f = None
+        self._f = None
         self.stackSize = None
         self.mode = parent.settings.value("fileMode")
         self.settings = QtCore.QSettings()
@@ -32,17 +63,17 @@ class FileLoader(QtCore.QObject):
         mode = self.mode
         if mode == "r*" and not settingsOwl.swmrSupported:
             return 1
-        if isinstance(self.f,h5py.File):
-            self.f.close()
+        if isinstance(self._f,h5py.File):
+            self._f.close()
         try:
-            self.f = h5py.File(fullFilename,mode)#,libver='latest')
+            self._f = h5py.File(fullFilename,mode)#,libver='latest')
             return 0
         except IOError as e:            
             if( str(e) == 'Unable to open file (File is already open for write or swmr write)'):                                
                 print "\n\n!!! TIP: Trying running h5clearsb.py on the file !!!\n\n"
             raise
             return 2
-        print self.f
+        print self._f
     def reopenFile(self):
         # IMPORTANT NOTE:
         # Reopening the file is required after groups (/ datasets?) are created, otherwise we corrupt the file.
@@ -53,7 +84,7 @@ class FileLoader(QtCore.QObject):
             self.updateTimer.stop()
         return self.openFile(self.fullFilename,self.mode)
     def loadFile(self,fullFilename):
-        self.f = None
+        self._f = None
         err =  self.openFile(fullFilename)
         if err == 1:
             print "Cannot open file. SWMR mode not supported by your h5py version. Please change file mode in the file menue and try again."
@@ -70,7 +101,7 @@ class FileLoader(QtCore.QObject):
         self.modelItems = {}
         self.pattersonItems = {}
         self.children = {}
-        H5Group = self.f[self.fullName]
+        H5Group = self._f[self.fullName]
         for k in H5Group.keys():
             item = H5Group[k]
             if isinstance(item,h5py.Dataset):
@@ -126,19 +157,19 @@ class FileLoader(QtCore.QObject):
         addDatasetRecursively(self,self.children)
     def updateStackSize(self):
         #print "update"
-        if self.f is None:
+        if self._f is None:
             return
         N = []
         for n,d in self.dataItems.items():
             if d.isSelectedStack:
-                if "numEvents" in self.f[n].attrs.keys():
+                if "numEvents" in self._f[n].attrs.keys():
                     ## if not self.f.mode == "r+": # self.f.mode is None if opened in swmr mode. This is odd.
-                    if self.f.mode == "r*": # This is to fix issues in r and r+ mode, does it also work with smwe now?
-                        self.f[n].refresh()
-                    N.append(self.f[n].attrs.get("numEvents")[0])
+                    if self._f.mode == "r*": # This is to fix issues in r and r+ mode, does it also work with smwe now?
+                        self._f[n].refresh()
+                    N.append(self._f[n].attrs.get("numEvents")[0])
                     #print n,N
                 else:
-                    N.append(self.f[n].shape[d.stackDim])
+                    N.append(self._f[n].shape[d.stackDim])
         if len(N) > 0:
             N = numpy.array(N).min()
         else:
@@ -147,7 +178,7 @@ class FileLoader(QtCore.QObject):
             self.stackSize = N
             self.stackSizeChanged.emit(N)
     def ensureReadWriteModeActivated(self):
-        if self.f.mode == "r+":
+        if self._f.mode == "r+":
             return 0
         else:
             accepted = QtGui.QMessageBox.question(self.parent,"Change to read-write mode?",
@@ -159,14 +190,14 @@ class FileLoader(QtCore.QObject):
                 return 0
         return 1
     def saveTags(self):
-        if self.f is None:
+        if self._f is None:
             return
         if 0 ==  self.ensureReadWriteModeActivated():
             for n,t in self.tagsItems.items():
                 t.saveTags()
 
     def tagsChanged(self):
-        if self.f is None:
+        if self._f is None:
             return
         for n,t in self.tagsItems.items():
             if t.tagsDirty:
@@ -174,27 +205,27 @@ class FileLoader(QtCore.QObject):
         return False
 
     def modelsChanged(self):
-        if self.f is None:
+        if self._f is None:
             return
         for n,m in self.modelItems.items():
             if m.paramsDirty:
                 return True
         return False
     def pattersonsChanged(self):
-        if self.f is None:
+        if self._f is None:
             return
         for n,p in self.pattersonItems.items():
             if p.paramsDirty:
                 return True
         return False
     def saveModels(self):
-        if self.f is None:
+        if self._f is None:
             return
         if 0 ==  self.ensureReadWriteModeActivated():
             for n,m in self.modelItems.items():
                 m.saveParams()
     def savePattersons(self):
-        if self.f is None:
+        if self._f is None:
             return
         if 0 ==  self.ensureReadWriteModeActivated():
             for n,m in self.pattersonItems.items():
@@ -207,5 +238,12 @@ class FileLoader(QtCore.QObject):
             self.settings.setValue("fileMode", newMode)
         else:
             raise ValueError('%s is not a recognized file mode' % (newMode))
-        if(self.f is not None):
+        if(self._f is not None):
             self.reopenFile()
+
+    def get(self, name, default=None, getclass=False, getlink=False):
+        return self._f.get(name,default,getclass,getlink)
+
+    def __getitem__(self, dataset):
+        return DatasetProxy(self._f[dataset])
+
