@@ -342,7 +342,7 @@ class Owl(QtGui.QMainWindow):
         self.colormapMenu = QtGui.QMenu("Colormap", self)
         self.colormapActionGroup = QtGui.QActionGroup(self)
 
-        traditionalColormaps = ['jet', 'hot', 'binary', 'gray', 'coolwarm', 'gnuplot', 'gist_earth']
+        traditionalColormaps = ['jet', 'hot', 'gray', 'Spectral', 'coolwarm', 'gnuplot', 'gist_earth']
         self.colormapActions = {}
         for colormap in traditionalColormaps:
             a = self.colormapMenu.addAction(colormapIcons.pop(colormap), colormap)
