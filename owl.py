@@ -559,6 +559,7 @@ class Owl(QtGui.QMainWindow):
         self.settings.setValue("colormap", self.dataProp.view2DProp['colormapText'])
         self.settings.setValue("normScaling", self.dataProp.view2DProp['normScaling'])
         self.settings.setValue("normClamp", self.dataProp.view2DProp['normClamp'])
+        self.settings.setValue("normInvert", self.dataProp.view2DProp['normInvert'])
         self.settings.setValue("normVmin", self.dataProp.view2DProp['normVmin'])
         self.settings.setValue("normVmax", self.dataProp.view2DProp['normVmax'])
         self.settings.setValue("fileMode", self.fileLoader.mode)

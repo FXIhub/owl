@@ -174,17 +174,6 @@
     </layout>
    </item>
    <item>
-    <layout class="QHBoxLayout" name="horizontalLayout_2">
-     <item>
-      <widget class="QCheckBox" name="displayClamp">
-       <property name="text">
-        <string>Clamp</string>
-       </property>
-      </widget>
-     </item>
-    </layout>
-   </item>
-   <item>
     <layout class="QHBoxLayout" name="horizontalLayout_3">
      <item>
       <widget class="QComboBox" name="displayScale">
@@ -212,6 +201,24 @@
       <widget class="QPushButton" name="displayColormap">
        <property name="text">
         <string/>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout_2">
+     <item>
+      <widget class="QCheckBox" name="displayClamp">
+       <property name="text">
+        <string>Clamp</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QCheckBox" name="displayInvert">
+       <property name="text">
+        <string>Invert Colormap</string>
        </property>
       </widget>
      </item>

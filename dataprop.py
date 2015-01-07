@@ -171,6 +171,7 @@ class DataProp(QtGui.QWidget):
         self.displayBox.displayMaxUnit.currentIndexChanged.connect(self.checkLimits)
         self.displayBox.displayMinUnit.currentIndexChanged.connect(self.checkLimits)
         self.displayBox.displayClamp.stateChanged.connect(self.emitView2DProp)
+        self.displayBox.displayInvert.stateChanged.connect(self.emitView2DProp)
         #self.displayBox.displayAutorange.stateChanged.connect(self.emitView2DProp)
         self.displayBox.displayScale.currentIndexChanged.connect(self.emitView2DProp)
         self.invertSortingCheckBox.toggled.connect(self.emitView2DProp)
@@ -282,6 +283,7 @@ class DataProp(QtGui.QWidget):
         P["normVmin"] = normVmin
         P["normVmax"] = normVmax        
         P["normClamp"] = self.displayBox.displayClamp.isChecked()
+        P["normInvert"] = self.displayBox.displayInvert.isChecked()
         if self.displayBox.displayScale.currentIndex() == 0:
             P["normScaling"] = "lin"
         elif self.displayBox.displayScale.currentIndex() == 1:
@@ -321,6 +323,11 @@ class DataProp(QtGui.QWidget):
         else:
             normClamp = True
         self.displayBox.displayClamp.setChecked(normClamp)
+        if(settings.contains("normInvert")):
+            normInvert = bool(settings.value('normInvert'))
+        else:
+            normInvert = False
+        self.displayBox.displayInvert.setChecked(normInvert)
         if(settings.contains("normScaling")):
             norm = settings.value("normScaling")
             if(norm == "lin"):

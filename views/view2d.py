@@ -274,6 +274,7 @@ class View2D(QtOpenGL.QGLWidget,View):
         self.gammaLoc = GL.glGetUniformLocation(self.shader, "gamma")
         self.normLoc = GL.glGetUniformLocation(self.shader, "norm")
         self.clampLoc = GL.glGetUniformLocation(self.shader, "do_clamp")
+        self.invertLoc = GL.glGetUniformLocation(self.shader, "invert_colormap")
         self.maskedBitsLoc = GL.glGetUniformLocation(self.shader, "maskedBits")
         self.modelCenterXLoc = GL.glGetUniformLocation(self.shader, "modelCenterX")
         self.modelCenterYLoc = GL.glGetUniformLocation(self.shader, "modelCenterY")
@@ -696,16 +697,14 @@ class View2D(QtOpenGL.QGLWidget,View):
                 print "ERROR: Invalid unit for norm limits."
         GL.glUniform1f(self.vminLoc, lmin)
         GL.glUniform1f(self.vmaxLoc, lmax)
+        GL.glUniform1f(self.gammaLoc, self.normGamma)
+        GL.glUniform1i(self.clampLoc, self.normClamp)
+        GL.glUniform1i(self.invertLoc, self.normInvert)
+        GL.glUniform1f(self.maskedBitsLoc, self.maskOutBits)
         if not pattersonEnabled:
-            GL.glUniform1f(self.gammaLoc, self.normGamma)
             GL.glUniform1i(self.normLoc, self.normScalingValue)
-            GL.glUniform1i(self.clampLoc, self.normClamp)
-            GL.glUniform1f(self.maskedBitsLoc, self.maskOutBits)
         else:
-            GL.glUniform1f(self.gammaLoc, self.normGamma)
             GL.glUniform1i(self.normLoc, 0)
-            GL.glUniform1i(self.clampLoc, self.normClamp)
-            GL.glUniform1f(self.maskedBitsLoc, self.maskOutBits)
 
         GL.glUniform1i(self.showModelLoc, self.modelView)
 
@@ -1401,6 +1400,10 @@ class View2D(QtOpenGL.QGLWidget,View):
                 self.normClamp = 1
             else:
                 self.normClamp = 0
+            if(prop["normInvert"] == True):
+                self.normInvert = 1
+            else:
+                self.normInvert = 0
             if not hasattr(self, 'colormapText') or self.colormapText != prop["colormapText"]:
                 self.colormapText = prop["colormapText"]
             self._setStackWidth(prop["imageStackSubplotsValue"])

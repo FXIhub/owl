@@ -5,6 +5,7 @@ uniform float vmin;
 uniform float vmax;
 uniform float gamma;
 uniform int do_clamp;
+uniform int invert_colormap;
 uniform sampler2D mask;
 uniform float maskedBits;
 uniform float modelCenterX;
@@ -18,6 +19,15 @@ uniform float modelVisibility;
 uniform float modelMinimaAlpha;
 uniform float fitMaskRadius;
 #define M_PI 3.1415926535897932384626433832795
+
+vec4 colorLookup(in sampler2D colormap, in vec2 coord)
+{
+  if(invert_colormap != 0){
+    coord[0] = 1.0-coord[0];
+  }
+  return texture2D(colormap, coord);
+}
+
 void main()
 {
   vec2 uv = gl_TexCoord[0].xy;
@@ -98,7 +108,7 @@ void main()
   if(uv[0] < 0.0){
     if(do_clamp == 1){
       uv[0] = 0.0;
-      gl_FragColor = texture2D(cmap, uv);
+      gl_FragColor = colorLookup(cmap, uv);
       return;
     }else{
       color.a = 0.0;
@@ -109,7 +119,7 @@ void main()
   if(uv[0] > scale){
     if(do_clamp == 1){
       uv[0] = 1.0;
-      gl_FragColor = texture2D(cmap, uv);
+      gl_FragColor = colorLookup(cmap, uv);
       return;
     }else{
       color.a = 0.0;
@@ -130,6 +140,6 @@ void main()
     scale = pow(scale+1.0, gamma)-1.0;
     uv[0] = (pow(uv[0]+1.0, gamma)-1.0)/scale;
   }
-  color = texture2D(cmap, uv);
+  color = colorLookup(cmap, uv);
   gl_FragColor = color;
 }
