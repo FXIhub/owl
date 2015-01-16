@@ -1,40 +1,9 @@
 from Qt import QtGui, QtCore
 import numpy
-import h5py
+import h5proxy as h5py
 import settingsOwl
 from groupitem import GroupItem
 from dataitem import DataItem
-
-class DatasetProxy(object):
-    def __init__(self,dataset):
-        self._ds = dataset
-
-    def __getitem__(self, args):
-        return self._ds[args]
-    
-    def keys(self):
-        return self._ds.keys()
-
-    @property
-    def dtype(self):
-        return self._ds.dtype
-    @property
-    def shape(self):
-        return self._ds.shape
-    @property
-    def attrs(self):
-        return self._ds.attrs
-
-    def __array__(self,dtype=None):
-        return self._ds.__array__(dtype)
-
-    def create_dataset(self, name, shape=None, dtype=None, data=None, **kwds):
-        return self._ds.create_dataset(name,shape,dtype,data,kwds)
-
-    def create_group(self, name):
-        return self._ds.create_group(name)
-
-
 
 class FileLoader(QtCore.QObject):
     stackSizeChanged = QtCore.Signal(int)
@@ -47,6 +16,9 @@ class FileLoader(QtCore.QObject):
         self.mode = parent.settings.value("fileMode")
         self.settings = QtCore.QSettings()
         self._init_timer()
+        
+        # Try to load zmq and start the file loader server
+        
     def _init_timer(self):
         """Initializes the file refresh timer and starts it if in SWMR mode.
         """
@@ -63,9 +35,11 @@ class FileLoader(QtCore.QObject):
         mode = self.mode
         if mode == "r*" and not settingsOwl.swmrSupported:
             return 1
-        if isinstance(self._f,h5py.File):
+        if(self._f):
+#        if isinstance(self._f,h5py.h5proxy.File):
             self._f.close()
         try:
+            print fullFilename
             self._f = h5py.File(fullFilename,mode)#,libver='latest')
             return 0
         except IOError as e:            
@@ -245,5 +219,5 @@ class FileLoader(QtCore.QObject):
         return self._f.get(name,default,getclass,getlink)
 
     def __getitem__(self, dataset):
-        return DatasetProxy(self._f[dataset])
+        return self._f[dataset]
 

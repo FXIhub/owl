@@ -1,4 +1,4 @@
-import h5py
+import h5proxy as h5py
 import parameters
 from dataitem import DataItem
 from tagsitem import TagsItem
@@ -13,7 +13,7 @@ class GroupItem:
         self.children = {}
         H5Group = self.fileLoader[self.fullName]
         for k in H5Group.keys():
-            item = H5Group[k]
+            item = H5Group[k]            
             if isinstance(item,h5py.Group):
                 self.children[k] = GroupItem(self,self.fileLoader,self.fullName+"/"+k)
         self.modelItem = parameters.ModelItem(self,self.fileLoader)

@@ -460,7 +460,7 @@ class Owl(QtGui.QMainWindow):
         """Slot triggered when Open File is clicked."""
         fileName = QtGui.QFileDialog.getOpenFileName(self, "Open CXI File", None, "CXI Files (*.cxi)")
         if(fileName[0]):
-            self._openCXIFile(fileName[0])
+            self._openCXIFile(fileName)
 
     def _fileModeClicked(self):
         """Slot triggered when File Mode is clicked."""

@@ -14,7 +14,7 @@ import time
 from cxi.cache import GLCache
 import fit
 import os.path
-import h5py
+import h5proxy as h5py
 from cxi.pixelmask import PixelMask
 
 # Import spimage for viewing of sphere model 

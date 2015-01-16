@@ -2,7 +2,7 @@
 from Qt import QtGui, QtCore, QtOpenGL
 from operator import mul
 import numpy,ctypes
-import h5py
+import h5proxy as h5py
 from matplotlib import colors
 from matplotlib import cm
 import pyqtgraph

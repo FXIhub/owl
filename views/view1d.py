@@ -2,7 +2,7 @@ from Qt import QtGui, QtCore
 import pyqtgraph
 import numpy
 from view import View
-import h5py
+import h5proxy as h5py
 
 class View1D(QtGui.QFrame,View):
     viewIndexSelected = QtCore.Signal(int)

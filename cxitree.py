@@ -1,6 +1,6 @@
 #from PyQt4 import QtGui, QtCore, QtOpenGL, Qt
 from Qt import QtGui, QtCore, QtOpenGL
-import h5py
+import h5proxy as h5py
 from operator import mul
 import numpy
 import sys,os

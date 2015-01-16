@@ -3,7 +3,7 @@ import numpy,cmath
 import logging
 import settingsOwl
 from cxi.pixelmask import PixelMask
-import h5py
+import h5proxy as h5py
 
 class DataItem:
     def __init__(self,parent,fileLoader,fullName):
