@@ -71,6 +71,9 @@ class Attributes(Base):
         return self._client.items(self._fileName, self._path, True)
     def get(self, name, default=None, getclass=False, getlink=False):
         return self._client.get(self._fileName, self._path, name, default, getclass, getlink, True)
+    def modify(self, name, value):
+        return self._client.modify(self._fileName, self._path, name, value, True)
+    
 
 
 
@@ -111,6 +114,9 @@ class Dataset(Base):
 
     def __array__(self,dtype=None):
         return self._client.array(self._fileName, self._path, dtype)
+
+    def resize(self, size, axis=None):
+        return self._client.resize(self._fileName, self._path, size, axis)
 
     
 from .client import Client

@@ -177,5 +177,26 @@ class Client(object):
         )
         return self._ser.call(args)
 
+    def modify(self, fileName, path, name, value, attrs = False):
+        args = dict(
+            func = "modify",
+            fileName = fileName,
+            path = path,
+            name = name,
+            value = value,
+            attrs = attrs
+        )
+        return self._ser.call(args)
+
+    def resize(self, fileName, path, size, axis):
+        args = dict(
+            func = "resize",
+            fileName = fileName,
+            path = path,
+            size = size,
+            axis = axis
+        )
+        return self._ser.call(args)
+
 
 from .serializer import Serializer

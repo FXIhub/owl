@@ -41,7 +41,7 @@ class Server(object):
             array = self.array, create_dataset = self.create_dataset,
             create_group = self.create_group, mode = self.mode, 
             contains = self.contains, values = self.values,
-            items = self.items, get = self.get)
+            items = self.items, get = self.get, modify = self.modify, resize = self.resize)
         # Get the function name to be called from the 'func' key
         fname = fc.pop('func')
         # Append eventual extra keyword arguments to the fc dictionary of arguments
@@ -147,6 +147,12 @@ class Server(object):
         else:
             return self.resolve(fileName, path, attrs).get(name, default, getclass, getlink)
 
+    def modify(self,fileName, path, name, value, attrs):
+        return self.resolve(fileName, path, attrs).modify(name, value)
+
+    def resize(self,fileName, path, size, axis):
+        return self.resolve(fileName, path).resize(size, axis)
+            
 
 from .h5proxy import Dataset,Group,File,Attributes 
 from .serializer import Serializer
