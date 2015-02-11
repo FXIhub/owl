@@ -459,8 +459,13 @@ class Owl(QtGui.QMainWindow):
     def _openFileClicked(self):
         """Slot triggered when Open File is clicked."""
         fileName = QtGui.QFileDialog.getOpenFileName(self, "Open CXI File", None, "CXI Files (*.cxi)")
-        if(fileName[0]):
-            self._openCXIFile(fileName)
+        # JAS: PySide (1.2.2) returns tuple, PyQt4 (4.8.6) returns unicode, which is fixed below
+        if(isinstance(fileName, tuple)):
+            if(fileName[0]):
+                self._openCXIFile(fileName[0])
+        else:
+            if(fileName):
+                self._openCXIFile(fileName)
 
     def _fileModeClicked(self):
         """Slot triggered when File Mode is clicked."""
