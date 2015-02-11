@@ -44,6 +44,10 @@ class Serializer(object):
                     data = Group(self._parent, data['fileName'], data['path'])
                 elif(data['className'] == "Attributes"):
                     data = Attributes(self._parent, data['fileName'], data['path'])
+                elif(data['className'] == "SoftLink"):
+                    data = h5py.SoftLink(data['path'])
+                elif(data['className'] == "ExternalLink"):
+                    data = h5py.ExternalLink(data['fileName'],data['path'])
                 elif(data['className'] == "exception"):
                     exc_type = data['exc_type']
                     exc_value = data['exc_value']
@@ -107,6 +111,17 @@ class Serializer(object):
                 fileName = data.file.filename,
                 path = ''
             )
+        elif type(data) is h5proxy.ExternalLink:
+            data = dict(
+                className = "ExternalLink",
+                fileName = data.filename,
+                path = data.path
+            )
+        elif type(data) is h5proxy.SoftLink:
+            data = dict(
+                className = "SoftLink",
+                path = data.path
+            )
         elif isinstance(data, numpy.ndarray) and self._socket:
             arrays.append(data)
             data = dict(
@@ -126,5 +141,6 @@ class Serializer(object):
             data = type(data)(ldata)
         return data, arrays
 
-from .h5proxy import Dataset,Group,File,Attributes 
+from .h5proxy import Dataset,Group,File,Attributes, SoftLink, ExternalLink
+import h5proxy
 from .server import Server
