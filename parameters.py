@@ -49,6 +49,9 @@ class AbstractParameterItem:
             if n in self.genParams:
                 self.genParams[n] = data[0]
             elif n in self.indParams:
+                while len(self.indParams[n]) < len(data):
+                    v = self.paramsIndDef[n]
+                    numpy.append(self.indParams[n],numpy.ones(self.chunkSize)*v)
                 self.indParams[n][:len(data)] = data[:]
     def getParams(self,img0):
         if (self.genParams == {}) or (self.indParams == {}):

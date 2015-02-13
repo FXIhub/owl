@@ -1,5 +1,8 @@
 from Qt import QtGui, QtCore
 import numpy
+import sys,os
+sys.path.append(os.path.dirname(os.path.realpath(__file__))+"/../")
+
 import h5proxy as h5py
 import settingsOwl
 from groupitem import GroupItem
