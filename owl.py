@@ -301,9 +301,9 @@ class Owl(QtGui.QMainWindow):
                          "Display Properties" : "Ctrl+D",
                          "Tags"               : "Ctrl+G",
                          "Model"              : "Ctrl+M",
-                         "Patterson"          : "Ctrl+P",
-                         "Pixel Peeper": "Ctrl+X",
-                         "Peak Finder": "Ctrl+K",
+                         "Patterson"          : "Ctrl+A",
+                         "Pixel Peeper"       : "Ctrl+X",
+                         "Peak Finder"        : "Ctrl+K",
         }
 
         viewNames = ["File Tree", "Display Properties", "View 1D", "View 2D", "Tags", "Model", "Patterson", "Pixel Peeper", "Peak Finder"]
