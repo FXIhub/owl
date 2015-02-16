@@ -199,7 +199,7 @@ class View1D(QtGui.QFrame,View):
         #self.nBins = props["N"]
         self.refreshPlot()
     def emitViewIndexSelected(self,foovalue=None):
-        index = int(self.infLine.getXPos())
+        index = int(round(self.infLine.getXPos()))
         self.viewIndexSelected.emit(index)
     #def onPlotNBinsEdit(self):
     #    self.nBins = int(self.sender().text())
