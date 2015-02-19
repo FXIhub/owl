@@ -3,8 +3,9 @@ import logging
 import numpy
 import fit
 import patterson
+logger = logging.getLogger("Viewer")
 
-class AbstractParameterItem:
+class AbstractParameterItem():
     def __init__(self,parentGroup,fileLoader,name,individualParamsDef,generalParamsDef):
         self.parentGroup = parentGroup
         self.fileLoader = fileLoader
@@ -55,7 +56,7 @@ class AbstractParameterItem:
                 self.indParams[n][:len(data)] = data[:]
     def getParams(self,img0):
         if (self.genParams == {}) or (self.indParams == {}):
-            self.initParams()
+           self.initParams()
         if img0 is None:
             img = 0
         else:
@@ -72,6 +73,9 @@ class AbstractParameterItem:
             ps[n] = p[img]
         return ps
     def setParams(self,img,paramsNew):
+        if img is None:
+            logger.info("No image selected. Therefore cannot set parameters.")
+            return
         paramsOld = self.getParams(img)
         for n,pNew in paramsNew.items():
             if n in self.indParams:
@@ -154,18 +158,33 @@ class ModelItem(AbstractParameterItem):
         name = "model"
         AbstractParameterItem.__init__(self,parentGroup,fileLoader,name,individualParamsDef,generalParamsDef)
     def find_center(self,img):
+        if img is None:
+            QtGui.QMessageBox.warning(self.fileLoader.parent, self.fileLoader.parent.tr("CXI Viewer"),
+                                      self.fileLoader.parent.tr("No image selected. Please click on the image that you want to use for center finding and try again."))
+            return
         M = fit.FitModel(self.dataItemImage,self.dataItemMask)
         newParams = M.find_center(img,self.getParams(img))
         self.setParams(img,newParams)
     def fit_diameter(self, img):
-        M = fit.FitModel(self.dataItemImage,self.dataItemMask)
+        if img is None:
+            QtGui.QMessageBox.warning(self.fileLoader.parent, self.fileLoader.parent.tr("CXI Viewer"),
+                                      self.fileLoader.parent.tr("No image selected. Please click on the image that you want to use as input to fit the diameter and try again."))
+            return
         newParams = M.fit_diameter(img,self.getParams(img))
         self.setParams(img,newParams)
     def fit_intensity(self, img):
+        if img is None:
+            QtGui.QMessageBox.warning(self.fileLoader.parent, self.fileLoader.parent.tr("CXI Viewer"),
+                                      self.fileLoader.parent.tr("No image selected. Please click on the image that you want to use as input to fit the intensity and try again."))
+            return
         M = fit.FitModel(self.dataItemImage,self.dataItemMask)
         newParams = M.fit_intensity(img,self.getParams(img))
         self.setParams(img,newParams)
     def fit_model(self,img):
+        if img is None:
+            QtGui.QMessageBox.warning(self.fileLoader.parent, self.fileLoader.parent.tr("CXI Viewer"),
+                                      self.fileLoader.parent.tr("No image selected. Please click on the image that you want to use as input to fit the model and try again."))
+            return
         M = fit.FitModel(self.dataItemImage,self.dataItemMask)
         newParams = M.fit_model(img,self.getParams(img))
         self.setParams(img,newParams)
