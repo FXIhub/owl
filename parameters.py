@@ -102,8 +102,12 @@ class AbstractParameterItem():
                 if n in grp:
                     ds = grp[n]
                     if ds.shape[0] != p.shape:
-                        ds.resize(p.shape)
-                    ds[:self.numEvents] = p[:]
+                        try:
+                            ds.resize(p.shape)
+                            ds[:self.numEvents] = p[:]
+                        # FM: Fix to allow saving parameters on older files without chunked parameter datasets
+                        except TypeError:
+                            ds[:] = p[:ds.shape[0]]                            
                 else:
                     ds = self.fileLoader[self.fullName].create_dataset(n,p.shape,maxshape=(None,),chunks=(10000,),data=self.indParams[n])
                     ds.attrs.modify("axes",["experiment_identifier"])
