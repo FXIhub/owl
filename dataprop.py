@@ -141,6 +141,8 @@ class DataProp(QtGui.QWidget):
         self.plotPointsCheckBox = QtGui.QCheckBox("",parent=self)
         hbox.addWidget(self.plotPointsCheckBox)
         self.plotBox.vbox.addLayout(hbox)
+        
+        self.plotBoxValueLabel = None
 
         self.plotBox.setLayout(self.plotBox.vbox)
         self.plotBox.hide()
@@ -259,6 +261,15 @@ class DataProp(QtGui.QWidget):
         self.displayBox.displayMin.setText("%0.1f" % (normVminShow))
         self.displayBox.displayMax.setText("%0.1f" % (normVmaxShow))
         self.checkLimits()
+    def setXYInPlotBox(self, x, y):
+        if self.plotBoxValueLabel is None:
+            hbox = QtGui.QHBoxLayout()
+            self.plotBoxValueLabel = QtGui.QLabel("(x, y): (%.0f, %.2e)" % (x, y), parent=self)
+            hbox.addWidget(self.plotBoxValueLabel)
+            self.plotBox.vbox.addLayout(hbox)
+            self.plotBox.setLayout(self.plotBox.vbox)
+        else:
+            self.plotBoxValueLabel.setText("(x, y): (%.0f, %.2e)" % (x, y))
     def checkLimits(self):
         #normVmin,normVmax = self.displayBox.getRegionLimits()
         #normVminUnit = self.displayBox.displayMinUnit.itemText(self.displayBox.displayMinUnit.currentIndex())

@@ -444,6 +444,7 @@ class Owl(QtGui.QMainWindow):
         self.view.view2D.pixelClicked.connect(self.dataProp.onPixelClicked)
         self.view.view2D.pixelClicked.connect(self.view.view1D.onPixelClicked)
         self.view.view1D.viewIndexSelected.connect(self.handleViewIndexSelected)
+        self.view.view1D.viewValueSelected.connect(self.handleViewValueSelected)
         self.goMenu.nextRow.triggered.connect(self.view.view2D.nextRow)
         self.goMenu.previousRow.triggered.connect(self.view.view2D.previousRow)
         self.saveMenu.toPNG.triggered.connect(self.view.view2D.saveToPNG)
@@ -943,8 +944,17 @@ class Owl(QtGui.QMainWindow):
         self.view.view1D.onStackSizeChanged(newStackSize)
         self.dataProp.onStackSizeChanged(newStackSize)
 
+    def handleViewValueSelected(self, value):
+        """Slot triggered when a new value is selected in the View1D
+
+        TODO JAS: link signal directly
+        """
+        assert type(value) == list, "value is not a list.."
+        assert len(value) == 2, "list is not of length 2 (%d)" % len(value)
+        self.dataProp.setXYInPlotBox(value[0], value[1])
+
     def handleViewIndexSelected(self, index):
-        """Slot triggered when the a new index is selected in the View1D
+        """Slot triggered when a new index is selected in the View1D
 
         TODO FM: link signal directly
         """

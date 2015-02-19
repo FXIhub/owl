@@ -6,6 +6,7 @@ import h5proxy as h5py
 
 class View1D(QtGui.QFrame,View):
     viewIndexSelected = QtCore.Signal(int)
+    viewValueSelected = QtCore.Signal(list)
     dataItemXChanged = QtCore.Signal(object)
     dataItemYChanged = QtCore.Signal(object)
     needDataset = QtCore.Signal(str)
@@ -17,13 +18,13 @@ class View1D(QtGui.QFrame,View):
         self.hbox = QtGui.QHBoxLayout(self)
         margin = 20
         self.hbox.setContentsMargins(margin,margin,margin,margin)
+        self.dataItemY = None
+        self.dataItemX = None
         self.initPlot()
         self.hbox.addWidget(self.plot)
         self.setLayout(self.hbox)
         self.setAcceptDrops(True)
         self.plotMode = "plot"
-        self.dataItemY = None
-        self.dataItemX = None
         #self.setPixelStack()
         self.setWindowSize()
         self.nBins = 200
@@ -65,6 +66,12 @@ class View1D(QtGui.QFrame,View):
             if self.dataItemY.isStack:
                 self.img = int(info["img"])
                 self.refreshPlot()
+        if info is not None:
+            if self.dataItemY is not None:
+                dataY = self.dataItemY.data()
+                self.viewValueSelected.emit([info["img"], dataY[info["img"]]])
+            if self.infLine is not None:
+                self.infLine.setValue(info["img"])
     def setDataItemX(self,dataItem):
         if self.dataItemX is not None:
             self.dataItemX.deselectStack()
@@ -113,6 +120,9 @@ class View1D(QtGui.QFrame,View):
             self.plot.addItem(infLine)
             infLine.sigPositionChangeFinished.connect(self.emitViewIndexSelected)    
             self.infLine = infLine
+            if self.dataItemY:
+                dataY = self.dataItemY.data()
+                self.viewValueSelected.emit([0, dataY[0]])
     def removeInfLine(self):
         if self.infLine is not None:
             self.plot.removeItem(self.infLine)
@@ -201,6 +211,9 @@ class View1D(QtGui.QFrame,View):
     def emitViewIndexSelected(self,foovalue=None):
         index = int(round(self.infLine.getXPos()))
         self.viewIndexSelected.emit(index)
+        if self.dataItemY is not None:
+            dataY = self.dataItemY.data()
+            self.viewValueSelected.emit([index, dataY[index]])
     #def onPlotNBinsEdit(self):
     #    self.nBins = int(self.sender().text())
     #    self.refreshPlot()
