@@ -120,9 +120,8 @@ class FitModel:
         m  = params["materialType"]
         rm = params["maskRadius"]
         dp = params["_doPhotonCounting"]
-        x0, y0, d, i, info = spimage.fit_full_sphere_model(I, M,
-                                                           diameter_nm=d, intensity_mJ_per_um2=i, wavelength_nm=wl, pixelsize_um=ps, detector_distance_mm=D,
-                                                           full_output=True, x0=x0, y0=y0, adup=ap, queff=qe, mat=m, rmax=rm, downsampling=1, do_photon_counting=dp)
+        x0, y0, d, i, info = spimage.fit_full_sphere_model(I, M, d, i, wl, ps, D,
+                                                           full_output=True, x0=x0, y0=y0, detector_adu_photon=ap, detector_qe=qe, material=m, rmax=rm, downsampling=1, do_photon_counting=dp)
         params["offCenterX"] = x0
         params["offCenterY"] = y0
         params["diameterNM"] = d

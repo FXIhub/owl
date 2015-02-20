@@ -174,6 +174,7 @@ class ModelItem(AbstractParameterItem):
             QtGui.QMessageBox.warning(self.fileLoader.parent, self.fileLoader.parent.tr("CXI Viewer"),
                                       self.fileLoader.parent.tr("No image selected. Please click on the image that you want to use as input to fit the diameter and try again."))
             return
+        M = fit.FitModel(self.dataItemImage,self.dataItemMask)
         newParams = M.fit_diameter(img,self.getParams(img))
         self.setParams(img,newParams)
     def fit_intensity(self, img):
