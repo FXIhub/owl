@@ -286,6 +286,7 @@ class View2D(QtOpenGL.QGLWidget,View):
         self.modelVisibilityLoc = GL.glGetUniformLocation(self.shader, "modelVisibility")
         self.modelMinimaAlphaLoc = GL.glGetUniformLocation(self.shader, "modelMinimaAlpha")
         self.fitMaskRadiusLoc = GL.glGetUniformLocation(self.shader, "fitMaskRadius")
+        self.detectorADUPhotonLoc = GL.glGetUniformLocation(self.shader, "detectorADUPhoton")
 
     def _initColormapTextures(self):
         n = 1024
@@ -736,6 +737,8 @@ class View2D(QtOpenGL.QGLWidget,View):
             m = params["materialType"]
             QE = params["detectorQuantumEfficiency"]
             ADUP = params["detectorADUPhoton"]
+            GL.glUniform1f(self.detectorADUPhotonLoc, ADUP)
+
             modelScale = spimage.sphere_model_convert_intensity_to_scaling(i, d, wl, p, D, QE, ADUP, m)
             GL.glUniform1f(self.modelScaleLoc, modelScale)
 

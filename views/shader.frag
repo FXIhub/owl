@@ -18,6 +18,7 @@ uniform float imageShapeY;
 uniform float modelVisibility;
 uniform float modelMinimaAlpha;
 uniform float fitMaskRadius;
+uniform float detectorADUPhoton;
 #define M_PI 3.1415926535897932384626433832795
 
 vec4 colorLookup(in sampler2D colormap, in vec2 coord)
@@ -26,6 +27,26 @@ vec4 colorLookup(in sampler2D colormap, in vec2 coord)
     coord[0] = 1.0-coord[0];
   }
   return texture2D(colormap, coord);
+}
+
+float rand(vec2 co){
+    return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
+}
+
+float poisson(float x, vec2 co){
+  co.x = floor(co.x * imageShapeX)/imageShapeX;
+  co.y = floor(co.y * imageShapeY)/imageShapeY;
+  x = x/detectorADUPhoton;
+  float L = exp(-x);
+  float k = 0.0;
+  float p = 1.0;
+  while(p > L){
+    k = k + 1.0;
+    co.x = rand(co);
+    co.y = rand(co);
+    p = p * co.x;
+  }
+  return (k-1.0)*detectorADUPhoton;
 }
 
 void main()
@@ -79,6 +100,7 @@ void main()
     //    float s = modelSize*sqrt((uv[0]-modelCenterX)*(uv[0]-modelCenterX)*(imageShapeX-1.)*(imageShapeX-1.)+(uv[1]-modelCenterY)*(uv[1]-modelCenterY)*(imageShapeY-1.)*(imageShapeY-1.));
     color.a = 3.0*(sin(s)-s*cos(s))/(s*s*s);
     color.a *= color.a * modelScale;
+    color.a = poisson(color.a, uv);
 
   }else{
 
