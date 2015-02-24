@@ -1,5 +1,11 @@
 #!/bin/bash
-DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+# Check if called from a symbolic link
+FILE=${BASH_SOURCE[0]}
+if [ -h "$FILE" ]
+then
+    FILE=$( readlink "$FILE" )
+fi
+DIR=$( cd "$( dirname "$FILE" )" && pwd )
 if [[ $HOSTNAME == psusr* ]] || [[ $HOSTNAME == psnxserv ]];
 then
   # Source environment

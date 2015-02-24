@@ -1419,8 +1419,11 @@ class View2D(QtOpenGL.QGLWidget,View):
         try:
             import Image
         except:
-            self.logger.warning("Cannot import PIL (Python Image Library). Saving to PNG failed.")
-            return
+            try:
+                from PIL import Image
+            except:
+                self.logger.warning("Cannot import PIL (Python Image Library). Saving to PNG failed.")
+                return
         self.browseToViewIndex(self.indexProjector.imgToIndex(self.centralImg))
         self.updateGL()
         (x, y, z) = self._imageToWindow(self.centralImg, 'TopLeft', False)
@@ -1429,7 +1432,7 @@ class View2D(QtOpenGL.QGLWidget,View):
         width = int(self._getImgWidth("window"))
         height = int(self.getImgHeight("window"))
         buffer = GL.glReadPixels(x, y-height, width, height, GL.GL_RGBA, GL.GL_UNSIGNED_BYTE)
-        image = Image.fromstring(mode="RGBA", size=(width, height),
+        image = Image.frombytes(mode="RGBA", size=(width, height),
                                  data=buffer)
         filename = "%s/%s_%s_%i.png" % (self.PNGOutputPath, (self.viewer.filename.split("/")[-1])[:-4],
                                         self.data.name, self.centralImg)
@@ -1437,7 +1440,7 @@ class View2D(QtOpenGL.QGLWidget,View):
         self.viewer.statusBar.showMessage("Saving image %i to %s" % (self.centralImg, filename), 1000)
 
     def toggleAutoLast(self):
-        """Toogles moving to the last image in the stack automatically"""
+        """Toggles moving to the last image in the stack automatically"""
         self.autoLast = not self.autoLast
         self._browseToLastIfAuto()
 

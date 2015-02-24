@@ -58,9 +58,11 @@ class FitModel:
         ne = params["_nrEval"]
         dp = params["_doPhotonCounting"]
         if method == 'pearson':
-            diameter, info = spimage.fit_sphere_diameter(I, M, d, i, wl, ps, D, method='pearson', full_output=True, x0=x0, y0=y0, adup=ap, queff=qe, mat=m, rmax=rm, downsampling=1, do_brute_evals=ne, do_photon_counting=dp)
+            diameter, info = spimage.fit_sphere_diameter(I, M, d, i, wl, ps, D,
+                                                         method='pearson', full_output=True, x0=x0, y0=y0, detector_adu_photon=ap, detector_quantum_efficiency=qe, material=m, rmax=rm, downsampling=1, do_brute_evals=ne, do_photon_counting=dp)
         elif method == 'pixelwise':
-            diameter, info = spimage.fit_sphere_diameter(I, M, d, i, wl, ps, D, method='pixelwise', full_output=True, x0=x0, y0=y0, adup=ap, queff=qe, mat=m, rmax=rm, downsampling=1, do_photon_counting=dp)
+            diameter, info = spimage.fit_sphere_diameter(I, M, d, i, wl, ps, D,
+                                                         method='pixelwise', full_output=True, x0=x0, y0=y0, detector_adu_photon=ap, detector_quantum_efficiency=qe, material=m, rmax=rm, downsampling=1, do_photon_counting=dp)
         else:
             diameter, info = [d, {"pcov":None, "error":None}]
         params["diameterNM"] = diameter
@@ -86,9 +88,11 @@ class FitModel:
         rm = params["maskRadius"]
         dp = params["_doPhotonCounting"]
         if method == 'pixelwise':
-            intensity, info = spimage.fit_sphere_intensity(I, M, d, i, wl, ps, D, method='pixelwise', full_output=True, x0=x0, y0=y0, adup=ap, queff=qe, mat=m, rmax=rm, downsampling=1, do_photon_counting=dp)
+            intensity, info = spimage.fit_sphere_intensity(I, M, d, i, wl, ps, D,
+                                                           method='pixelwise', full_output=True, x0=x0, y0=y0, detector_adu_photon=ap, detector_quantum_efficiency=qe, material=m, rmax=rm, downsampling=1, do_photon_counting=dp)
         elif method == 'nrphotons':
-            intensity, info = spimage.fit_sphere_intensity(I, M, d, i, wl, ps, D, method='nrphotons', full_output=True, x0=x0, y0=y0, adup=ap, queff=qe, mat=m, rmax=rm, downsampling=1, do_photon_counting=dp)
+            intensity, info = spimage.fit_sphere_intensity(I, M, d, i, wl, ps, D,
+                                                           method='nrphotons', full_output=True, x0=x0, y0=y0, detector_adu_photon=ap, detector_quantum_efficiency=qe, material=m, rmax=rm, downsampling=1, do_photon_counting=dp)
         else:
             intensity, info = [i, {"pcov":None, "error":None}]
         params["intensityMJUM2"] = intensity
@@ -112,7 +116,8 @@ class FitModel:
         m  = params["materialType"]
         rm = params["maskRadius"]
         dp = params["_doPhotonCounting"]
-        x0, y0, d, i, info = spimage.fit_full_sphere_model(I, M, d, i, wl, ps, D, full_output=True, x0=x0, y0=y0, adup=ap, queff=qe, mat=m, rmax=rm, downsampling=1, do_photon_counting=dp)
+        x0, y0, d, i, info = spimage.fit_full_sphere_model(I, M, d, i, wl, ps, D,
+                                                           full_output=True, x0=x0, y0=y0, detector_adu_photon=ap, detector_quantum_efficiency=qe, material=m, rmax=rm, downsampling=1, do_photon_counting=dp)
         params["offCenterX"] = x0
         params["offCenterY"] = y0
         params["diameterNM"] = d
