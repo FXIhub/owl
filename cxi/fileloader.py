@@ -42,7 +42,7 @@ class FileLoader(QtCore.QObject):
 #        if isinstance(self._f,h5py.h5proxy.File):
             self._f.close()
         try:
-            print fullFilename
+            #print fullFilename
             self._f = h5py.File(fullFilename,mode)#,libver='latest')
             return 0
         except IOError as e:            
