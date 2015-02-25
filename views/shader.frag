@@ -13,6 +13,7 @@ uniform float modelCenterY;
 uniform float modelSize;
 uniform float modelScale;
 uniform int showModel;
+uniform int showModelPoisson;
 uniform float imageShapeX;
 uniform float imageShapeY;
 uniform float modelVisibility;
@@ -100,7 +101,9 @@ void main()
     //    float s = modelSize*sqrt((uv[0]-modelCenterX)*(uv[0]-modelCenterX)*(imageShapeX-1.)*(imageShapeX-1.)+(uv[1]-modelCenterY)*(uv[1]-modelCenterY)*(imageShapeY-1.)*(imageShapeY-1.));
     color.a = 3.0*(sin(s)-s*cos(s))/(s*s*s);
     color.a *= color.a * modelScale;
-    color.a = poisson(color.a, uv);
+    if (showModelPoisson == 1){
+       color.a = poisson(color.a, uv);
+    }
 
   }else{
 

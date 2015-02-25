@@ -725,6 +725,7 @@ class ModelProperties(QtGui.QGroupBox, Ui_ModelProperties):
         self.visibilitySlider.valueChanged.connect(self.ModelVisibilityChanged)
         self.minimaEdit.textChanged.connect(self.ModelMinimaChanged)
         self.minimaSlider.valueChanged.connect(self.ModelMinimaChanged)
+        self.showModelPoisson.stateChanged.connect(self.ModelPoissonChanged)
     def setModelItem(self,modelItem=None):
         self.modelItem = modelItem
         if modelItem is None:
@@ -852,6 +853,9 @@ class ModelProperties(QtGui.QGroupBox, Ui_ModelProperties):
         self.minimaEdit.setText(str(value))
         self.minimaSlider.setValue(int(value))
         self.setParams()
+    def ModelPoissonChanged(self, value):
+        self.parent.viewer.view.view2D.modelViewPoisson = (value != 0)
+        
     def toggleVisible(self):
         self.setVisible(hasSpimage and not self.isVisible())
 
