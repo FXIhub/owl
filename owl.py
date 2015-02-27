@@ -693,6 +693,7 @@ class Owl(QtGui.QMainWindow):
         """
         _ = action
         self.view.view2D.setMaskOutBits(self.cxiNavigation.dataMenus["mask"].getMaskOutBits())
+        self.cxiNavigation.CXITree.fileLoader.maskOutBits = self.cxiNavigation.dataMenus["mask"].getMaskOutBits()
         #self.view.view2D.clearTextures()
         self.view.view2D.updateGL()
 

@@ -16,6 +16,7 @@ class FileLoader(QtCore.QObject):
         self.parent = parent
         self._f = None
         self.stackSize = None
+        self.maskOutBits = None
         self.mode = parent.settings.value("fileMode")
         self.settings = QtCore.QSettings()
         self._init_timer()

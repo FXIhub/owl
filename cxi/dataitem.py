@@ -133,7 +133,7 @@ class DataItem:
         else:
             d = numpy.array(self.fileLoader[self.fullName])
         if kwargs.get("binaryMask",False):
-            d = (d & PixelMask.PIXEL_IS_IN_MASK) == 0
+            d = (d & self.fileLoader.maskOutBits) == 0
 
         windowSize = kwargs.get("windowSize",None)
         if windowSize is not None:

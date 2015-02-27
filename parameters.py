@@ -73,10 +73,6 @@ class AbstractParameterItem():
             ps[n] = p[img]
         return ps
     def setParams(self,img,paramsNew):
-        #if img is None:
-        #   logger.info("No image selected. Therefore cannot set parameters.")
-        #   return
-        # B.D.: This kills the possibility to change global parameters, e.g. of the model (energy, distance, ...)
         paramsOld = self.getParams(img)
         for n,pNew in paramsNew.items():
             if n in self.indParams:
