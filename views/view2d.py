@@ -102,6 +102,7 @@ class View2D(QtOpenGL.QGLWidget,View):
         self.tagView = True
         self.modelView = False
         self.modelViewPoisson = False
+        self.modelViewMask = False
         self.pattersonView = False
         self.hoveredPixel = None
         self.showPixelPeeper = False
@@ -283,6 +284,7 @@ class View2D(QtOpenGL.QGLWidget,View):
         self.modelScaleLoc = GL.glGetUniformLocation(self.shader, "modelScale")
         self.showModelLoc = GL.glGetUniformLocation(self.shader, "showModel")
         self.showModelPoissonLoc = GL.glGetUniformLocation(self.shader, "showModelPoisson")
+        self.showModelMaskLoc = GL.glGetUniformLocation(self.shader, "showModelMask")
         self.imageShapeXLoc = GL.glGetUniformLocation(self.shader, "imageShapeX")
         self.imageShapeYLoc = GL.glGetUniformLocation(self.shader, "imageShapeY")
         self.modelVisibilityLoc = GL.glGetUniformLocation(self.shader, "modelVisibility")
@@ -711,6 +713,7 @@ class View2D(QtOpenGL.QGLWidget,View):
 
         GL.glUniform1i(self.showModelLoc, self.modelView)
         GL.glUniform1i(self.showModelPoissonLoc, self.modelViewPoisson)
+        GL.glUniform1i(self.showModelMaskLoc, self.modelViewMask)
 
         # Model related variables
         if(self.modelView):

@@ -14,6 +14,7 @@ uniform float modelSize;
 uniform float modelScale;
 uniform int showModel;
 uniform int showModelPoisson;
+uniform int showModelMask;
 uniform float imageShapeX;
 uniform float imageShapeY;
 uniform float modelVisibility;
@@ -104,11 +105,10 @@ void main()
     if (showModelPoisson == 1){
        color.a = poisson(color.a, uv);
     }
+  }
 
-  }else{
-
-    // Apply Mask
-
+  // Apply Mask
+  if (((showModel == 0) || (uv[0] < modelVisibility)) || (showModelMask == 1)){
     // Using a float for the mask will only work up to about 24 bits
     float maskBits = mcolor.a;
     // loop through the first 16 bits
