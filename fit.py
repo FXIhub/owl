@@ -44,11 +44,11 @@ class FitModel:
         I = self.dataItemImage.data(img=img)
         M = self.dataItemMask.data(img=img,binaryMask=True)
         method = params["_fitDiameterMethod"]
-        d  = params["diameterNM"]
-        i  = params["intensityMJUM2"]
-        wl = params["photonWavelengthNM"]
-        ps = params["detectorPixelSizeUM"]
-        D  = params["detectorDistanceMM"]
+        d  = params["diameterNM"] * 1E-9
+        i  = params["intensityMJUM2"] * 1E-3 / 1E-12
+        wl = params["photonWavelengthNM"] * 1E-9
+        ps = params["detectorPixelSizeUM"] * 1E-6
+        D  = params["detectorDistanceMM"] * 1E-3
         x0 = params["offCenterX"]
         y0 = params["offCenterY"]
         ap = params["detectorADUPhoton"]
@@ -65,8 +65,8 @@ class FitModel:
                                                          method='pixelwise', full_output=True, x0=x0, y0=y0, detector_adu_photon=ap, detector_quantum_efficiency=qe, material=m, rmax=rm, downsampling=1, do_photon_counting=dp)
         else:
             diameter, info = [d, {"pcov":None, "error":None}]
-        params["diameterNM"] = diameter
-        params["fitErrorDiameterNM"] = info["pcov"]
+        params["diameterNM"] = diameter / 1E-9
+        params["fitErrorDiameterNM"] = info["pcov"] / 1E-9
         params["fitError"] = info["error"]
         return params
             
@@ -75,11 +75,11 @@ class FitModel:
         I = self.dataItemImage.data(img=img)
         M = self.dataItemMask.data(img=img,binaryMask=True)
         method = params["_fitIntensityMethod"]
-        d  = params["diameterNM"]
-        i  = params["intensityMJUM2"]
-        wl = params["photonWavelengthNM"]
-        ps = params["detectorPixelSizeUM"]
-        D  = params["detectorDistanceMM"]
+        d  = params["diameterNM"] * 1.E-9
+        i  = params["intensityMJUM2"] * 1E-3 / 1E-12
+        wl = params["photonWavelengthNM"] * 1E-9
+        ps = params["detectorPixelSizeUM"] * 1E-6
+        D  = params["detectorDistanceMM"] * 1E-3
         x0 = params["offCenterX"]
         y0 = params["offCenterY"]
         ap = params["detectorADUPhoton"]
@@ -95,8 +95,8 @@ class FitModel:
                                                            method='nrphotons', full_output=True, x0=x0, y0=y0, detector_adu_photon=ap, detector_quantum_efficiency=qe, material=m, rmax=rm, downsampling=1, do_photon_counting=dp)
         else:
             intensity, info = [i, {"pcov":None, "error":None}]
-        params["intensityMJUM2"] = intensity
-        params["fitErrorIntensityMJUM2"] = info["pcov"]
+        params["intensityMJUM2"] = intensity / (1E-3 / 1E-12)
+        params["fitErrorIntensityMJUM2"] = info["pcov"] / (1E-3 / 1E-12)
         params["fitError"] = info["error"]
         return params
 
@@ -104,11 +104,11 @@ class FitModel:
         if not hasSpimage: return params
         I = self.dataItemImage.data(img=img)
         M = self.dataItemMask.data(img=img,binaryMask=True)
-        d  = params["diameterNM"]
-        i  = params["intensityMJUM2"]
-        wl = params["photonWavelengthNM"]
-        ps = params["detectorPixelSizeUM"]
-        D  = params["detectorDistanceMM"]
+        d  = params["diameterNM"] * 1E-9
+        i  = params["intensityMJUM2"] * 1E-3 / 1E-12
+        wl = params["photonWavelengthNM"] * 1E-9
+        ps = params["detectorPixelSizeUM"] * 1E-6
+        D  = params["detectorDistanceMM"] * 1E-3
         x0 = params["offCenterX"]
         y0 = params["offCenterY"]
         ap = params["detectorADUPhoton"]
@@ -120,12 +120,12 @@ class FitModel:
                                                            full_output=True, x0=x0, y0=y0, detector_adu_photon=ap, detector_quantum_efficiency=qe, material=m, rmax=rm, downsampling=1, do_photon_counting=dp)
         params["offCenterX"] = x0
         params["offCenterY"] = y0
-        params["diameterNM"] = d
-        params["intensityMJUM2"] = i
+        params["diameterNM"] = d / 1E-9
+        params["intensityMJUM2"] = i / (1E-3 / 1E-12)
         params["fitErrorOffCenterX"] = info["pcov"][0]
         params["fitErrorOffCenterY"] = info["pcov"][1]
-        params["fitErrorDiameterNM"] = info["pcov"][2]
-        params["fitErrorIntensityMJUM2"] = info["pcov"][3]
+        params["fitErrorDiameterNM"] = info["pcov"][2] / 1E-9
+        params["fitErrorIntensityMJUM2"] = info["pcov"][3] / (1E-3 / 1E-12)
         params["fitError"] = info["error"]
         return params
         

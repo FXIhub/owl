@@ -731,15 +731,15 @@ class View2D(QtOpenGL.QGLWidget,View):
             GL.glUniform1f(self.modelCenterYLoc, centerY)
 
             # Update size of sphere model
-            d  = params["diameterNM"]
-            wl = params["photonWavelengthNM"]
-            p  = params["detectorPixelSizeUM"]
-            D  = params["detectorDistanceMM"]
+            d  = params["diameterNM"] * 1E-9
+            wl = params["photonWavelengthNM"] * 1E-9
+            p  = params["detectorPixelSizeUM"] * 1E-6
+            D  = params["detectorDistanceMM"] * 1E-3
             modelSize = spimage.sphere_model_convert_diameter_to_size(d, wl, p, D)
             GL.glUniform1f(self.modelSizeLoc, modelSize)
 
             # Update scale of sphere model
-            i = params["intensityMJUM2"]
+            i = params["intensityMJUM2"] * 1E-3 / 1E-12
             m = params["materialType"]
             QE = params["detectorQuantumEfficiency"]
             ADUP = params["detectorADUPhoton"]
@@ -1533,23 +1533,25 @@ class View2D(QtOpenGL.QGLWidget,View):
         centerY = ((s[0]-1)/2.+params["offCenterY"])
 
         # Update size of sphere model
-        d  = params["diameterNM"]
-        wl = params["photonWavelengthNM"]
-        p  = params["detectorPixelSizeUM"]
-        D  = params["detectorDistanceMM"]
+        d  = params["diameterNM"] * 1E-9
+        wl = params["photonWavelengthNM"] * 1E-9
+        p  = params["detectorPixelSizeUM"] * 1E-6
+        D  = params["detectorDistanceMM"] * 1E-3
         modelSize = spimage.sphere_model_convert_diameter_to_size(d, wl, p, D)
 
         # Update scale of sphere model
-        i = params["intensityMJUM2"]
+        i = params["intensityMJUM2"] * 1E-3 / 1E-12
         m = params["materialType"]
         QE = params["detectorQuantumEfficiency"]
         ADUP = params["detectorADUPhoton"]
         modelScale = spimage.sphere_model_convert_intensity_to_scaling(i, d, wl, p, D, QE, ADUP, m)
 
-        xv, yv = numpy.meshgrid(range(s[0]),range(s[1]))
-        r = numpy.sqrt((xv-centerX)**2+(yv-centerY)**2)
-        s = 2.0*numpy.pi*modelSize*r;
-        modelImage =  (3.0*(numpy.sin(s)-s*numpy.cos(s))/(s*s*s))**2 * modelScale
+        xv, yv = numpy.meshgrid(numpy.arange(s[0]),numpy.arange(s[1]))
+        qx = spimage.x_to_qx(xv-centerX,p,D)
+        qy = spimage.x_to_qx(yv-centerY,p,D)
+        qr = numpy.sqrt(qx**2+qy**2)
+        modelImage = spimage.I_sphere_diffraction(modelScale,qr,modelSize)
+
         return modelImage
         
     @QtCore.Slot()
