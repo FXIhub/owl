@@ -1044,12 +1044,13 @@ def exceptionHandler(exceptionType, value, traceback):
     QtGui.QApplication.instance().exit()
     sys.exit(-1)
 
-def main():
-    """The main function"""
+if __name__ == '__main__':
+
     logging.basicConfig()
     QtCore.QCoreApplication.setOrganizationName("CXIDB")
     QtCore.QCoreApplication.setOrganizationDomain("cxidb.org")
     QtCore.QCoreApplication.setApplicationName("owl")
+
     # FM: This should provide retina rendering on Mac, but
     # might break some pyqtgraph stuff, we should be aware
     # QtGui.QApplication.setGraphicsSystem("native")
@@ -1057,7 +1058,7 @@ def main():
         app = QtGui.QApplication(sys.argv)
     else:
         app = QtGui.QApplication([])
-        
+
     parser = argparse.ArgumentParser(description='')
     parser.add_argument('-d', '--debug', dest='debuggingMode', action='store_true', help='debugging mode')
     parser.add_argument('filename', nargs="?", type=str, help='CXI file to load', default="")
@@ -1073,6 +1074,3 @@ def main():
     ret = app.exec_()
     aw.view.view2D.stopThreads()
     sys.exit(ret)
-
-if __name__ == '__main__':
-    main()
