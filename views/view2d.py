@@ -678,11 +678,11 @@ class View2D(QtOpenGL.QGLWidget,View):
                 imageDataSorted = numpy.sort(imageData.flatten())
             # min
             if self.normVminUnit == "Value":
-                lmin = self.normVminShow
+                lmin = self.normVmin
             elif self.normVminUnit == "% Range":
-                lmin = imageDataMin + (imageDataMax-imageDataMin) * self.normVminShow/100.
+                lmin = imageDataMin + (imageDataMax-imageDataMin) * self.normVmin/100.
             elif self.normVminUnit == "% Histogram":
-                imin = int(round(self.normVminShow/100. * (len(imageDataSorted)-1)))
+                imin = int(round(self.normVmin/100. * (len(imageDataSorted)-1)))
                 imin = min(imin,len(imageDataSorted)-1)
                 imin = max(imin,0)
                 lmin = imageDataSorted[imin]
@@ -690,11 +690,11 @@ class View2D(QtOpenGL.QGLWidget,View):
                 print "ERROR: Invalid unit for norm limits."
             # max
             if self.normVmaxUnit == "Value":
-                lmax = self.normVmaxShow
+                lmax = self.normVmax
             elif self.normVmaxUnit == "% Range":
-                lmax = imageDataMin + (imageDataMax-imageDataMin) * self.normVmaxShow/100.
+                lmax = imageDataMin + (imageDataMax-imageDataMin) * self.normVmax/100.
             elif self.normVmaxUnit == "% Histogram":
-                imax = int(round(self.normVmaxShow/100. * (len(imageDataSorted)-1)))
+                imax = int(round(self.normVmax/100. * (len(imageDataSorted)-1)))
                 imax = min(imax,len(imageDataSorted)-1)
                 imax = max(imax,0)
                 lmax = imageDataSorted[imax]
@@ -1400,8 +1400,8 @@ class View2D(QtOpenGL.QGLWidget,View):
                 self.normScalingValue = 1
             elif(self.normScaling == 'pow'):
                 self.normScalingValue = 2
-            self.normVminShow = prop["normVminShow"]
-            self.normVmaxShow = prop["normVmaxShow"]
+            self.normVmin = prop["normVmin"]
+            self.normVmax = prop["normVmax"]
             self.normVminUnit = prop["normVminUnit"]
             self.normVmaxUnit = prop["normVmaxUnit"]           
             self.normGamma = prop["normGamma"]

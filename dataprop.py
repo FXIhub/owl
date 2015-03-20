@@ -256,10 +256,10 @@ class DataProp(QtGui.QWidget):
         (normVmin,normVmax) = region.getRegion()
         normVminUnit = self.displayBox.displayMinUnit.itemText(self.displayBox.displayMinUnit.currentIndex())
         normVmaxUnit = self.displayBox.displayMaxUnit.itemText(self.displayBox.displayMaxUnit.currentIndex())
-        normVminShow = self.displayBox.toUnit(normVmin,"Value",normVminUnit)
-        normVmaxShow = self.displayBox.toUnit(normVmax,"Value",normVmaxUnit)
-        self.displayBox.displayMin.setText("%0.1f" % (normVminShow))
-        self.displayBox.displayMax.setText("%0.1f" % (normVmaxShow))
+        normVmin = self.displayBox.toUnit(normVmin,"Value",normVminUnit)
+        normVmax = self.displayBox.toUnit(normVmax,"Value",normVmaxUnit)
+        self.displayBox.displayMin.setText("%0.1f" % (normVmin))
+        self.displayBox.displayMax.setText("%0.1f" % (normVmax))
         self.checkLimits()
     def setXYInPlotBox(self, x, y):
         if self.plotBoxValueLabel is None:
@@ -275,21 +275,21 @@ class DataProp(QtGui.QWidget):
         #normVminUnit = self.displayBox.displayMinUnit.itemText(self.displayBox.displayMinUnit.currentIndex())
         #normVmaxUnit = self.displayBox.displayMaxUnit.itemText(self.displayBox.displayMaxUnit.currentIndex())
         #if normVmin is not None:
-        #    normVmaxShowLimit = self.displayBox.toUnit(normVmin,normVminUnit,normVmaxUnit)
-        #    if normVmaxShowLimit is not None:
-        #        self.displayBox.displayMax.validator().setBottom(normVmaxShowLimit)
+        #    normVmaxLimit = self.displayBox.toUnit(normVmin,normVminUnit,normVmaxUnit)
+        #    if normVmaxLimit is not None:
+        #        self.displayBox.displayMax.validator().setBottom(normVmaxLimit)
         #if normVmax is not None:
-        #    normVminShowLimit = self.displayBox.toUnit(normVmax,normVmaxUnit,normVminUnit)
-        #    if normVminShowLimit is not None:
-        #        self.displayBox.displayMin.validator().setTop(normVminShowLimit)
+        #    normVminLimit = self.displayBox.toUnit(normVmax,normVmaxUnit,normVminUnit)
+        #    if normVminLimit is not None:
+        #        self.displayBox.displayMin.validator().setTop(normVminLimit)
         self.emitView2DProp()
     # NORM
     def setNorm(self):
         P = self.view2DProp
         P["normVminUnit"] = self.displayBox.displayMinUnit.currentText()
         P["normVmaxUnit"] = self.displayBox.displayMaxUnit.currentText()
-        P["normVminShow"] = float(self.displayBox.displayMin.text())
-        P["normVmaxShow"] = float(self.displayBox.displayMax.text())
+        P["normVmin"] = float(self.displayBox.displayMin.text())
+        P["normVmax"] = float(self.displayBox.displayMax.text())
         normVmin,normVmax = self.displayBox.getRegionLimits()
         P["normVmin"] = normVmin
         P["normVmax"] = normVmax        
@@ -305,14 +305,14 @@ class DataProp(QtGui.QWidget):
         self.displayBox.setRegionLimits(normVmin,normVmax)
     def clearNorm(self):
         settings = QtCore.QSettings()
-        if(settings.contains("normVmaxShow")):
-            normVmaxShow = float(settings.value('normVmaxShow'))
+        if(settings.contains("normVmax")):
+            normVmax = float(settings.value('normVmax'))
         else:
-            normVmaxShow = 1000.
-        if(settings.contains("normVminShow")):
-            normVminShow = float(settings.value('normVminShow'))
+            normVmax = 1000.
+        if(settings.contains("normVmin")):
+            normVmin = float(settings.value('normVmin'))
         else:
-            normVminShow = 10.
+            normVmin = 10.
         if(settings.contains("normVminUnit")):
             normVminUnit = settings.value('normVminUnit')
         else:
@@ -323,19 +323,19 @@ class DataProp(QtGui.QWidget):
             normVmaxUnit = "Value"
         normVminUnitIndex = self.displayBox.displayMinUnit.findText(normVminUnit)
         normVmaxUnitIndex = self.displayBox.displayMaxUnit.findText(normVmaxUnit)
-        self.displayBox.vMin = self.displayBox.toUnit(normVminShow,normVminUnit,"Value")
-        self.displayBox.vMax = self.displayBox.toUnit(normVmaxShow,normVmaxUnit,"Value")
-        self.displayBox.displayMin.setText(str(normVminShow))
-        self.displayBox.displayMax.setText(str(normVmaxShow))
+        self.displayBox.vMin = self.displayBox.toUnit(normVmin,normVminUnit,"Value")
+        self.displayBox.vMax = self.displayBox.toUnit(normVmax,normVmaxUnit,"Value")
+        self.displayBox.displayMin.setText(str(normVmin))
+        self.displayBox.displayMax.setText(str(normVmax))
         self.displayBox.displayMinUnit.setCurrentIndex(normVminUnitIndex)
         self.displayBox.displayMaxUnit.setCurrentIndex(normVmaxUnitIndex)
         if(settings.contains("normClamp")):
-            normClamp = bool(settings.value('normClamp'))
+            normClamp = settings.value('normClamp', type=bool)
         else:
             normClamp = True
         self.displayBox.displayClamp.setChecked(normClamp)
         if(settings.contains("normInvert")):
-            normInvert = bool(settings.value('normInvert'))
+            normInvert = settings.value('normInvert', type=bool)
         else:
             normInvert = False
         self.displayBox.displayInvert.setChecked(normInvert)
@@ -980,12 +980,12 @@ class DisplayBox(QtGui.QGroupBox, Ui_displayBox):
             return
         self.intensityHistogramRegion.setRegion([lmin,lmax])
     def getRegionLimits(self):
-        normVminShow = float(self.displayMin.text())
-        normVmaxShow = float(self.displayMax.text())
+        normVmin = float(self.displayMin.text())
+        normVmax = float(self.displayMax.text())
         normVminUnit = self.displayMinUnit.itemText(self.displayMinUnit.currentIndex())
         normVmaxUnit = self.displayMaxUnit.itemText(self.displayMaxUnit.currentIndex())
-        lmin = self.toUnit(normVminShow,normVminUnit)
-        lmax = self.toUnit(normVmaxShow,normVmaxUnit)
+        lmin = self.toUnit(normVmin,normVminUnit)
+        lmax = self.toUnit(normVmax,normVmaxUnit)
         return lmin,lmax
     def toUnit(self,value,unit0,unit1="Value"):
         if "% Range" in [unit1,unit0]:
