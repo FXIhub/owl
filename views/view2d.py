@@ -96,8 +96,8 @@ class View2D(QtOpenGL.QGLWidget,View):
         self.slideshowTimer.setInterval(2000)
         self.slideshowTimer.timeout.connect(self._nextSlideRow)
 
-        settings = QtCore.QSettings()
-        self.PNGOutputPath = settings.value("PNGOutputPath")
+        self.settings = QtCore.QSettings()
+        self.PNGOutputPath = self.settings.value("PNGOutputPath")
         self.setFocusPolicy(QtCore.Qt.StrongFocus)
         self.tagView = True
         self.modelView = False
@@ -278,6 +278,7 @@ class View2D(QtOpenGL.QGLWidget,View):
         self.clampLoc = GL.glGetUniformLocation(self.shader, "do_clamp")
         self.invertLoc = GL.glGetUniformLocation(self.shader, "invert_colormap")
         self.maskedBitsLoc = GL.glGetUniformLocation(self.shader, "maskedBits")
+        self.maskAlphaLoc = GL.glGetUniformLocation(self.shader, "maskAlpha")
         self.modelCenterXLoc = GL.glGetUniformLocation(self.shader, "modelCenterX")
         self.modelCenterYLoc = GL.glGetUniformLocation(self.shader, "modelCenterY")
         self.modelSizeLoc = GL.glGetUniformLocation(self.shader, "modelSize")
@@ -706,6 +707,7 @@ class View2D(QtOpenGL.QGLWidget,View):
         GL.glUniform1i(self.clampLoc, self.normClamp)
         GL.glUniform1i(self.invertLoc, self.normInvert)
         GL.glUniform1f(self.maskedBitsLoc, self.maskOutBits)
+        GL.glUniform1f(self.maskAlphaLoc, float(self.settings.value("maskAlpha")))
         if not pattersonEnabled:
             GL.glUniform1i(self.normLoc, self.normScalingValue)
         else:

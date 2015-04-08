@@ -8,6 +8,7 @@ uniform int do_clamp;
 uniform int invert_colormap;
 uniform sampler2D mask;
 uniform float maskedBits;
+uniform float maskAlpha;
 uniform float modelCenterX;
 uniform float modelCenterY;
 uniform float modelSize;
@@ -107,25 +108,6 @@ void main()
     }
   }
 
-  // Apply Mask
-  if (((showModel == 0) || (uv[0] < modelVisibility)) || (showModelMask == 1)){
-    // Using a float for the mask will only work up to about 24 bits
-    float maskBits = mcolor.a;
-    // loop through the first 16 bits
-    float bit = 1.0;
-    if(maskBits > 0.0){
-      for(int i = 0;i<16;i++){
-	if(floor(mod(maskBits/bit, 2.0)) == 1.0 && floor(mod(maskedBits/bit, 2.0)) == 1.0){
-	  color.a = 0.0;
-	  gl_FragColor = color;
-	  return;
-	}
-	bit = bit*2.0;
-      }
-    }
-  }
-
-
   uv[0] = (color.a-offset);
 
   // Check for clamping
@@ -166,5 +148,24 @@ void main()
     uv[0] = (pow(uv[0]+1.0, gamma)-1.0)/scale;
   }
   color = colorLookup(cmap, uv);
+
+  // Apply Mask
+  if (((showModel == 0) || (uv[0] < modelVisibility)) || (showModelMask == 1)){
+    // Using a float for the mask will only work up to about 24 bits
+    float maskBits = mcolor.a;
+    // loop through the first 16 bits
+    float bit = 1.0;
+    if(maskBits > 0.0){
+      for(int i = 0;i<16;i++){
+	if(floor(mod(maskBits/bit, 2.0)) == 1.0 && floor(mod(maskedBits/bit, 2.0)) == 1.0){
+	  color.a = maskAlpha;
+	  gl_FragColor = color;
+	  return;
+	}
+	bit = bit*2.0;
+      }
+    }
+  }
+
   gl_FragColor = color;
 }

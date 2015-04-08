@@ -175,6 +175,9 @@ class Owl(QtGui.QMainWindow):
                 self.settings.setValue("fileMode", "r")
         if(not self.settings.contains("normGamma")):
             self.settings.setValue("normGamma", "0.25")
+        if(not self.settings.contains("maskAlpha")):
+            self.settings.setValue("maskAlpha", "0.00")
+            
 
     def _init_menus(self):
         """Initialize the top level menus."""
@@ -366,6 +369,10 @@ class Owl(QtGui.QMainWindow):
 
         action = QtGui.QAction("Power Scale Exp...", self)
         action.triggered.connect(self.setPowerExponent)
+        self.viewMenu.addAction(action)
+
+        action = QtGui.QAction("Mask Transperency...", self)
+        action.triggered.connect(self.setMaskTransperency)
         self.viewMenu.addAction(action)
 
     def _init_menu_analysis(self):
@@ -1032,6 +1039,19 @@ class Owl(QtGui.QMainWindow):
                                                  gamma, -10, 10, 3)
         if(ok):
             gamma = self.settings.setValue("normGamma", gamma)
+            self.dataProp.emitView2DProp()
+
+    def setMaskTransperency(self):
+        """Slot triggered when the Mask Transperency... menu is clicked
+
+        TODO FM: move to dataProp?
+        """
+        alpha = float(self.settings.value("maskAlpha"))
+        alpha, ok = QtGui.QInputDialog.getDouble(self, "Mask Transperency",
+                                                 "Set New Mask Transperency:",
+                                                 alpha, 0., 1., 3)
+        if(ok):
+            alpha = self.settings.setValue("maskAlpha", alpha)
             self.dataProp.emitView2DProp()
 
     def _togglePeakFinder(self, value):
