@@ -115,39 +115,33 @@ void main()
   if(uv[0] < 0.0){
     if(do_clamp == 1){
       uv[0] = 0.0;
-      gl_FragColor = colorLookup(cmap, uv);
-      return;
+      color = colorLookup(cmap, uv);
     }else{
       color.a = 0.0;
-      gl_FragColor = color;
-      return;
     }
-  }
-  if(uv[0] > scale){
+  } else if(uv[0] > scale){
     if(do_clamp == 1){
       uv[0] = 1.0;
-      gl_FragColor = colorLookup(cmap, uv);
-      return;
+      color = colorLookup(cmap, uv);
     }else{
       color.a = 0.0;
-      gl_FragColor = color;
-      return;
     }
+  } else {
+    // Apply Colormap
+    if(norm == 0){
+     // linear
+     uv[0] /= scale;
+    }else if(norm == 1){
+     // log
+     scale = log(scale+1.0);
+     uv[0] = log(uv[0]+1.0)/scale;
+    }else if(norm == 2){
+     // power
+     scale = pow(scale+1.0, gamma)-1.0;
+     uv[0] = (pow(uv[0]+1.0, gamma)-1.0)/scale;
+    }
+    color = colorLookup(cmap, uv);
   }
-  // Apply Colormap
-  if(norm == 0){
-    // linear
-    uv[0] /= scale;
-  }else if(norm == 1){
-    // log
-    scale = log(scale+1.0);
-    uv[0] = log(uv[0]+1.0)/scale;
-  }else if(norm == 2){
-    // power
-    scale = pow(scale+1.0, gamma)-1.0;
-    uv[0] = (pow(uv[0]+1.0, gamma)-1.0)/scale;
-  }
-  color = colorLookup(cmap, uv);
 
   // Apply Mask
   if (((showModel == 0) || (uv[0] < modelVisibility)) || (showModelMask == 1)){
