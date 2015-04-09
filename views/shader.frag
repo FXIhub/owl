@@ -59,8 +59,8 @@ void main()
   vec4 mcolor = texture2D(mask, uv);
   float scale = (vmax-vmin);
   float offset = vmin;
-  
   float s;
+
   if(showModel == 1){
     // Paint Fit Mask Radius
     float r = sqrt((uv[0]-modelCenterX)*(uv[0]-modelCenterX)*(imageShapeX-1.)*(imageShapeX-1.)+(uv[1]-modelCenterY)*(uv[1]-modelCenterY)*(imageShapeY-1.)*(imageShapeY-1.));
@@ -152,9 +152,11 @@ void main()
     if(maskBits > 0.0){
       for(int i = 0;i<16;i++){
 	if(floor(mod(maskBits/bit, 2.0)) == 1.0 && floor(mod(maskedBits/bit, 2.0)) == 1.0){
-	  color.a = maskAlpha;
-	  gl_FragColor = color;
-	  return;
+          color.a = maskAlpha;
+	  //color.r = maskAlpha;
+	  //color.g = maskAlpha;
+	  //color.b = maskAlpha;
+	  break;	  
 	}
 	bit = bit*2.0;
       }
@@ -162,4 +164,5 @@ void main()
   }
 
   gl_FragColor = color;
+  return;
 }

@@ -319,6 +319,7 @@ class View2D(QtOpenGL.QGLWidget,View):
             GL.glTexParameterf(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_WRAP_T, GL.GL_CLAMP_TO_EDGE)
             GL.glPixelStorei(GL.GL_UNPACK_ALIGNMENT, 1)
             GL.glTexImage2D(GL.GL_TEXTURE_2D, 0, GL.GL_RGBA, n, 1, 0, GL.GL_RGBA, GL.GL_UNSIGNED_BYTE, a_rgb)
+            GL.glDisable(GL.GL_BLEND)
 
     def resizeGL(self, w, h):
         """Resize the OpenGL window
@@ -764,6 +765,7 @@ class View2D(QtOpenGL.QGLWidget,View):
             self.maskRadius = params["maskRadius"]
             GL.glUniform1f(self.fitMaskRadiusLoc, params["maskRadius"])
 
+        GL.glEnable(GL.GL_BLEND)
         GL.glBegin(GL.GL_QUADS)
         GL.glTexCoord2f(0.0, 0.0)
         GL.glVertex3f(0, img_height, 0.0)
@@ -774,11 +776,13 @@ class View2D(QtOpenGL.QGLWidget,View):
         GL.glTexCoord2f(0.0, 1.0)
         GL.glVertex3f(0, 0, 0.0)
         GL.glEnd()
+        GL.glDisable(GL.GL_BLEND)
+
         # Activate again the original texture unit
         GL.glActiveTexture(GL.GL_TEXTURE0)
 
         GL.glUseProgram(0)
-        
+      
         if(img == self.selectedImage):
             self._paintSelectedImageBorder(img_width, img_height)
 #            self._paintImageProperties(img)
@@ -807,7 +811,6 @@ class View2D(QtOpenGL.QGLWidget,View):
                 GL.glPopMatrix()
 
         GL.glPopMatrix()
-
 
     def paintGL(self):
         """Main drawing routine
