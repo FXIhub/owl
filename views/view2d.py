@@ -364,7 +364,7 @@ class View2D(QtOpenGL.QGLWidget,View):
             ix = self.hoveredPixel[0]
             iy = self.hoveredPixel[1]
             if self.loaderThread.maskData[img] is not None:
-                text.append("Mask: %5.3g" % (self.loaderThread.maskData[img][iy, ix]))
+                text.append("Mask: %d" % (self.loaderThread.maskData[img][iy, ix]))
             text.append("Value: %g" % (self.loaderThread.imageData[img][iy, ix]))
             text.append("Pixel: (%d, %d)" % (ix, iy))
         else:
