@@ -456,7 +456,7 @@ class Owl(QtGui.QMainWindow):
         self.goMenu.previousRow.triggered.connect(self.view.view2D.previousRow)
         self.saveMenu.toPNG.triggered.connect(self.view.view2D.saveToPNG)
         for i in range(0, len(self.editMenu.toggleTag)):
-            self.editMenu.toggleTag[i].triggered.connect(lambda id=i: self.dataProp.toggleSelectedImageTag(id))
+            self.editMenu.toggleTag[i].triggered.connect(lambda checked=False, id=i: self.dataProp.toggleSelectedImageTag(id))
         self.editMenu.moveSelectionRight.triggered.connect(lambda: self.view.view2D.moveSelectionBy(1, 0))
         self.editMenu.moveSelectionLeft.triggered.connect(lambda: self.view.view2D.moveSelectionBy(-1, 0))
         self.editMenu.moveSelectionUp.triggered.connect(lambda: self.view.view2D.moveSelectionBy(0, -1))
