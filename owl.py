@@ -165,7 +165,13 @@ class Owl(QtGui.QMainWindow):
             shortcuts["Toggle 1st Tag"] = QtGui.QKeySequence("1").toString()
             shortcuts["Toggle 2nd Tag"] = QtGui.QKeySequence("2").toString()
             shortcuts["Toggle 3rd Tag"] = QtGui.QKeySequence("3").toString()
-            for i in range(4, 8):
+            for i in range(4, 10):
+                shortcuts["Toggle "+str(i)+"th Tag"] = QtGui.QKeySequence(str(i)).toString()
+            self.settings.setValue("Shortcuts", shortcuts)
+        elif("Toggle 8th Tag" not in self.settings.value('Shortcuts')):
+            # We're missing the new shortcuts        
+            shortcuts = self.settings.value('Shortcuts')
+            for i in range(8, 10):
                 shortcuts["Toggle "+str(i)+"th Tag"] = QtGui.QKeySequence(str(i)).toString()
             self.settings.setValue("Shortcuts", shortcuts)
         if not self.settings.contains("fileMode"):
@@ -402,7 +408,7 @@ class Owl(QtGui.QMainWindow):
         self.addAction(action)
         self.editMenu.toggleTag.append(action)
 
-        for i in range(4, 8):
+        for i in range(4, 10):
             action = QtGui.QAction('Toggle '+str(i)+'th Tag', self)
             action.setShortcut(QtGui.QKeySequence.fromString(shortcuts['Toggle '+str(i)+'th Tag']))
             self.addAction(action)
