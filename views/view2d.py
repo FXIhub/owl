@@ -1427,14 +1427,6 @@ class View2D(QtOpenGL.QGLWidget,View):
 
     def saveToPNG(self):
         """Save central image to PNG"""
-        try:
-            import Image
-        except:
-            try:
-                from PIL import Image
-            except:
-                self.logger.warning("Cannot import PIL (Python Image Library). Saving to PNG failed.")
-                return
         self.browseToViewIndex(self.indexProjector.imgToIndex(self.centralImg))
         self.updateGL()
         (x, y, z) = self._imageToWindow(self.centralImg, 'TopLeft', False)
@@ -1443,11 +1435,10 @@ class View2D(QtOpenGL.QGLWidget,View):
         width = int(self._getImgWidth("window"))
         height = int(self.getImgHeight("window"))
         buffer = GL.glReadPixels(x, y-height, width, height, GL.GL_RGBA, GL.GL_UNSIGNED_BYTE)
-        image = Image.frombytes(mode="RGBA", size=(width, height),
-                                 data=buffer)
+        image = QtGui.QImage(buffer, width, height, QtGui.QImage.Format_ARGB32)
         filename = "%s/%s_%s_%i.png" % (self.PNGOutputPath, (self.viewer.filename.split("/")[-1])[:-4],
                                         self.data.name, self.centralImg)
-        image.save(filename)
+        image.rgbSwapped().mirrored().save(filename)
         self.viewer.statusBar.showMessage("Saving image %i to %s" % (self.centralImg, filename), 1000)
 
     def toggleAutoLast(self):
