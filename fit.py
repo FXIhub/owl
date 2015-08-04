@@ -42,7 +42,11 @@ class FitModel:
     def fit_diameter(self,img,params):
         if not hasSpimage: return params
         I = self.dataItemImage.data(img=img)
-        M = self.dataItemMask.data(img=img,binaryMask=True)
+        if self.dataItemMask is None:
+            M = numpy.ones(I.shape,dtype=bool)
+        else:
+            M = self.dataItemMask.data(img=img,binaryMask=True)
+            
         method = params["_fitDiameterMethod"]
         d  = params["diameterNM"] * 1E-9
         i  = params["intensityMJUM2"] * 1E-3 / 1E-12
