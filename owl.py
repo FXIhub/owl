@@ -227,10 +227,6 @@ class Owl(QtGui.QMainWindow):
         self.fileMenu.addAction(self.quitAction)
         self.quitAction.triggered.connect(QtGui.QApplication.instance().quit)
 
-        self.preferences = QtGui.QAction("Preferences", self)
-        self.fileMenu.addAction(self.preferences)
-        self.preferences.triggered.connect(self._preferencesClicked)
-
     def _init_menu_edit(self):
         """Initialize the Edit menu."""
         self.editMenu = self.menuBar().addMenu(self.tr("&Edit"))
@@ -238,6 +234,10 @@ class Owl(QtGui.QMainWindow):
         self.tagsAction = QtGui.QAction("Tags...", self)
         self.editMenu.addAction(self.tagsAction)
         self.tagsAction.triggered.connect(self._tagsClicked)
+
+        self.preferences = QtGui.QAction("Preferences", self)
+        self.editMenu.addAction(self.preferences)
+        self.preferences.triggered.connect(self._preferencesClicked)
 
     def _init_menu_go(self):
         """Initialize the Go menu."""
