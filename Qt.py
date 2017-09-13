@@ -138,7 +138,6 @@ elif USE_QT_PY == PYQT5:
         self.setSectionResizeMode(mode)
     QtWidgets.QHeaderView.setResizeMode = setResizeMode
 
-    
     QtGui.QApplication = QtWidgets.QApplication
     QtGui.QGraphicsScene = QtWidgets.QGraphicsScene
     QtGui.QGraphicsObject = QtWidgets.QGraphicsObject
@@ -146,6 +145,9 @@ elif USE_QT_PY == PYQT5:
 
     QtGui.QApplication.setGraphicsSystem = None
     QtCore.Signal = Qt.pyqtSignal
+    QtCore.Slot = QtCore.pyqtSlot
+
+    loadUiType = PyQt5.uic.loadUiType
     
     # Import all QtWidgets objects into QtGui
     for o in dir(QtWidgets):

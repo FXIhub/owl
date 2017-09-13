@@ -13,8 +13,8 @@ class View1D(QtGui.QFrame,View):
     datasetChanged = QtCore.Signal(h5py.Dataset,str)
 
     def __init__(self,parent=None,indexProjector=None):
-        View.__init__(self,parent,indexProjector,"plot")
         QtGui.QFrame.__init__(self,parent)
+        View.__init__(self,parent,indexProjector,"plot")
         self.hbox = QtGui.QHBoxLayout(self)
         margin = 20
         self.hbox.setContentsMargins(margin,margin,margin,margin)

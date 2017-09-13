@@ -22,7 +22,6 @@ import ui.widgets
 from views.indexprojector import IndexProjector
 from views.viewsplitter import ViewSplitter
 
-
 # Wishes:
 #
 # Infinite subplots

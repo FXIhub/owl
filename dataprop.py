@@ -258,8 +258,8 @@ class DataProp(QtGui.QWidget):
         normVmaxUnit = self.displayBox.displayMaxUnit.itemText(self.displayBox.displayMaxUnit.currentIndex())
         normVmin = self.displayBox.toUnit(normVmin,"Value",normVminUnit)
         normVmax = self.displayBox.toUnit(normVmax,"Value",normVmaxUnit)
-        self.displayBox.displayMin.setText("%0.1f" % (normVmin))
-        self.displayBox.displayMax.setText("%0.1f" % (normVmax))
+        self.displayBox.displayMin.setText("%0.3f" % (normVmin))
+        self.displayBox.displayMax.setText("%0.3f" % (normVmax))
         self.checkLimits()
     def setXYInPlotBox(self, x, y):
         if self.plotBoxValueLabel is None:
@@ -305,52 +305,60 @@ class DataProp(QtGui.QWidget):
         self.displayBox.setRegionLimits(normVmin,normVmax)
     def clearNorm(self):
         settings = QtCore.QSettings()
-        if(settings.contains("normVmax")):
-            normVmax = float(settings.value('normVmax'))
-        else:
-            normVmax = 1000.
-        if(settings.contains("normVmin")):
-            normVmin = float(settings.value('normVmin'))
-        else:
-            normVmin = 10.
-        if(settings.contains("normVminUnit")):
-            normVminUnit = settings.value('normVminUnit')
-        else:
-            normVminUnit = "Value"
-        if(settings.contains("normVminUnit")):
-            normVmaxUnit = settings.value('normVmaxUnit')
-        else:
-            normVmaxUnit = "Value"
-        normVminUnitIndex = self.displayBox.displayMinUnit.findText(normVminUnit)
-        normVmaxUnitIndex = self.displayBox.displayMaxUnit.findText(normVmaxUnit)
-        self.displayBox.vMin = self.displayBox.toUnit(normVmin,normVminUnit,"Value")
-        self.displayBox.vMax = self.displayBox.toUnit(normVmax,normVmaxUnit,"Value")
-        self.displayBox.displayMin.setText(str(normVmin))
-        self.displayBox.displayMax.setText(str(normVmax))
-        self.displayBox.displayMinUnit.setCurrentIndex(normVminUnitIndex)
-        self.displayBox.displayMaxUnit.setCurrentIndex(normVmaxUnitIndex)
-        if(settings.contains("normClamp")):
-            normClamp = settings.value('normClamp', type=bool)
-        else:
-            normClamp = True
-        self.displayBox.displayClamp.setChecked(normClamp)
-        if(settings.contains("normInvert")):
-            normInvert = settings.value('normInvert', type=bool)
-        else:
-            normInvert = False
-        self.displayBox.displayInvert.setChecked(normInvert)
-        if(settings.contains("normScaling")):
-            norm = settings.value("normScaling")
-            if(norm == "lin"):
-                self.displayBox.displayScale.setCurrentIndex(0)
-            elif(norm == "log"):
-                self.displayBox.displayScale.setCurrentIndex(1)
-            elif(norm == "pow"):
-                self.displayBox.displayScale.setCurrentIndex(2)
-            else:
-                sys.exit(-1)
-        else:
-            self.displayBox.displayScale.setCurrentIndex(1)
+        initialised = False
+        failed = False
+        while not initialised:
+            try:
+                if(settings.contains("normVmax")) and not failed:
+                    normVmax = float(settings.value('normVmax'))
+                else:
+                    normVmax = 1000.
+                if(settings.contains("normVmin")) and not failed:
+                    normVmin = float(settings.value('normVmin'))
+                else:
+                    normVmin = 10.
+                if(settings.contains("normVminUnit")) and not failed:
+                    normVminUnit = settings.value('normVminUnit')
+                else:
+                    normVminUnit = "Value"
+                if(settings.contains("normVminUnit")) and not failed:
+                    normVmaxUnit = settings.value('normVmaxUnit')
+                else:
+                    normVmaxUnit = "Value"
+                normVminUnitIndex = self.displayBox.displayMinUnit.findText(normVminUnit)
+                normVmaxUnitIndex = self.displayBox.displayMaxUnit.findText(normVmaxUnit)
+                self.displayBox.vMin = self.displayBox.toUnit(normVmin,normVminUnit,"Value")
+                self.displayBox.vMax = self.displayBox.toUnit(normVmax,normVmaxUnit,"Value")
+                self.displayBox.displayMin.setText(str(normVmin))
+                self.displayBox.displayMax.setText(str(normVmax))
+                self.displayBox.displayMinUnit.setCurrentIndex(normVminUnitIndex)
+                self.displayBox.displayMaxUnit.setCurrentIndex(normVmaxUnitIndex)
+                if(settings.contains("normClamp")) and not failed:
+                    normClamp = settings.value('normClamp', type=bool)
+                else:
+                    normClamp = True
+                self.displayBox.displayClamp.setChecked(normClamp)
+                if(settings.contains("normInvert")) and not failed:
+                    normInvert = settings.value('normInvert', type=bool)
+                else:
+                    normInvert = False
+                self.displayBox.displayInvert.setChecked(normInvert)
+                if(settings.contains("normScaling")) and not failed:
+                    norm = settings.value("normScaling")
+                    if(norm == "lin"):
+                        self.displayBox.displayScale.setCurrentIndex(0)
+                    elif(norm == "log"):
+                        self.displayBox.displayScale.setCurrentIndex(1)
+                    elif(norm == "pow"):
+                        self.displayBox.displayScale.setCurrentIndex(2)
+                    else:
+                        sys.exit(-1)
+                else:
+                    self.displayBox.displayScale.setCurrentIndex(1)
+                initialised = True
+            except ValueError:
+                print "WARNING: Could not load information from settings file."
+                failed = True
         self.setNorm()
     # COLORMAP
     def setColormap(self,foovalue=None):

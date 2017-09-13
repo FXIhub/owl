@@ -2,7 +2,7 @@ from Qt import QtGui, QtCore
 from view2d import View2D
 
 class View2DScrollWidget(QtGui.QWidget):
-    def __init__(self,parent,view2D):
+    def __init__(self, parent, view2D):
         QtGui.QWidget.__init__(self,parent)
         self.view2D = view2D
         hbox = QtGui.QHBoxLayout()
@@ -13,6 +13,7 @@ class View2DScrollWidget(QtGui.QWidget):
         self.scrollbar.setMinimum(self.view2D.minimumTranslation())
         self.scrollbar.setPageStep(1)
         self.scrollbar.valueChanged.connect(self.onValueChanged)
+        print "View2DScrollWidget", self.view2D.indexProjector
         self.view2D.indexProjector.projectionChanged.connect(self.update)
         self.view2D.stackWidthChanged.connect(self.update)
         self.view2D.translationChanged.connect(self.onTranslationChanged)

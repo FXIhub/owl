@@ -1,4 +1,5 @@
 import sys
+import Qt
 from Qt import QtGui, QtCore, QtOpenGL
 from matplotlib import colors
 from matplotlib import cm
@@ -37,8 +38,8 @@ class View2D(QtOpenGL.QGLWidget,View):
     datasetChanged = QtCore.Signal(h5py.Dataset,str)
 
     def __init__(self, parent, viewer, indexProjector):
-        View.__init__(self, parent, indexProjector, "image")
         QtOpenGL.QGLWidget.__init__(self, parent)
+        View.__init__(self, parent, indexProjector, "image")
         self.autoLast = False
         self.logger = logging.getLogger("View2D")
         # If you want to see debug messages change level here
@@ -1100,7 +1101,11 @@ class View2D(QtOpenGL.QGLWidget,View):
 
         Reimplemented from QWidget"""
         settings = QtCore.QSettings()
-        t = -event.delta()*float(settings.value("scrollDirection"))
+        if Qt.USE_QT_PY != Qt.PYQT5:
+            delta = event.delta()
+        else:
+            delta = event.angleDelta().y()
+        t = -delta*float(settings.value("scrollDirection"))
         self._translateBy([0, t])
 
     def toggleSlideShow(self):

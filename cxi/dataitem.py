@@ -26,7 +26,7 @@ class DataItem:
                 self.stackDim = axes_attrs.index("experiment_identifier")
             else:
                 # default choice
-                self.logger.warning("Cannot determine stack dimension. Dataset does not have the standard CXI attribute \'experiment_identifier\'. Choosing the zeroth dimension by default. This might be a wrong choice.")
+                self.logger.warning("Cannot determine stack dimension. Dataset attribute \'axes\' has no standard CXI dimension named \'experiment_identifier\'. Choosing the zeroth dimension by default. This might be a wrong choice.")
                 self.stackDim = 0
             # check wheter or not a stack has modules
             if "module_identifier" in axes_attrs:
