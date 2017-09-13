@@ -1,4 +1,5 @@
 #from PyQt4 import QtGui, QtCore, QtOpenGL, Qt
+import Qt
 from Qt import QtGui, QtCore, QtOpenGL
 import h5proxy as h5py
 from operator import mul
@@ -357,7 +358,12 @@ class CXITree(QtGui.QTreeWidget):
         # start drag 
         drag = QtGui.QDrag(self)
         drag.setMimeData(mime)
-        drag.start(QtCore.Qt.MoveAction)
+        if not Qt.USE_QT_PY == Qt.PYQT5:
+            start = drag.start
+        else:
+            start = drag.exec_
+        start(QtCore.Qt.MoveAction)
+        
     def handleClick(self,item,column):
         if(item.text(self.columnPath) in self.fileLoader.dataItems.keys()):
             self.dataClicked.emit(item.text(self.columnPath))
