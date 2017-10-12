@@ -258,8 +258,6 @@ class DataProp(QtGui.QWidget):
         normVmaxUnit = self.displayBox.displayMaxUnit.itemText(self.displayBox.displayMaxUnit.currentIndex())
         normVmin = self.displayBox.toUnit(normVmin,"Value",normVminUnit)
         normVmax = self.displayBox.toUnit(normVmax,"Value",normVmaxUnit)
-        self.displayBox.displayMin.setText("%0.3f" % (normVmin))
-        self.displayBox.displayMax.setText("%0.3f" % (normVmax))
         self.checkLimits()
     def setXYInPlotBox(self, x, y):
         if self.plotBoxValueLabel is None:
@@ -271,6 +269,25 @@ class DataProp(QtGui.QWidget):
         else:
             self.plotBoxValueLabel.setText("(x, y): (%.0f, %.2e)" % (x, y))
     def checkLimits(self):
+        normVmin = float(self.displayBox.displayMin.text())
+        normVmax = float(self.displayBox.displayMax.text())
+        if abs(normVmin) < 1E3 and abs(normVmin) > 1E-3:
+            self.displayBox.displayMin.setText(("%0.9f" % (normVmin)).rstrip("0"))
+        else:
+            tmp = "%0.9e" % (normVmin)
+            id = tmp.find(".")
+            ie = tmp.find("e")
+            tmp = tmp[:id+1] + tmp[id+1:ie].rstrip("0") + tmp[ie:]
+            self.displayBox.displayMin.setText(tmp)
+        if abs(normVmax) < 1E3 and abs(normVmax) > 1E-3:
+            self.displayBox.displayMax.setText(("%0.9f" % (normVmax)).rstrip("0"))
+        else:
+            tmp = "%0.9e" % (normVmax)
+            id = tmp.find(".")
+            ie = tmp.find("e")
+            tmp = tmp[:id+1] + tmp[id+1:ie].rstrip("0") + tmp[ie:]
+            self.displayBox.displayMax.setText(tmp)
+
         #normVmin,normVmax = self.displayBox.getRegionLimits()
         #normVminUnit = self.displayBox.displayMinUnit.itemText(self.displayBox.displayMinUnit.currentIndex())
         #normVmaxUnit = self.displayBox.displayMaxUnit.itemText(self.displayBox.displayMaxUnit.currentIndex())

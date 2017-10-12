@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>302</width>
-    <height>255</height>
+    <width>504</width>
+    <height>272</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -57,55 +57,57 @@
         </widget>
        </item>
        <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_8">
+        <widget class="QLineEdit" name="displayMin">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>100</width>
+           <height>0</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>16777215</width>
+           <height>16777215</height>
+          </size>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QComboBox" name="displayMinUnit">
+         <property name="minimumSize">
+          <size>
+           <width>100</width>
+           <height>0</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>16777215</width>
+           <height>16777215</height>
+          </size>
+         </property>
          <item>
-          <widget class="QLineEdit" name="displayMin">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="maximumSize">
-            <size>
-             <width>50</width>
-             <height>16777215</height>
-            </size>
-           </property>
-          </widget>
+          <property name="text">
+           <string>Value</string>
+          </property>
          </item>
          <item>
-          <widget class="QComboBox" name="displayMinUnit">
-           <property name="minimumSize">
-            <size>
-             <width>0</width>
-             <height>0</height>
-            </size>
-           </property>
-           <property name="maximumSize">
-            <size>
-             <width>70</width>
-             <height>16777215</height>
-            </size>
-           </property>
-           <item>
-            <property name="text">
-             <string>Value</string>
-            </property>
-           </item>
-           <item>
-            <property name="text">
-             <string>% Range</string>
-            </property>
-           </item>
-           <item>
-            <property name="text">
-             <string>% Histogram</string>
-            </property>
-           </item>
-          </widget>
+          <property name="text">
+           <string>% Range</string>
+          </property>
          </item>
-        </layout>
+         <item>
+          <property name="text">
+           <string>% Histogram</string>
+          </property>
+         </item>
+        </widget>
        </item>
       </layout>
      </item>
@@ -119,55 +121,57 @@
         </widget>
        </item>
        <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_5">
+        <widget class="QLineEdit" name="displayMax">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>100</width>
+           <height>0</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>16777215</width>
+           <height>16777215</height>
+          </size>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QComboBox" name="displayMaxUnit">
+         <property name="minimumSize">
+          <size>
+           <width>100</width>
+           <height>0</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>16777215</width>
+           <height>16777215</height>
+          </size>
+         </property>
          <item>
-          <widget class="QLineEdit" name="displayMax">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="maximumSize">
-            <size>
-             <width>50</width>
-             <height>16777215</height>
-            </size>
-           </property>
-          </widget>
+          <property name="text">
+           <string>Value</string>
+          </property>
          </item>
          <item>
-          <widget class="QComboBox" name="displayMaxUnit">
-           <property name="minimumSize">
-            <size>
-             <width>0</width>
-             <height>0</height>
-            </size>
-           </property>
-           <property name="maximumSize">
-            <size>
-             <width>70</width>
-             <height>16777215</height>
-            </size>
-           </property>
-           <item>
-            <property name="text">
-             <string>Value</string>
-            </property>
-           </item>
-           <item>
-            <property name="text">
-             <string>% Range</string>
-            </property>
-           </item>
-           <item>
-            <property name="text">
-             <string>% Histogram</string>
-            </property>
-           </item>
-          </widget>
+          <property name="text">
+           <string>% Range</string>
+          </property>
          </item>
-        </layout>
+         <item>
+          <property name="text">
+           <string>% Histogram</string>
+          </property>
+         </item>
+        </widget>
        </item>
       </layout>
      </item>
