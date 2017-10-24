@@ -287,7 +287,6 @@ class DataProp(QtGui.QWidget):
             ie = tmp.find("e")
             tmp = tmp[:id+1] + tmp[id+1:ie].rstrip("0") + tmp[ie:]
             self.displayBox.displayMax.setText(tmp)
-
         #normVmin,normVmax = self.displayBox.getRegionLimits()
         #normVminUnit = self.displayBox.displayMinUnit.itemText(self.displayBox.displayMinUnit.currentIndex())
         #normVmaxUnit = self.displayBox.displayMaxUnit.itemText(self.displayBox.displayMaxUnit.currentIndex())

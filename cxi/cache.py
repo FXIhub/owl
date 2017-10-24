@@ -5,13 +5,14 @@ import logging
 from OpenGL import GL
 import OpenGL.GL.ARB.texture_float
 
+
 class Cache(object):
     """Base caching class
 
     It uses a least recently used (LRU) algorithm to determine which
     entries to delete when the cache gets filled.
     """
-    def __init__(self, size=100):
+    def __init__(self, size=0):
         """Zero or negative values for size will create an unlimited cache"""
         self.maxSize = size
         self.dict = OrderedDict()
@@ -29,7 +30,7 @@ class Cache(object):
             retval = self.dict.pop(key)
             self.dict[key] = retval
             return retval
-
+        
     def __setitem__(self, key, value):
         with self.lock:
             self._trim()
@@ -65,7 +66,8 @@ class Cache(object):
             if(self.maxSize > 0):
                 while len(self.dict) >= self.maxSize:
                     (k, _) = self.dict.popitem(last=False) # FIFO pop
-                    self.logger.debug("Removing %d from cache", k)
+                    self.logger.debug("Removing %d from cache (maxSize=%i)", k, self.maxSize)
+
 
 
 
@@ -80,7 +82,7 @@ class ArrayCache(Cache):
         self.itemSize = None
         self.sizeInBytes = int(sizeInBytes)
     def __setitem__(self, key, value):
-        if(self.itemSize is None and value is not None):
+        if(self.itemSize is None and not value is None):
             self.itemSize = int(value.nbytes)
             size = self.sizeInBytes/self.itemSize
             self.setMaxSize(size)

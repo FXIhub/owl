@@ -62,7 +62,7 @@ class ImageLoader(QtCore.QObject):
         self.imageLoaded.emit(img)
     def loadGeometry(self,img):
         pass
-
+    
     def loadPatterson(self,img):
         params = self.view.data.pattersonItem.getParams(img)
         I = self.view.data.data(img=img)
@@ -70,7 +70,7 @@ class ImageLoader(QtCore.QObject):
         self.pattersonData = patterson.patterson(I,M,params,normalize=True)
         self.imageLoaded.emit(img)
     def loadedImages(self):
-        return self.imageData.keys()
+        return set.intersection(set(self.imageData.keys()), set(self.maskData.keys()))
     def loadedPatterson(self):
         return self.pattersonData.keys()
     def clear(self):

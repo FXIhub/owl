@@ -954,7 +954,8 @@ class View2D(QtOpenGL.QGLWidget,View):
         """Generates a texture, used for display, for the given image.
 
         Called after the imageLoader has finished loading an image."""
-        if img not in self.loaderThread.imageData.keys():
+        #if img not in self.loaderThread.imageData.keys():
+        if not img in self.loaderThread.imageData or not img in self.loaderThread.maskData: 
             # in the moment of changing datasets we can end up here
             # no reason to panic, just return
             return
