@@ -1,6 +1,7 @@
 import h5py
 import numpy
-import cPickle as pickle
+# import cPickle as pickle
+import pickle
 import sys
 
 
@@ -21,7 +22,7 @@ class Server(object):
                 self._socket.set(zmq.RCVTIMEO, self._hbInterval)
         self.files = {}
     def start(self):    
-        print "Starting server"
+        print("Starting server")
         while(True):
             #  Wait for next request from client
             try:

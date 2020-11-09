@@ -1,7 +1,7 @@
 from Qt import QtGui, QtCore
 import pyqtgraph
 import numpy
-from view import View
+from .view import View
 import h5proxy as h5py
 
 class View1D(QtGui.QFrame,View):
@@ -38,8 +38,8 @@ class View1D(QtGui.QFrame,View):
         self.needDataset.emit(e.mimeData().text())
 
     def clearView(self):
-	self.stackSize = 0
-	self.integrationMode = None
+        self.stackSize = 0
+        self.integrationMode = None
 
     def initPlot(self,widgetType="plot"):
         self.lineColor = (255,255,255)

@@ -1091,7 +1091,7 @@ if __name__ == '__main__':
     
     if args.debuggingMode:
         # Set exception handler
-        print "Running owl in debugging mode."
+        print("Running owl in debugging mode.")
         sys.excepthook = exceptionHandler
 
     aw = Owl(args)

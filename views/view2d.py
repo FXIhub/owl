@@ -119,8 +119,8 @@ class View2D(QtOpenGL.QGLWidget,View):
         self.needDataset.emit(e.mimeData().text())
 
     def clearView(self):
-	self.stackSize = 0
-	self.integrationMode = None
+        self.stackSize = 0
+        self.integrationMode = None
 
     def _setData(self, dataItem=None):
         """Sets the currently displayed dataItem
@@ -258,7 +258,7 @@ class View2D(QtOpenGL.QGLWidget,View):
 
     def _initShaders(self):
         if not GL.glUseProgram:
-            print 'Missing Shader Objects!'
+            print('Missing Shader Objects!')
             sys.exit(1)
         self.makeCurrent()
 
@@ -543,7 +543,7 @@ class View2D(QtOpenGL.QGLWidget,View):
                 peakXPos = self.peakData["peakXPosAssembled"].data()
                 peakYPos = self.peakData["peakYPosAssembled"].data()
             else:
-                print "Warning: cannot determine if plotting an assembled or a raw image while drawing peak circles. Assuming assembled."
+                print("Warning: cannot determine if plotting an assembled or a raw image while drawing peak circles. Assuming assembled.")
                 peakXPos = self.peakData["peakXPosAssembled"].data()
                 peakYPos = self.peakData["peakYPosAssembled"].data()
 
@@ -690,7 +690,7 @@ class View2D(QtOpenGL.QGLWidget,View):
                 imin = max(imin,0)
                 lmin = imageDataSorted[imin]
             else:
-                print "ERROR: Invalid unit for norm limits."
+                print("ERROR: Invalid unit for norm limits.")
             # max
             if self.normVmaxUnit == "Value":
                 lmax = self.normVmax
@@ -702,7 +702,7 @@ class View2D(QtOpenGL.QGLWidget,View):
                 imax = max(imax,0)
                 lmax = imageDataSorted[imax]
             else:
-                print "ERROR: Invalid unit for norm limits."
+                print("ERROR: Invalid unit for norm limits.")
         GL.glUniform1f(self.vminLoc, lmin)
         GL.glUniform1f(self.vmaxLoc, lmax)
         GL.glUniform1f(self.gammaLoc, self.normGamma)

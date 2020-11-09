@@ -565,7 +565,7 @@
        <item row="3" column="2">
         <widget class="QRadioButton" name="traditional">
          <property name="text">
-          <string>Traditional (PC)</string>
+          <string>System</string>
          </property>
          <property name="checked">
           <bool>true</bool>
@@ -575,7 +575,7 @@
        <item row="4" column="2">
         <widget class="QRadioButton" name="natural">
          <property name="text">
-          <string>Natural (Mac)</string>
+          <string>Inverted</string>
          </property>
         </widget>
        </item>

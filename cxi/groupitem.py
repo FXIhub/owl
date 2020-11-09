@@ -1,7 +1,7 @@
 import h5proxy as h5py
 import parameters
-from dataitem import DataItem
-from tagsitem import TagsItem
+from .dataitem import DataItem
+from .tagsitem import TagsItem
 
 class GroupItem:
     def __init__(self,parent,fileLoader,fullName):

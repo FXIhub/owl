@@ -1,6 +1,7 @@
 import numpy
 import h5py
-import cPickle as pickle
+# import cPickle as pickle
+import pickle
 
 
 class Serializer(object):

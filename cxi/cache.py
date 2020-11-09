@@ -45,7 +45,7 @@ class Cache(object):
 
     def values(self):
         """Returns all the cached values"""
-        return self.dict.values()
+        return list(self.dict.values())
 
     def keys(self):
         """Returns the keys of all the cached values"""

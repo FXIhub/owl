@@ -6,7 +6,7 @@ class View(object):
         self.autoLast = False
         self.stackSize = 0
         self.datasetMode = datasetMode
-	self.integrationMode = None
+        self.integrationMode = None
 
 
 

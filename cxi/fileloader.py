@@ -5,8 +5,8 @@ sys.path.append(os.path.dirname(os.path.realpath(__file__))+"/../")
 
 import h5proxy as h5py
 import settingsOwl
-from groupitem import GroupItem
-from dataitem import DataItem
+from .groupitem import GroupItem
+from .dataitem import DataItem
 
 class FileLoader(QtCore.QObject):
     stackSizeChanged = QtCore.Signal(int)
@@ -48,10 +48,10 @@ class FileLoader(QtCore.QObject):
             return 0
         except IOError as e:            
             if( str(e) == 'Unable to open file (File is already open for write or swmr write)'):                                
-                print "\n\n!!! TIP: Trying running h5clearsb.py on the file !!!\n\n"
+                print("\n\n!!! TIP: Trying running h5clearsb.py on the file !!!\n\n")
             raise
             return 2
-        print self._f
+        print(self._f)
     def reopenFile(self):
         # IMPORTANT NOTE:
         # Reopening the file is required after groups (/ datasets?) are created, otherwise we corrupt the file.
@@ -65,7 +65,7 @@ class FileLoader(QtCore.QObject):
         self._f = None
         err =  self.openFile(fullFilename)
         if err == 1:
-            print "Cannot open file. SWMR mode not supported by your h5py version. Please change file mode in the file menue and try again."
+            print("Cannot open file. SWMR mode not supported by your h5py version. Please change file mode in the file menue and try again.")
             return
         self.fullFilename = fullFilename
         self.filename = QtCore.QFileInfo(fullFilename).fileName()
@@ -100,7 +100,7 @@ class FileLoader(QtCore.QObject):
                 self.pattersonItems[child.fullName] = child.pattersonItem
                 self.collectItems(child.children)
             else:
-                print "no valid item."
+                print("no valid item.")
     def addGroupPosterior(self,name0):
         name = name0
         if name[-1] == "/": name = name[:-1]

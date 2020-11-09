@@ -237,7 +237,7 @@ class CXITree(QtGui.QTreeWidget):
     def updateTree(self):
         self.updateBranch(self.fileLoader,self.item)
     def updateBranch(self,group,branch):
-        groupChildrenNames=  group.children.keys()
+        groupChildrenNames= list(group.children.keys())
         # First groups then datasets in alphabetical order
         groupChildrenNames.sort()
         for n in list(groupChildrenNames):

@@ -1,4 +1,4 @@
-from h5proxy import Group, Dataset, File, HardLink, SoftLink, ExternalLink
+from .h5proxy import Group, Dataset, File, HardLink, SoftLink, ExternalLink
 
 def startServer():
     from h5proxy import Server

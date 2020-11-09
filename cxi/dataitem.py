@@ -20,7 +20,9 @@ class DataItem:
 
         # check whether or not it is a stack
         if len(self.fileLoader[self.fullName].attrs.items()) > 0 and "axes" in self.fileLoader[self.fullName].attrs.keys():
-            axes_attrs = self.fileLoader[self.fullName].attrs.get("axes")[0].split(":")
+            # print(self.fileLoader[self.fullName].attrs.get("axes"))
+            # axes_attrs = self.fileLoader[self.fullName].attrs.get("axes")[0].split(":")
+            axes_attrs = self.fileLoader[self.fullName].attrs.get("axes")[0].decode().split(":")
             self.isStack = True
             if "experiment_identifier" in axes_attrs:
                 self.stackDim = axes_attrs.index("experiment_identifier")

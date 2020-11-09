@@ -12,12 +12,14 @@ from ui import Ui_displayBox
 from ui import Ui_ModelProperties 
 from ui import Ui_PattersonProperties
 
+from functools import reduce
+
 # Import spimage (needed for ModelProperties)
 try:
     import spimage
     hasSpimage = True
 except:
-    print "Warning: The python package libspimage could not be found. Without libspimage, the View -> Model feature is disabled. \nAll code for viewing and fitting of the model has been moved to libspimage. You can download and install it from here: \nhttps://github.com/FilipeMaia/libspimage"
+    print("Warning: The python package libspimage could not be found. Without libspimage, the View -> Model feature is disabled. \nAll code for viewing and fitting of the model has been moved to libspimage. You can download and install it from here: \nhttps://github.com/FilipeMaia/libspimage")
     hasSpimage = False
 
 def sizeof_fmt(num):
@@ -373,7 +375,7 @@ class DataProp(QtGui.QWidget):
                     self.displayBox.displayScale.setCurrentIndex(1)
                 initialised = True
             except ValueError:
-                print "WARNING: Could not load information from settings file."
+                print("WARNING: Could not load information from settings file.")
                 failed = True
         self.setNorm()
     # COLORMAP
@@ -1032,7 +1034,7 @@ class DisplayBox(QtGui.QGroupBox, Ui_displayBox):
             i = int(round(i))
             value0 = imageDataSorted[i]
         else:
-            print "ERROR: Invalid unit0 for norm limits."
+            print("ERROR: Invalid unit0 for norm limits.")
         if unit1 == "Value":
             value1 = value0
         elif self.imageData is None:
@@ -1042,7 +1044,7 @@ class DisplayBox(QtGui.QGroupBox, Ui_displayBox):
         elif unit1 == "% Histogram":
             value1 = 100. * (abs(imageDataSorted - value0)).argmin() / float(len(imageDataSorted)-1)
         else:
-            print "ERROR: Invalid unit1 for norm limits."
+            print("ERROR: Invalid unit1 for norm limits.")
         return value1
     def onPixelClicked(self,imageData):
         self.imageData = imageData
